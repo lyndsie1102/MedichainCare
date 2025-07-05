@@ -19,3 +19,12 @@ class DoctorNote(Base):
     analysis = Column(Text)
 
     patient = relationship("Patient", backref="doctor_notes")
+
+class User(Base):
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True)
+    username = Column(String, unique=True)
+    password = Column(String) # For mock login, store plaintext or hashed
+    role = Column(String)  # "patient", "doctor", or "lab_staff"
+    
+

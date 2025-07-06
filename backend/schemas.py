@@ -1,20 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional
-
-class PatientCreate(BaseModel):
-    name: str
-    age: int
-    gender: str
-    symptoms: str
-    image_path: Optional[str] = None
-
-class PatientOut(BaseModel):
-    id: int
-    name: str
-    age: int
-    gender: str
-    symptoms: str
-    status: str
+from datetime import datetime
+from models import SymptomStatus
 
 class UserCreate(BaseModel):
     username: str
@@ -25,8 +12,21 @@ class UserOut(BaseModel):
     id: int
     username: str
     role: str
-    
+
+class SymptomCreate(BaseModel):
+    symptoms: str
+    image_path: Optional[str] = None
+    patient_id: int
+
+class SymptomOut(BaseModel):
+    id: int
+    symptoms: str
+    image_path: Optional[str]
+    status: SymptomStatus
+    date: str
+    time: str
+    hasImage: bool
 
     class Config:
-        orm_mode = True
-
+        from_attributes = True
+        use_enum_values = True

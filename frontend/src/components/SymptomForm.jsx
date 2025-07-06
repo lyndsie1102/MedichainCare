@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Send, Camera } from 'lucide-react';
 import { uploadImage, submitSymptom } from '../api';
+
 
 const SymptomForm = ({ onSubmitSuccess, patientId }) => {
   const [symptoms, setSymptoms] = useState('');
   const [selectedImage, setSelectedImage] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const fileInputRef = useRef(); // ⬅️ file input reference
 
   const handleImageChange = (e) => {
     if (e.target.files && e.target.files[0]) {
@@ -27,8 +29,10 @@ const SymptomForm = ({ onSubmitSuccess, patientId }) => {
       }
 
       await submitSymptom({ symptoms, image_path: imagePath, patient_id: patientId });
+
       setSymptoms('');
       setSelectedImage(null);
+      fileInputRef.current.value = ''; // ⬅️ clear file input
       onSubmitSuccess();
     } catch (err) {
       console.error("Submission failed:", err);
@@ -49,11 +53,18 @@ const SymptomForm = ({ onSubmitSuccess, patientId }) => {
           value={symptoms}
           onChange={(e) => setSymptoms(e.target.value)}
           required
-          placeholder="Please describe your symptoms in detail..."
+          placeholder="Please describe your symptoms in detail, 
+including when they started, severity, and 
+any triggers you've noticed..."
         />
 
         <label>Optional: Upload Image</label>
-        <input type="file" onChange={handleImageChange} accept="image/*" />
+        <input
+          type="file"
+          onChange={handleImageChange}
+          accept="image/*"
+          ref={fileInputRef} // ⬅️ attach ref
+        />
         {selectedImage && <div className="preview">Selected: {selectedImage.name}</div>}
 
         <button type="submit" disabled={isSubmitting || !symptoms.trim()}>

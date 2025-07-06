@@ -1,38 +1,233 @@
-.App {
-  text-align: center;
+body {
+  margin: 0;
+  font-family: 'Inter', Arial, sans-serif;
+  background: linear-gradient(to bottom right, #fff7ed, #f9fafb);
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
+.container {
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 0 1rem;
   min-height: 100vh;
+  /* ensures full viewport height */
   display: flex;
   flex-direction: column;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
   align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 1rem 0;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.logo h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #111827;
+}
+
+.logo p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.icon-heart {
+  background-color: #f97316;
   color: white;
+  padding: 0.5rem;
+  border-radius: 0.75rem;
 }
 
-.App-link {
-  color: #61dafb;
+.user-info {
+  background-color: #f3f4f6;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.main-content {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 2rem;
+  margin-top: 2rem;
+  padding-bottom: 3rem;
+  height: 500px;
+}
+
+.form-container,
+.history-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-container {
+  display: flex;
+  flex-direction: column;
+  /* vertical stacking */
+  height: 100%;
+}
+
+.form-header {
+  background: linear-gradient(to right, #f97316, #ea580c);
+  color: white;
+  padding: 1.5rem;
+  border-radius: 1rem 1rem 0 0;
+  margin: 0;
+  /* no margin here */
+}
+
+.form-section {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 0 0 1rem 1rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  margin-top: 0;
+  /* no gap between header & form */
+  flex-grow: 1;
+}
+
+
+.form-header h2 {
+  color: white;
+  font-size: 1.25rem;
+  /* equivalent to text-xl */
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+.form-header p {
+  color: #ffedd5;
+  /* tailwind's orange-100 */
+  font-size: 0.875rem;
+  /* text-sm */
+}
+
+
+.form-section h2 {
+  margin-bottom: 1rem;
+}
+
+form label {
+  display: block;
+  margin: 1rem 0 0.5rem;
+  font-weight: bold;
+}
+
+form textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  border: 1px solid #d1d5db;
+  resize: none;
+  min-height: 150px;
+  /* or any height you want */
+  box-sizing: border-box;
+  /* ensure padding is included in height */
+}
+
+form input[type="file"] {
+  margin-top: 0.5rem;
+}
+
+form .preview {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-top: 0.5rem;
+}
+
+form button {
+  margin-top: 1.5rem;
+  background: linear-gradient(to right, #f97316, #ea580c);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  font-weight: bold;
+  border: none;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.history-section {
+  overflow-y: auto;
+  background: white;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  border: 1px solid #e5e7eb;
+}
+
+.history-section h2 {
+  margin-bottom: 1.5rem;
+  color: #111827;
+}
+
+.submission-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  background-color: #f9fafb;
+}
+
+.submission-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.date-time {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.image-tag {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: bold;
+  gap: 0.25rem;
+}
+
+.status.pending {
+  background-color: #ffedd5;
+  color: #c2410c;
+  border: 1px solid #fdba74;
+}
+
+.status.reviewed {
+  background-color: #d1fae5;
+  color: #065f46;
+  border: 1px solid #6ee7b7;
+}
+
+.status.inprogress {
+  background-color: #dbeafe;
+  color: #1e40af;
+  border: 1px solid #93c5fd;
 }

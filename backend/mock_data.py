@@ -4,7 +4,7 @@ from faker import Faker
 from sqlalchemy.orm import Session
 from models import (
     User, Doctor, Patient, LabStaff, Symptom, Diagnosis, Consent,
-    SymptomStatus, RoleEnum, GenderEnum, ConsentPurpose
+    SymptomStatus, RoleEnum, GenderEnum, ConsentPurpose, MedicalLab
 )
 from database import SessionLocal
 from passlib.hash import bcrypt
@@ -83,6 +83,27 @@ def create_lab_staff(db: Session, user: User) -> LabStaff:
     return lab_staff
 
 
+def create_medical_lab(db: Session) -> MedicalLab:
+    specialties = [
+        "Pathology",
+        "Hematology",
+        "Microbiology",
+        "Genetics",
+        "Radiology",
+        "Toxicology",
+        "Immunology"
+    ]
+    lab = MedicalLab(
+        name=f"{fake.last_name()} Medical Lab",
+        location=fake.city(),
+        specialties=", ".join(random.sample(specialties, k=random.randint(1, 3)))
+    )
+    db.add(lab)
+    db.commit()
+    db.refresh(lab)
+    return lab
+
+
 def create_symptom(db: Session, patient_id: int) -> Symptom:
     symptom = Symptom(
         patient_id=patient_id,
@@ -146,12 +167,16 @@ def seed_db():
                 elif role == 'LAB_STAFF':
                     create_lab_staff(db, user)
 
-        # Step 2: Create patients (after doctors are available)
+        # Step 2: Create medical labs
+        for _ in range(5):  # Create 5 medical labs
+            create_medical_lab(db)
+
+        # Step 3: Create patients
         for user in users:
             if user.role == RoleEnum.PATIENT:
                 create_patient(db, user, doctors)
 
-        # Step 3: Create symptoms, diagnoses, consents for patients
+        # Step 4: Create symptoms, diagnoses, consents for patients
         patients = db.query(Patient).all()
         doctor = db.query(Doctor).first()
         if not doctor:

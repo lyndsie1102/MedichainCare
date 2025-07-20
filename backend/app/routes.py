@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, File, UploadFile, HTTPException, FastAPI
 from sqlalchemy.orm import Session
 from database import SessionLocal, get_db
-from models import User, Symptom, RoleEnum, Consent, Patient, ConsentPurpose, Diagnosis, Doctor
-from schemas import UserCreate, UserOut, SymptomCreate, SymptomOut, ConsentOut, PatientOut, DiagnosisOut, PatientSymptomDetails, DoctorOut, DiagnosisCreate
+from models import User, Symptom, RoleEnum, Consent, Patient, ConsentPurpose, Diagnosis, Doctor, MedicalLab
+from schemas import UserCreate, UserOut, SymptomCreate, SymptomOut, ConsentOut, PatientOut, DiagnosisOut, PatientSymptomDetails, DoctorOut, DiagnosisCreate, MedicalLabResponse
 from fastapi.security import OAuth2PasswordRequestForm
 import os
 import shutil
@@ -366,3 +366,21 @@ def create_diagnosis(
             "analysis": new_diagnosis.diagnosis_content,
             "createdAt": new_diagnosis.timestamp
         }}
+
+
+@router.get("/medical-labs", response_model=List[MedicalLabResponse])
+def get_medical_labs(db: Session = Depends(get_db), current_user: User = Depends(verify_role(RoleEnum.DOCTOR))):
+    labs = db.query(MedicalLab).all()
+
+    # Convert specialties string to list for each lab
+    results = []
+    for lab in labs:
+        results.append(
+            MedicalLabResponse(
+                id=lab.id,
+                name=lab.name,
+                location=lab.location,
+                specialties=lab.specialties.split(',')  # convert CSV to list
+            )
+        )
+    return results 

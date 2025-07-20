@@ -1,6 +1,6 @@
-// components/AssignModal.jsx
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, ChevronDown } from 'lucide-react';
+import { getMedicalLabs } from '../api';
 
 const AssignModal = ({
     selectedSubmission,
@@ -8,15 +8,30 @@ const AssignModal = ({
     setSelectedLab,
     showLabDropdown,
     setShowLabDropdown,
-    mockLabs,
     handleAssignToLab,
     handleCloseModal
 }) => {
+    const [labs, setLabs] = useState([]);
+
+    useEffect(() => {
+        const fetchLabs = async () => {
+            try {
+                const token = localStorage.getItem('access_token');
+                const data = await getMedicalLabs(token);
+                setLabs(data);
+            } catch (err) {
+                console.error('Error fetching labs:', err);
+            }
+        };
+
+        fetchLabs();
+    }, []);
+
     return (
         <div className="modal-overlay">
-            <div className="modal-container">
+            <div className="modal-container assign-modal">
                 <div className="modal-header modal-header-orange">
-                    <h3 className="modal-title">Assign to Lab - {selectedSubmission.patient.name}</h3>
+                    <h3 className="modal-title">Assign to Lab - Patient: {selectedSubmission.patient.name}</h3>
                     <button onClick={handleCloseModal} className="modal-close">
                         <X className="close-icon" />
                     </button>
@@ -35,7 +50,7 @@ const AssignModal = ({
 
                             {showLabDropdown && (
                                 <div className="dropdown-menu">
-                                    {mockLabs.map((lab) => (
+                                    {labs.map((lab) => (
                                         <button
                                             key={lab.id}
                                             onClick={() => {

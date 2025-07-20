@@ -26,7 +26,7 @@ const PatientDashboard = () => {
     <div className="container">
       <header className="header">
         <div className="logo">
-          <Heart size={24} className="icon-heart" />
+          <Heart size={40} className="icon-heart" />
           <div>
             <h1>HealthCare Portal</h1>
             <p>Patient Dashboard</p>
@@ -38,7 +38,7 @@ const PatientDashboard = () => {
         </div>
       </header>
 
-      <main className="main-content">
+      <main className="main-content-patient">
         <SymptomForm onSubmitSuccess={fetchSubmissions} patientId={patientId} />
         <SubmissionHistory submissions={submissions} />
       </main>

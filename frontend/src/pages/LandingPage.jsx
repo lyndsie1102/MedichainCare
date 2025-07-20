@@ -2,31 +2,17 @@ import React from 'react';
 import { Heart, Stethoscope, User, TestTube, Shield, Clock, Users, ArrowRight } from 'lucide-react';
 import '../App.css';
 import { useNavigate } from 'react-router-dom';
+import { login } from '../api';
+
+
 
 const LandingPage = () => {
     const navigate = useNavigate();
+    const handleLogin = (role) => {
+        navigate(`/login/${role.toLowerCase()}`);
+    };
 
-    const handleLogin = (userType) => {
-        const handleLogin = (userType) => {
-            // Simulate setting user after login
-            const userInfo = {
-                id: 1,
-                username: `${userType} User`,
-                role:
-                    userType === 'Patient'
-                        ? 'patient'
-                        : userType === 'Doctor'
-                            ? 'doctor'
-                            : 'lab_staff',
-            };
-            localStorage.setItem('user', JSON.stringify(userInfo));
 
-            // Navigate to dashboard
-            navigate('/dashboard');
-            alert(`Redirecting to ${userType} login page...`);
-            // In real app, use: navigate(`/login/${userType.toLowerCase()}`)
-        };
-    }
     return (
         <div className="container-landing">
             {/* Header */}
@@ -98,6 +84,7 @@ const LandingPage = () => {
                         <button onClick={() => handleLogin(role.title.split(' ')[0])}>
                             Login as {role.title.split(' ')[0]} <ArrowRight size={14} />
                         </button>
+
                     </div>
                 ))}
             </div>

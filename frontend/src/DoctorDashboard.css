@@ -551,6 +551,10 @@
   max-height: calc(90vh - 5rem);
 }
 
+.assign-modal .modal-body {
+  min-height: 400px;
+}
+
 .modal-content {
   display: flex;
   flex-direction: column;

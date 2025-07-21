@@ -64,6 +64,12 @@ class DiagnosisOut(BaseModel):
     analysis: str
     createdAt: datetime
 
+class MedicalLabResponse(BaseModel):
+    id: int
+    name: str
+    location: str
+    specialties: List[str]
+
 class PatientSymptomDetails(BaseModel):
     id: str
     patient: PatientOut

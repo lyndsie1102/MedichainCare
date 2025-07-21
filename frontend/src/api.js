@@ -86,3 +86,14 @@ export const createDiagnosis = async (diagnosisData, token) => {
   });
   return res.data;
 };
+
+
+export const getMedicalLabs = async (token) => {
+  const res = await axios.get(`${API_URL}/medical-labs/`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    }
+  });
+  return res.data;
+};

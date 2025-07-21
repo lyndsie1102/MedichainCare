@@ -64,8 +64,11 @@ class MedicalLab(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False)
     location = Column(String, nullable=False)
-    contact_info = Column(String, nullable=True)  # e.g., phone number or email
-    timestamp = Column(DateTime, default=datetime.utcnow)
+    specialties = Column(String, nullable=False)
+
+    @property
+    def specialties_list(self):
+        return self.specialties.split(',')
 
 class Symptom(Base):
     __tablename__ = "symptoms"

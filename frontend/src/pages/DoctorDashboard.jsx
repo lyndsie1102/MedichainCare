@@ -27,28 +27,6 @@ import ViewModal from '../components/ViewModal';
 import { getDoctorDashboard, getDoctorDetails, getSymptomDetails, getAllDoctor, createDiagnosis } from '../api';
 
 
-const mockLabs = [
-    {
-        id: 'lab1',
-        name: 'Central Medical Laboratory',
-        location: 'Downtown Medical Center',
-        specialties: ['Blood Work', 'Radiology', 'Pathology']
-    },
-    {
-        id: 'lab2',
-        name: 'Advanced Diagnostics Lab',
-        location: 'North Campus',
-        specialties: ['MRI', 'CT Scan', 'Ultrasound']
-    },
-    {
-        id: 'lab3',
-        name: 'QuickTest Laboratory',
-        location: 'South Wing',
-        specialties: ['Rapid Tests', 'Microbiology', 'Chemistry']
-    }
-];
-
-
 const DoctorDashboard = () => {
     const [submissions, setSubmissions] = useState([]);
     const [doctorInfo, setDoctorInfo] = useState(null);
@@ -312,11 +290,11 @@ const DoctorDashboard = () => {
                                 className="status-filter"
                             >
                                 <option value="all">All Status</option>
-                                <option value="pending">Pending</option>
-                                <option value="under_review">Under Review</option>
-                                <option value="diagnosed">Diagnosed</option>
-                                <option value="referred">Referred</option>
-                                <option value="completed">Completed</option>
+                                <option value="Pending">Pending</option>
+                                <option value="Under Review">Under Review</option>
+                                <option value="Diagnosed">Diagnosed</option>
+                                <option value="Referred">Referred</option>
+                                <option value="Completed">Completed</option>
                             </select>
                             <Filter className="filter-icon" />
                         </div>
@@ -378,7 +356,6 @@ const DoctorDashboard = () => {
                     setSelectedLab={setSelectedLab}
                     showLabDropdown={showLabDropdown}
                     setShowLabDropdown={setShowLabDropdown}
-                    mockLabs={mockLabs}
                     handleAssignToLab={handleAssignToLab}
                     handleCloseModal={handleCloseModal}
                 />

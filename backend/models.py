@@ -4,6 +4,7 @@ from sqlalchemy.orm import relationship
 from database import Base
 from datetime import datetime
 from enum import Enum, IntEnum 
+import uuid
 
 
 class SymptomStatus(str, Enum):
@@ -79,6 +80,9 @@ class Symptom(Base):
     status = Column(SQLEnum(SymptomStatus, native_enum=False), default=SymptomStatus.PENDING)
     timestamp = Column(DateTime, default=datetime.utcnow)
 
+    consents = relationship("Consent", backref="symptom", cascade="all, delete-orphan")
+
+
 class Diagnosis(Base):
     __tablename__ = "diagnosis"
     id = Column(Integer, primary_key=True)
@@ -99,7 +103,16 @@ class Consent(Base):
     granted_at = Column(DateTime, default=datetime.utcnow)
     revoked_at = Column(DateTime, nullable=True)
 
-
+class LabAssignment(Base):
+    __tablename__ = "lab_assignments"
+    id = Column(Integer, primary_key=True)
+    symptom_id = Column(Integer, ForeignKey("symptoms.id"), nullable=False)
+    lab_id = Column(Integer, ForeignKey("medical_labs.id"), nullable=False)
+    doctor_id = Column(Integer, ForeignKey("doctors.id"), nullable=False)
+    upload_token = Column(String, unique=True, index=True, default=lambda: str(uuid.uuid4()))
+    assigned_at = Column(DateTime, default=datetime.utcnow)
+    uploaded_result_path = Column(String, nullable=True)
+    uploaded_at = Column(DateTime, nullable=True)
 
 
 

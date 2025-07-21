@@ -64,11 +64,23 @@ class DiagnosisOut(BaseModel):
     analysis: str
     createdAt: datetime
 
-class MedicalLabResponse(BaseModel):
+class MedicalLabs(BaseModel):
     id: int
     name: str
     location: str
     specialties: List[str]
+
+class LabAssignmentCreate(BaseModel):
+    symptom_id: int
+    lab_id: int
+    doctor_id: int
+
+class LabAssignmentOut(BaseModel):
+    id: int
+    symptom_id: int
+    lab_id: int
+    doctor_id: int
+    upload_token: str
 
 class PatientSymptomDetails(BaseModel):
     id: str

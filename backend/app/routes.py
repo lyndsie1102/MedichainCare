@@ -1,20 +1,26 @@
 from fastapi import APIRouter, Depends, File, UploadFile, HTTPException, FastAPI
 from sqlalchemy.orm import Session
 from database import SessionLocal, get_db
-from models import User, Symptom, RoleEnum, Consent, Patient, ConsentPurpose, Diagnosis, Doctor, MedicalLab
-from schemas import UserCreate, UserOut, SymptomCreate, SymptomOut, ConsentOut, PatientOut, DiagnosisOut, PatientSymptomDetails, DoctorOut, DiagnosisCreate, MedicalLabResponse
+from models import User, Symptom, RoleEnum, Consent, Patient, ConsentPurpose, Diagnosis, Doctor, MedicalLab, LabAssignment, SymptomStatus
+from schemas import UserCreate, UserOut, SymptomCreate, SymptomOut, ConsentOut, PatientOut, DiagnosisOut, PatientSymptomDetails, DoctorOut, DiagnosisCreate, MedicalLabs, LabAssignmentCreate, LabAssignmentOut
 from fastapi.security import OAuth2PasswordRequestForm
 import os
 import shutil
 from typing import List, Optional
 from .auth import authenticate_user, create_access_token, get_password_hash, verify_role
 from datetime import datetime
+from uuid import uuid4
 
 router = APIRouter()
 
 
-UPLOAD_DIR = "uploaded_images"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
+LAB_RESULT_DIR = "uploads/lab_results"
+PATIENT_IMAGE_DIR = "uploads/lab_images"
+
+# Ensure directories exist
+os.makedirs(LAB_RESULT_DIR, exist_ok=True)
+os.makedirs(PATIENT_IMAGE_DIR, exist_ok=True)
+
 
 
 @router.post("/register", response_model=UserOut)
@@ -93,7 +99,7 @@ def login(form: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get
 
 @router.post("/upload-image/")
 def upload_image(file: UploadFile = File(...)):
-    file_location = f"{UPLOAD_DIR}/{file.filename}"
+    file_location = f"{PATIENT_IMAGE_DIR}/{file.filename}"
     with open(file_location, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
     return {"image_path": file_location}
@@ -104,19 +110,16 @@ def submit_symptoms(symptom: SymptomCreate,
                     current_user: User = Depends(verify_role(RoleEnum.PATIENT)), 
                     db: Session = Depends(get_db)):
     patient_id = current_user.id
-    print(f"Patient ID: {patient_id}")
     new_symptom = Symptom(
         patient_id=patient_id,
         symptoms=symptom.symptoms,
         image_path=symptom.image_path
     )
-    print(f"New Symptom: {new_symptom}")
     db.add(new_symptom)
     db.commit()
     db.refresh(new_symptom)
-    print(f"New Symptom Saved: ID={new_symptom.id}, Symptoms={new_symptom.symptoms}")
 
-    for consent_type, is_given in symptom.consents.items():
+    for consent_type, is_given in symptom.consent_type.items():
         if is_given:
             new_consent = Consent(
                 patient_id=patient_id,
@@ -126,7 +129,6 @@ def submit_symptoms(symptom: SymptomCreate,
                 granted_at=datetime.utcnow()
             )
             db.add(new_consent)
-            print(f"New Consent: {new_consent}")
     db.commit()
     return {"message": "Symptom submitted", "id": new_symptom.id}
 
@@ -368,7 +370,7 @@ def create_diagnosis(
         }}
 
 
-@router.get("/medical-labs", response_model=List[MedicalLabResponse])
+@router.get("/medical-labs", response_model=List[MedicalLabs])
 def get_medical_labs(db: Session = Depends(get_db), current_user: User = Depends(verify_role(RoleEnum.DOCTOR))):
     labs = db.query(MedicalLab).all()
 
@@ -376,7 +378,7 @@ def get_medical_labs(db: Session = Depends(get_db), current_user: User = Depends
     results = []
     for lab in labs:
         results.append(
-            MedicalLabResponse(
+            MedicalLabs(
                 id=lab.id,
                 name=lab.name,
                 location=lab.location,
@@ -384,3 +386,98 @@ def get_medical_labs(db: Session = Depends(get_db), current_user: User = Depends
             )
         )
     return results 
+
+@router.post("/assign-lab/", response_model=LabAssignmentOut)
+def assign_lab(
+    payload: LabAssignmentCreate,
+    current_user: User = Depends(verify_role(RoleEnum.DOCTOR)),
+    db: Session = Depends(get_db)
+):
+    symptom = db.query(Symptom).filter_by(id=payload.symptom_id).first()
+    lab = db.query(MedicalLab).filter_by(id=payload.lab_id).first()
+
+    if not symptom or not lab:
+        raise HTTPException(status_code=404, detail="Symptom or Lab not found")
+    
+    # ✅ Only allow assignment if symptom is in pending or referred state
+    if symptom.status not in [SymptomStatus.PENDING, SymptomStatus.REFERRED]:
+        raise HTTPException(
+            status_code=400,
+            detail="Only pending or referred symptoms can be assigned to labs"
+        )
+
+    assignment = LabAssignment(
+        symptom_id=payload.symptom_id,
+        lab_id=payload.lab_id,
+        doctor_id=current_user.id,  # Use the current doctor's ID
+        upload_token=str(uuid4())
+    )
+    db.add(assignment)
+    db.commit()
+    db.refresh(assignment)
+    return assignment
+
+
+@router.get("/dashboard/{lab_id}")
+def get_lab_dashboard(lab_id: int, 
+                      current_user: User = Depends(verify_role(RoleEnum.LAB_STAFF)),
+                      db: Session = Depends(get_db)):
+    assignments = (
+        db.query(LabAssignment)
+        .filter_by(lab_id=lab_id)
+        .join(Symptom)
+        .all()
+    )
+
+    results = []
+    for assign in assignments:
+        patient = db.query(User).filter_by(id=assign.symptom.patient_id).first()
+        results.append({
+            "patient_name": patient.name,
+            "email": patient.email,
+            "phone": patient.phone_number,
+            "location": patient.location,
+            "upload_token": assign.upload_token,
+            "upload_url": f"/lab/upload/{assign.upload_token}",
+            "status": "Uploaded" if assign.uploaded_result_path else "Pending"
+        })
+
+    return results
+
+
+@router.get("/upload/{token}")
+def get_upload_info(token: str,
+                    current_user: User = Depends(verify_role(RoleEnum.LAB_STAFF)),
+                    db: Session = Depends(get_db)):
+    assignment = db.query(LabAssignment).filter_by(upload_token=token).first()
+    if not assignment:
+        raise HTTPException(status_code=404, detail="Invalid token")
+    
+    patient = db.query(User).filter_by(id=assignment.symptom.patient_id).first()
+
+    return {
+        "patient_name": patient.name,
+        "email": patient.email,
+        "phone": patient.phone_number,
+        "location": patient.location
+    }
+
+
+@router.post("/upload/{token}")
+def upload_lab_result(token: str, 
+                      file: UploadFile = File(...),
+                      current_user: User = Depends(verify_role(RoleEnum.LAB_STAFF)),
+                      db: Session = Depends(get_db)):
+    assignment = db.query(LabAssignment).filter_by(upload_token=token).first()
+    if not assignment:
+        raise HTTPException(status_code=404, detail="Invalid token")
+    
+    file_path = os.path.join(LAB_RESULT_DIR, f"{assignment.id}_{file.filename}")
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    assignment.uploaded_result_path = file_path
+    assignment.uploaded_at = datetime.utcnow()
+    db.commit()
+
+    return {"message": "Result uploaded successfully."}

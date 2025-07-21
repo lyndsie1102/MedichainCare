@@ -48,6 +48,7 @@ const mockLabs = [
     }
 ];
 
+
 const DoctorDashboard = () => {
     const [submissions, setSubmissions] = useState([]);
     const [doctorInfo, setDoctorInfo] = useState(null);
@@ -93,15 +94,15 @@ const DoctorDashboard = () => {
 
     const getStatusIcon = (status) => {
         switch (status) {
-            case 'pending':
+            case 'Pending':
                 return <Clock className="status-icon status-icon-orange" />;
-            case 'under_review':
+            case 'Under Review':
                 return <AlertCircle className="status-icon status-icon-blue" />;
-            case 'diagnosed':
+            case 'Diagnosed':
                 return <CheckCircle className="status-icon status-icon-green" />;
-            case 'completed':
+            case 'Completed':
                 return <BadgeCheck className="status-icon status-icon-purple" />;
-            case 'referred':
+            case 'Referred':
                 return <ArrowRight className="status-icon status-icon-indigo" />;
             default:
                 return <Clock className="status-icon status-icon-gray" />;
@@ -110,15 +111,15 @@ const DoctorDashboard = () => {
 
     const getStatusColor = (status) => {
         switch (status) {
-            case 'pending':
+            case 'Pending':
                 return 'status-badge status-badge-orange';
-            case 'under_review':
+            case 'Under Review':
                 return 'status-badge status-badge-blue';
-            case 'diagnosed':
+            case 'Diagnosed':
                 return 'status-badge status-badge-green';
-            case 'completed':
+            case 'Completed':
                 return 'status-badge status-badge-purple';
-            case 'referred':
+            case 'Referred':
                 return 'status-badge status-badge-indigo';
             default:
                 return 'status-badge status-badge-gray';

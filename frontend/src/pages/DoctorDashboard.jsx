@@ -24,7 +24,7 @@ import AssignModal from '../components/AssignModal';
 import ReferModal from '../components/ReferModal';
 import SubmissionList from '../components/SubmissionList';
 import ViewModal from '../components/ViewModal';
-import { getDoctorDashboard, getDoctorDetails, getSymptomDetails, getAllDoctor, createDiagnosis } from '../api';
+import { getDoctorDashboard, getDoctorDetails, getSymptomDetails, createDiagnosis, createReferral } from '../api';
 
 
 const DoctorDashboard = () => {
@@ -156,20 +156,35 @@ const DoctorDashboard = () => {
         }
     };
 
-    const handleReferToDoctor = () => {
-        if (selectedDoctor && selectedSubmission) {
+    const handleReferToDoctor = async () => {
+        if (!selectedDoctor || !selectedSubmission) return;
+
+        const token = localStorage.getItem('access_token');
+
+        try {
+            await createReferral(
+                token,
+                selectedSubmission.id, // this is the symptom_id
+                selectedDoctor.id      // this is referral_doctor_id
+            );
+
+            // Update the submission status in the UI
             setSubmissions(prev =>
                 prev.map(sub =>
                     sub.id === selectedSubmission.id
-                        ? { ...sub, status: 'referred' }
+                        ? { ...sub, status: 'Referred' }
                         : sub
                 )
             );
 
-            alert(`Successfully referred to ${selectedDoctor.name}`);
+            alert(`Successfully referred to Dr. ${selectedDoctor.name}`);
             handleCloseModal();
+        } catch (error) {
+            console.error('Failed to refer:', error);
+            alert('Referral failed. Please try again.');
         }
     };
+
 
     const handleAddDiagnosis = async () => {
         if (!analysis.trim() || !selectedSubmission) return;

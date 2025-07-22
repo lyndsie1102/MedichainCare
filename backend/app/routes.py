@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, File, UploadFile, HTTPException, FastAPI
 from sqlalchemy.orm import Session
 from database import SessionLocal, get_db
-from models import User, Symptom, RoleEnum, Consent, Patient, ConsentPurpose, Diagnosis, Doctor, MedicalLab, LabAssignment, SymptomStatus
-from schemas import UserCreate, UserOut, SymptomCreate, SymptomOut, ConsentOut, PatientOut, DiagnosisOut, PatientSymptomDetails, DoctorOut, DiagnosisCreate, MedicalLabs, LabAssignmentCreate, LabAssignmentOut
+from models import User, Symptom, RoleEnum, Consent, Patient, ConsentPurpose, Diagnosis, Doctor, MedicalLab, LabAssignment, SymptomStatus, Referral
+from schemas import UserCreate, UserOut, SymptomCreate, SymptomOut, ConsentOut, PatientOut, DiagnosisOut, PatientSymptomDetails, DoctorOut, DiagnosisCreate, MedicalLabs, LabAssignmentCreate, LabAssignmentOut, ReferralCreate
 from fastapi.security import OAuth2PasswordRequestForm
 import os
 import shutil
@@ -60,17 +60,30 @@ def get_doctors(
     current_user: User = Depends(verify_role(RoleEnum.DOCTOR)),
     db: Session = Depends(get_db)
 ):
-    # Get all other doctors except the current one
-    doctors = db.query(User).filter(
-        User.role == RoleEnum.DOCTOR,
-        User.id != current_user.id
-    ).all()
+    # Query Users with role DOCTOR and join Doctor table for specialty
+    doctors = (
+        db.query(User)
+        .join(Doctor, Doctor.id == User.id)
+        .filter(
+            User.role == RoleEnum.DOCTOR,
+            User.id != current_user.id
+        )
+        .all()
+    )
 
     if not doctors:
         raise HTTPException(status_code=404, detail="No doctors found")
 
-    return doctors
-
+    # Return list of dicts matching DoctorOut model
+    # Map User+Doctor to DoctorOut fields
+    return [
+        DoctorOut(
+            id=doctor.id,
+            name=doctor.name,
+            specialty=doctor.doctor.specialty  # access Doctor via relationship or query join
+        )
+        for doctor in doctors
+    ]
 
 @router.get("/doctor/me", response_model=DoctorOut)
 def get_doctor_details(
@@ -413,6 +426,11 @@ def assign_lab(
         upload_token=str(uuid4())
     )
     db.add(assignment)
+
+    # Update symptom status to UNDER_REVIEW
+    symptom.status = SymptomStatus.UNDER_REVIEW
+
+
     db.commit()
     db.refresh(assignment)
     return assignment
@@ -481,3 +499,36 @@ def upload_lab_result(token: str,
     db.commit()
 
     return {"message": "Result uploaded successfully."}
+
+
+@router.post("/refer")
+def refer_symptom(
+    referral_data: ReferralCreate,
+    current_user: User = Depends(verify_role(RoleEnum.DOCTOR)),
+    db: Session = Depends(get_db)
+):
+    # 1. Verify symptom exists and belongs to patient
+    symptom = db.query(Symptom).filter(Symptom.id == referral_data.symptom_id).first()
+    if not symptom:
+        raise HTTPException(status_code=404, detail="Symptom not found")
+
+
+    # 2. Verify referral doctor exists and is a doctor
+    referral_doc = db.query(Doctor).filter(Doctor.id == referral_data.referral_doctor_id).first()
+    if not referral_doc:
+        raise HTTPException(status_code=404, detail="Referral doctor not found")
+
+    # 3. Create referral record
+    new_referral = Referral(
+        symptom_id=referral_data.symptom_id,
+        referral_doctor_id=referral_data.referral_doctor_id,
+        referred_at=datetime.utcnow()
+    )
+    db.add(new_referral)
+
+    # 4. Update symptom status to REFERRED
+    symptom.status = SymptomStatus.REFERRED
+
+    db.commit()
+
+    return {"message": "Symptom successfully referred", "referral_id": new_referral.id}

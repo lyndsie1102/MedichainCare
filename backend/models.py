@@ -41,10 +41,15 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     timestamp = Column(DateTime, default=datetime.utcnow)
 
+    doctor = relationship("Doctor", back_populates="user", uselist=False)
+
 class Doctor(Base):
     __tablename__ = "doctors"
     id = Column(Integer, ForeignKey("users.id"), primary_key=True)
     specialty = Column(String)
+
+    user = relationship("User", back_populates="doctor")
+
 
 class Patient(Base):
     __tablename__ = "patients"
@@ -115,4 +120,9 @@ class LabAssignment(Base):
     uploaded_at = Column(DateTime, nullable=True)
 
 
-
+class Referral(Base):
+    __tablename__ = "referrals"
+    id = Column(Integer, primary_key=True)
+    symptom_id = Column(Integer, ForeignKey("symptoms.id"), nullable=False)
+    referral_doctor_id = Column(Integer, ForeignKey("doctors.id"), nullable=False) 
+    referred_at = Column(DateTime, default=datetime.utcnow)

@@ -73,7 +73,6 @@ class MedicalLabs(BaseModel):
 class LabAssignmentCreate(BaseModel):
     symptom_id: int
     lab_id: int
-    doctor_id: int
 
 class LabAssignmentOut(BaseModel):
     id: int
@@ -91,6 +90,10 @@ class PatientSymptomDetails(BaseModel):
     status: SymptomStatus
     diagnoses: List[DiagnosisOut]
     consent: ConsentOut
+
+class ReferralCreate(BaseModel):
+    symptom_id: int
+    referral_doctor_id: int
 
     class Config:
         from_attributes = True

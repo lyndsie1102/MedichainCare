@@ -68,15 +68,6 @@ export const getSymptomDetails = async (symptomId, token) => {
   return res.data;
 };
 
-export const getAllDoctors = async (token) => {
-    const response = await axios.get(`${API_URL}/doctors`, {
-        headers: {
-            Authorization: `Bearer ${token}`,
-        },
-    });
-    return response.data;
-};
-
 export const createDiagnosis = async (diagnosisData, token) => {
   const res = await axios.post(`${API_URL}/create_diagnosis/`, diagnosisData, {
     headers: {
@@ -95,5 +86,34 @@ export const getMedicalLabs = async (token) => {
       'Content-Type': 'application/json'
     }
   });
+  return res.data;
+};
+
+
+export const getAllDoctors = async (token) => {
+   const res = await axios.get(`${API_URL}/doctors/`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    }
+  });
+  return res.data;
+}
+
+
+export const createReferral = async (token, symptomId, doctorId) => {
+  const res = await axios.post(
+    `${API_URL}/refer`,
+    {
+      symptom_id: symptomId,
+      referral_doctor_id: doctorId
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    }
+  );
   return res.data;
 };

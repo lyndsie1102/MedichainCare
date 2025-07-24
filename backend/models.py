@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Boolean
-from sqlalchemy.types import Enum as SQLEnum  # 👈 Import Enum của SQLAlchemy đúng cách
+from sqlalchemy.types import Enum as SQLEnum, JSON
 from sqlalchemy.orm import relationship
 from database import Base
 from datetime import datetime
@@ -54,7 +54,7 @@ class Doctor(Base):
 class Patient(Base):
     __tablename__ = "patients"
     id = Column(Integer, ForeignKey("users.id"), primary_key=True)
-    gp_id = Column(Integer, ForeignKey('users.id'))
+    gp_id = Column(Integer, ForeignKey('users.id'), nullable=False)  # General Practitioner (GP) ID
     location = Column(String, nullable=False)
     phone_number = Column(String, nullable=True)
     email = Column(String, nullable=True)
@@ -84,6 +84,9 @@ class Symptom(Base):
     image_path = Column(String, nullable=True)
     status = Column(SQLEnum(SymptomStatus, native_enum=False), default=SymptomStatus.PENDING)
     timestamp = Column(DateTime, default=datetime.utcnow)
+    consent_treatment = Column(Boolean, default=False)
+    consent_referral = Column(Boolean, default=False)
+    consent_research = Column(Boolean, default=False)
 
     consents = relationship("Consent", backref="symptom", cascade="all, delete-orphan")
 
@@ -108,17 +111,19 @@ class Consent(Base):
     granted_at = Column(DateTime, default=datetime.utcnow)
     revoked_at = Column(DateTime, nullable=True)
 
-class LabAssignment(Base):
-    __tablename__ = "lab_assignments"
+class TestRequest(Base):
+    __tablename__ = "test_requests"
     id = Column(Integer, primary_key=True)
+    test_type_id = Column(Integer, ForeignKey("test_types.id"), nullable=False)
     symptom_id = Column(Integer, ForeignKey("symptoms.id"), nullable=False)
     lab_id = Column(Integer, ForeignKey("medical_labs.id"), nullable=False)
     doctor_id = Column(Integer, ForeignKey("doctors.id"), nullable=False)
     upload_token = Column(String, unique=True, index=True, default=lambda: str(uuid.uuid4()))
-    assigned_at = Column(DateTime, default=datetime.utcnow)
+    requested_at = Column(DateTime, default=datetime.utcnow)
     uploaded_result_path = Column(String, nullable=True)
-    uploaded_at = Column(DateTime, nullable=True)
+    status = Column(SQLEnum(SymptomStatus, native_enum=False), default=SymptomStatus.PENDING)
 
+    test_results = relationship("TestResults", back_populates="test_request")
 
 class Referral(Base):
     __tablename__ = "referrals"
@@ -126,3 +131,19 @@ class Referral(Base):
     symptom_id = Column(Integer, ForeignKey("symptoms.id"), nullable=False)
     referral_doctor_id = Column(Integer, ForeignKey("doctors.id"), nullable=False) 
     referred_at = Column(DateTime, default=datetime.utcnow)
+
+class TestType(Base):
+    __tablename__ = "test_types"
+    id = Column(Integer, primary_key=True)
+    name = Column(String, nullable=False)
+
+
+class TestResults(Base):
+    __tablename__ = "test_results"
+    id = Column(Integer, primary_key=True)
+    test_request_id = Column(Integer, ForeignKey("test_requests.id"), nullable=False)
+    files = Column(JSON, nullable=False)
+    summary = Column(Text, nullable=True)
+    uploaded_at = Column(DateTime, default=datetime.utcnow)
+
+    test_request = relationship("TestRequest", back_populates="test_results")

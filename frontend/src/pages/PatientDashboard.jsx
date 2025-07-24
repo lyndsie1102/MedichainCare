@@ -2,25 +2,47 @@ import React, { useEffect, useState } from 'react';
 import { Heart, User } from 'lucide-react';
 import SymptomForm from '../components/SymptomForm';
 import SubmissionHistory from '../components/SubmissionHistory';
-import { getSymptomHistory } from '../api';
+import { getSymptomHistory, getPatientInfo } from '../api';
 
 const PatientDashboard = () => {
   const [submissions, setSubmissions] = useState([]);
-  const user = JSON.parse(localStorage.getItem('user'));
-  const patientId = user?.id || 1;
+  const [user, setUser] = useState(null);
 
+  // Fetch the user information from localStorage or elsewhere
+  const fetchUserInfo = async () => {
+    const token = localStorage.getItem('access_token');
+    if (token) {
+      try {
+        const data = await getPatientInfo(token); // Fetch patient details using the token
+        setUser(data); // Store user data in state (e.g., name, etc.)
+      } catch (err) {
+        console.error('Failed to load user info', err);
+      }
+    } else {
+      console.error('No access token found');
+    }
+  };
+
+  // Function to fetch the symptom history for the patient
   const fetchSubmissions = async () => {
     try {
-      const data = await getSymptomHistory(patientId);
-      setSubmissions(data);
+      const token = localStorage.getItem('access_token');
+      if (token) {
+        const data = await getSymptomHistory(token);
+        setSubmissions(data);
+      } else {
+        console.error('No access token found');
+      }
     } catch (err) {
       console.error('Failed to load submissions', err);
     }
   };
 
   useEffect(() => {
+    // Fetch user info and submissions when the component mounts
+    fetchUserInfo();
     fetchSubmissions();
-  }, []);
+  }, []); // Empty dependency array means it will only run once after the component mounts
 
   return (
     <div className="container">
@@ -32,19 +54,28 @@ const PatientDashboard = () => {
             <p>Patient Dashboard</p>
           </div>
         </div>
+        {/* User Info */}
         <div className="user-info">
-          <User size={16} />
-          <span>{user?.username || 'Patient'}</span>
+          <div className="user-icon-patient">
+            <User className="patient-user-icon" />
+          </div>
+          <div className="user-details">
+            <p className="user-name">
+              {user ? user.name : 'Loading...'}
+            </p>
+          </div>
         </div>
       </header>
 
       <main className="main-content-patient">
-        <SymptomForm onSubmitSuccess={fetchSubmissions} patientId={patientId} />
+        {/* SymptomForm component that handles submission */}
+        <SymptomForm onSubmitSuccess={fetchSubmissions} />
+
+        {/* Submission history, which shows a list of previously submitted symptoms */}
         <SubmissionHistory submissions={submissions} />
       </main>
     </div>
   );
 };
-
 
 export default PatientDashboard;

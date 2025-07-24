@@ -792,3 +792,57 @@ button:disabled {
   box-sizing: border-box;
 }
 
+
+/* Consent Checkbox Section */
+.consent-section {
+  display: flex;
+  flex-direction: column;
+  margin-top: 5px;
+}
+
+.consent-section input[type="checkbox"] {
+  border: 2px solid #FFA500;
+  margin-right: 10px;
+}
+
+.consent-section input[type="checkbox"]:focus {
+  outline: none; /* Remove default focus outline */
+  border-color: #FFA500; /* Keep the orange border on focus */
+}
+
+.consent-section label {
+  font-size: 0.875rem; /* Tailwind's text-sm */
+  color: #374151; /* Tailwind's gray-700 */
+}
+
+/* Style for required symbol */
+.required {
+  color: red;  /* Color for the required symbol */
+  font-size: 16px; /* Adjust the size as needed */
+  margin-left: 5px; /* Space between the text and the asterisk */
+  font-weight: bold; /* Make the asterisk bold */
+}
+
+.user-icon-patient {
+  height: 2rem;
+  width: 1.25rem;
+  color: white;
+}
+
+.user-details {
+  text-align: right;
+}
+
+.user-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+
+.patient-user-icon {
+  flex-shrink: 0;
+  background: linear-gradient(to right, #FF8C00, #FFA500);
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+}

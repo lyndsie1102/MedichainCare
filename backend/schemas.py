@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional, Dict, List
 from datetime import datetime
-from models import SymptomStatus, GenderEnum, RoleEnum
+from models import SymptomStatus, GenderEnum, RoleEnum, ConsentPurpose
 
 class UserCreate(BaseModel):
     username: str
@@ -19,15 +19,15 @@ class UserOut(BaseModel):
     gender: GenderEnum
     age: int
 
-class SymptomCreate(BaseModel):
-    symptoms: str
-    image_path: Optional[str] = None
-    consent_type: Dict[str, bool]  # e.g., {"treatment": true, "referral": true, "research": false}
-
 class ConsentOut(BaseModel):
     treatment: bool
     referral: bool
-    research: bool
+    research: Optional[bool] = False
+
+class SymptomCreate(BaseModel):
+    symptoms: str
+    image_path: Optional[str] = None
+    consent_type: ConsentOut
 
 class PatientOut(BaseModel):
     id: int
@@ -55,7 +55,7 @@ class SymptomOut(BaseModel):
     image_path: Optional[List[str]]
     status: str
     submitted_at: datetime
-    patient: PatientOut
+    consents: List[str] 
 
 class DiagnosisOut(BaseModel):
     id: str
@@ -81,10 +81,17 @@ class LabAssignmentOut(BaseModel):
     doctor_id: int
     upload_token: str
 
+class TestResultOut(BaseModel):
+    uploadedAt: datetime
+    files: List[dict]  # Each file contains name, url, and type
+    summary: Optional[str] = None
+
 class PatientSymptomDetails(BaseModel):
     id: str
     patient: PatientOut
     symptoms: str
+    testType: Optional[str] = None
+    testResults: Optional[List[TestResultOut]] = []
     images: List[str] 
     submittedAt: datetime
     status: SymptomStatus

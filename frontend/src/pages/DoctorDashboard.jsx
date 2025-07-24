@@ -6,17 +6,8 @@ import {
     AlertCircle,
     CheckCircle,
     BadgeCheck,
-    User,
     Search,
     Filter,
-    X,
-    ChevronDown,
-    Calendar,
-    Phone,
-    Mail,
-    MapPin,
-    Eye,
-    UserCheck,
     ArrowRight
 } from 'lucide-react';
 import '../DoctorDashboard.css';

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, File, UploadFile, HTTPException, FastAPI
 from sqlalchemy.orm import Session
 from database import SessionLocal, get_db
-from models import User, Symptom, RoleEnum, Consent, Patient, ConsentPurpose, Diagnosis, Doctor, MedicalLab, LabAssignment, SymptomStatus, Referral
+from models import User, Symptom, RoleEnum, Consent, Patient, ConsentPurpose, Diagnosis, Doctor, MedicalLab, TestRequest, SymptomStatus, Referral, TestResults, TestType
 from schemas import UserCreate, UserOut, SymptomCreate, SymptomOut, ConsentOut, PatientOut, DiagnosisOut, PatientSymptomDetails, DoctorOut, DiagnosisCreate, MedicalLabs, LabAssignmentCreate, LabAssignmentOut, ReferralCreate
 from fastapi.security import OAuth2PasswordRequestForm
 import os
@@ -100,6 +100,22 @@ def get_doctor_details(
         specialty=doctor.specialty
     )
 
+@router.get("/patient/me")
+def get_patient_details(
+    current_user: User = Depends(verify_role(RoleEnum.PATIENT)),
+    db: Session = Depends(get_db)
+):
+    # Query the Patient table and join with the User table
+    patient = db.query(User).filter(User.id == current_user.id).first()
+    
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient details not found")
+    
+    # Return patient name (from the User table)
+    return {"name": patient.name}
+
+
+    
 @router.post("/login")
 def login(form: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user = authenticate_user(db, form.username, form.password)
@@ -119,36 +135,65 @@ def upload_image(file: UploadFile = File(...)):
 
 
 @router.post("/symptoms/")
-def submit_symptoms(symptom: SymptomCreate, 
-                    current_user: User = Depends(verify_role(RoleEnum.PATIENT)), 
-                    db: Session = Depends(get_db)):
-    patient_id = current_user.id
+def submit_symptoms(
+    symptom: SymptomCreate,
+    current_user: User = Depends(verify_role(RoleEnum.PATIENT)),
+    db: Session = Depends(get_db),
+):
+    print(f"current user: {current_user.id}")
+    # Enforce required consents
+    if not symptom.consent_type.treatment:
+        raise HTTPException(status_code=400, detail="Treatment consent is required.")
+    if not symptom.consent_type.referral:
+        raise HTTPException(status_code=400, detail="Referral consent is required.")
+
+
+    # Create Symptom record
     new_symptom = Symptom(
-        patient_id=patient_id,
+        patient_id=current_user.id,
         symptoms=symptom.symptoms,
-        image_path=symptom.image_path
+        image_path=symptom.image_path,
+        consent_treatment=True,
+        consent_referral=True,
+        consent_research = symptom.consent_type.research or False, 
     )
     db.add(new_symptom)
     db.commit()
     db.refresh(new_symptom)
 
-    for consent_type, is_given in symptom.consent_type.items():
-        if is_given:
-            new_consent = Consent(
-                patient_id=patient_id,
-                symptom_id=new_symptom.id,
-                consent_type=consent_type,
-                is_granted=True,
-                granted_at=datetime.utcnow()
-            )
-            db.add(new_consent)
+    # Create treatment consent (for GP)
+    patient_record = db.query(Patient).filter(Patient.id == current_user.id).first()
+    treatment_consent = Consent(
+        patient_id=current_user.id,
+        symptom_id=new_symptom.id,
+        doctor_id=patient_record.gp_id,  # GP ID if available; adjust if GP is different
+        consent_type=ConsentPurpose.TREATMENT,
+        is_granted=True,
+        granted_at=datetime.utcnow(),
+    )
+    db.add(treatment_consent)
+
+    # Create research consent if granted
+    if symptom.consent_type.research:
+        research_consent = Consent(
+            patient_id=current_user.id,
+            symptom_id=new_symptom.id,
+            doctor_id=None,
+            consent_type=ConsentPurpose.RESEARCH,
+            is_granted=True,
+            granted_at=datetime.utcnow(),
+        )
+        db.add(research_consent)
+
     db.commit()
     return {"message": "Symptom submitted", "id": new_symptom.id}
 
 
-@router.get("/symptoms/history/{patient_id}", response_model=List[SymptomOut])
-def get_symptom_history(patient_id: int, db: Session = Depends(get_db)):
-    symptoms = db.query(Symptom).filter(Symptom.patient_id == patient_id).order_by(Symptom.timestamp.desc()).all()
+@router.get("/symptoms-history/", response_model=List[SymptomOut])
+def get_symptom_history(
+    current_user: User = Depends(verify_role(RoleEnum.PATIENT)), 
+    db: Session = Depends(get_db)):
+    symptoms = db.query(Symptom).filter(Symptom.patient_id == current_user.id).order_by(Symptom.timestamp.desc()).all()
     
     result = []
     for s in symptoms:
@@ -164,8 +209,7 @@ def get_symptom_history(patient_id: int, db: Session = Depends(get_db)):
             symptoms=s.symptoms,
             image_path=s.image_path,
             status=s.status,
-            date=s.timestamp.strftime("%Y-%m-%d"),
-            time=s.timestamp.strftime("%H:%M"),
+            submitted_at=s.timestamp,
             consents=consent_types  # Pass the consent types
         ))
 
@@ -201,7 +245,8 @@ def get_doctor_dashboard(
     # Combine all symptoms
     all_symptoms = {s.id: s for s in gp_symptoms + referred_symptoms + research_symptoms}.values()
 
-    for symptom in all_symptoms:
+    sorted_symptoms = sorted(all_symptoms, key=lambda s: s.timestamp, reverse=True)
+    for symptom in sorted_symptoms:
         patient = db.query(Patient).filter(Patient.id == symptom.patient_id).first()
         user = db.query(User).filter(User.id == symptom.patient_id).first()
         if search:
@@ -245,13 +290,12 @@ def get_full_symptom_record(symptom_id: int, current_user: User = Depends(verify
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    # Fetch all consents related to this symptom
-    consents = db.query(Consent).filter(Consent.symptom_id == symptom.id).all()
-    consent_dict = {
-        "treatment": any(c.is_granted and c.consent_type == ConsentPurpose.TREATMENT for c in consents),
-        "referral": any(c.is_granted and c.consent_type == ConsentPurpose.REFERRAL for c in consents),
-        "research": any(c.is_granted and c.consent_type == ConsentPurpose.RESEARCH for c in consents),
-    }
+    # Initialize consent booleans from the Symptom model itself
+    consent_out = ConsentOut(
+        treatment=symptom.consent_treatment,
+        referral=symptom.consent_referral,
+        research=symptom.consent_research
+    )
 
     # Fetch diagnoses for the symptom
     diagnoses = db.query(Diagnosis).filter(Diagnosis.symptom_id == symptom.id).all()
@@ -275,6 +319,32 @@ def get_full_symptom_record(symptom_id: int, current_user: User = Depends(verify
             )
         )
 
+    # Fetch TestRequest for the symptom
+    test_request = db.query(TestRequest).filter(TestRequest.symptom_id == symptom.id).first()
+
+    test_result_out = []
+    if test_request:
+        # Fetch all test results associated with this TestRequest
+        test_results = db.query(TestResults).filter(TestResults.test_request_id == test_request.id).all()
+
+        # Loop through test results and prepare the response
+        for result in test_results:
+            test_result_out.append({
+                "uploadedAt": result.uploaded_at,
+                "files": [
+                    {"name": file["file_name"], "url": file["file_url"]} 
+                    for file in result.files
+                ],
+                "summary": result.summary
+            })
+
+    # Fetch the test type associated with the request
+    test_type_name = None
+    if test_request:
+        test_type = db.query(TestType).filter(TestType.id == test_request.test_type_id).first()
+        if test_type:
+            test_type_name = test_type.name
+
     return PatientSymptomDetails(
         id=str(symptom.id),
         patient=PatientOut(
@@ -287,12 +357,15 @@ def get_full_symptom_record(symptom_id: int, current_user: User = Depends(verify
             address=patient.location
         ),
         symptoms=symptom.symptoms,
+        testType=test_type_name,
+        testResults=test_result_out,
         images=[symptom.image_path] if symptom.image_path else [],
         submittedAt=symptom.timestamp,
         status=symptom.status,
         diagnoses=diagnosis_list,
-        consent=ConsentOut(**consent_dict)
+        consent=consent_out
     )
+
 
 
 router.get("/doctor/submissions", response_model=List[SymptomOut])
@@ -419,7 +492,7 @@ def assign_lab(
             detail="Only pending or referred symptoms can be assigned to labs"
         )
 
-    assignment = LabAssignment(
+    assignment = TestRequest(
         symptom_id=payload.symptom_id,
         lab_id=payload.lab_id,
         doctor_id=current_user.id,  # Use the current doctor's ID
@@ -441,7 +514,7 @@ def get_lab_dashboard(lab_id: int,
                       current_user: User = Depends(verify_role(RoleEnum.LAB_STAFF)),
                       db: Session = Depends(get_db)):
     assignments = (
-        db.query(LabAssignment)
+        db.query(TestRequest)
         .filter_by(lab_id=lab_id)
         .join(Symptom)
         .all()
@@ -467,7 +540,7 @@ def get_lab_dashboard(lab_id: int,
 def get_upload_info(token: str,
                     current_user: User = Depends(verify_role(RoleEnum.LAB_STAFF)),
                     db: Session = Depends(get_db)):
-    assignment = db.query(LabAssignment).filter_by(upload_token=token).first()
+    assignment = db.query(TestRequest).filter_by(upload_token=token).first()
     if not assignment:
         raise HTTPException(status_code=404, detail="Invalid token")
     
@@ -482,23 +555,48 @@ def get_upload_info(token: str,
 
 
 @router.post("/upload/{token}")
-def upload_lab_result(token: str, 
-                      file: UploadFile = File(...),
-                      current_user: User = Depends(verify_role(RoleEnum.LAB_STAFF)),
-                      db: Session = Depends(get_db)):
-    assignment = db.query(LabAssignment).filter_by(upload_token=token).first()
+def upload_lab_result(
+    token: str, 
+    files: List[UploadFile] = File(...),  # Accepting multiple files
+    current_user: User = Depends(verify_role(RoleEnum.LAB_STAFF)),
+    db: Session = Depends(get_db)
+):
+    # Retrieve the test request based on the token
+    assignment = db.query(TestRequest).filter_by(upload_token=token).first()
+    
     if not assignment:
         raise HTTPException(status_code=404, detail="Invalid token")
     
-    file_path = os.path.join(LAB_RESULT_DIR, f"{assignment.id}_{file.filename}")
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+    # List to store file paths
+    uploaded_files = []
+    
+    # Save each file and generate file path
+    for file in files:
+        file_path = os.path.join(LAB_RESULT_DIR, f"{assignment.id}_{file.filename}")
+        
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        
+        # Append file path to the uploaded files list
+        uploaded_files.append({"name": file.filename, "path": file_path})
+    
+    # Create a new entry in the TestResults table for each uploaded file
+    test_result = TestResults(
+        test_request_id=assignment.id,
+        files=uploaded_files,  # Storing multiple files in the 'files' field
+        summary=None,  # Optionally add a summary
+        uploaded_at=datetime.utcnow()
+    )
+    
+    db.add(test_result)
 
-    assignment.uploaded_result_path = file_path
+    # Update the TestRequest table with the uploaded result file paths and time
+    assignment.uploaded_result_path = uploaded_files[0]["path"]  # You can choose how to represent the first file path
     assignment.uploaded_at = datetime.utcnow()
+    
     db.commit()
 
-    return {"message": "Result uploaded successfully."}
+    return {"message": f"{len(files)} file(s) uploaded successfully."}
 
 
 @router.post("/refer")
@@ -507,28 +605,54 @@ def refer_symptom(
     current_user: User = Depends(verify_role(RoleEnum.DOCTOR)),
     db: Session = Depends(get_db)
 ):
-    # 1. Verify symptom exists and belongs to patient
+    # 1. Verify symptom exists
     symptom = db.query(Symptom).filter(Symptom.id == referral_data.symptom_id).first()
     if not symptom:
         raise HTTPException(status_code=404, detail="Symptom not found")
 
-
-    # 2. Verify referral doctor exists and is a doctor
+    # 2. Verify referral doctor exists
     referral_doc = db.query(Doctor).filter(Doctor.id == referral_data.referral_doctor_id).first()
     if not referral_doc:
         raise HTTPException(status_code=404, detail="Referral doctor not found")
 
-    # 3. Create referral record
+    # 3. Ensure referral consent is granted before proceeding
+    if not symptom.consent_referral:
+        raise HTTPException(status_code=403, detail="Referral consent not granted by patient.")
+
+    # 4. Create referral record
     new_referral = Referral(
-        symptom_id=referral_data.symptom_id,
+        symptom_id=symptom.id,
         referral_doctor_id=referral_data.referral_doctor_id,
         referred_at=datetime.utcnow()
     )
     db.add(new_referral)
 
-    # 4. Update symptom status to REFERRED
+    # 5. Create referral consent record
+    referral_consent = Consent(
+        patient_id=symptom.patient_id,
+        symptom_id=symptom.id,
+        doctor_id=referral_data.referral_doctor_id,
+        consent_type=ConsentPurpose.REFERRAL,
+        is_granted=True,
+        granted_at=datetime.utcnow()
+    )
+    db.add(referral_consent)
+
+    # 6. Update symptom status
     symptom.status = SymptomStatus.REFERRED
 
     db.commit()
 
-    return {"message": "Symptom successfully referred", "referral_id": new_referral.id}
+    return {
+        "message": "Symptom successfully referred",
+        "referral_id": new_referral.id
+    }
+
+
+@router.get("/test-types/")
+def get_test_types(db: Session = Depends(get_db), current_user: User = Depends(verify_role(RoleEnum.DOCTOR))):
+    test_types = db.query(TestType).all()
+    if not test_types:
+        raise HTTPException(status_code=404, detail="No test types found")
+    
+    return [{"id": tt.id, "name": tt.name} for tt in test_types]

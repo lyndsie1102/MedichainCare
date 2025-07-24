@@ -1,6 +1,5 @@
-// components/DiagnosisModal.jsx
 import React from 'react';
-import { X, User, Phone, Mail, MapPin, Shield } from 'lucide-react';
+import { X, User, Phone, Mail, MapPin, Shield, Calendar, FileText } from 'lucide-react';
 
 const ViewModal = ({
     selectedSubmission,
@@ -24,6 +23,7 @@ const ViewModal = ({
 
                 <div className="modal-body">
                     <div className="modal-content">
+                        {/* Patient Information */}
                         <div className="patient-details-card">
                             <h4 className="section-title">Patient Information</h4>
                             <div className="patient-info-list">
@@ -94,6 +94,58 @@ const ViewModal = ({
                                             alt={`Symptom ${index + 1}`}
                                             className="modal-image"
                                         />
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Test Results Section */}
+                        {selectedSubmission.testResults && selectedSubmission.testResults.length > 0 && (
+                            <div>
+                                <h4 className="section-title">Test Results</h4>
+                                <div className="test-results-card">
+                                    {selectedSubmission.testResults.map((testResult, index) => (
+                                        <div key={index} className="test-results">
+                                            <div className="test-results-header">
+                                                <div className="test-results-info">
+                                                    <h5 className="test-results-type">{selectedSubmission.testType?.name}</h5>
+                                                    <p className="test-results-date">
+                                                        <Calendar className="test-results-icon" />
+                                                        Results uploaded: {formatDate(testResult.uploadedAt)}
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            <div className="test-results-summary">
+                                                <h6 className="test-results-summary-title">Summary:</h6>
+                                                <p className="test-results-summary-text">{testResult.summary}</p>
+                                            </div>
+
+                                            <div className="test-results-files">
+                                                <h6 className="test-results-files-title">Attached Files:</h6>
+                                                <div className="test-results-files-list">
+                                                    {testResult.files.map((file, fileIndex) => (
+                                                        <div key={fileIndex} className="test-results-file">
+                                                            <FileText className="test-results-file-icon" />
+                                                            <div className="test-results-file-info">
+                                                                <span className="test-results-file-name">{file.name}</span>
+                                                                <span className="test-results-file-type">{file.type}</span>
+
+                                                                {/* Open the file in a new tab */}
+                                                                <a
+                                                                    href={file.url}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="file-preview-button"
+                                                                >
+                                                                    View
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
                                     ))}
                                 </div>
                             </div>

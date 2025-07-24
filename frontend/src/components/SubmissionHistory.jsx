@@ -21,27 +21,38 @@ const getStatusIcon = (status) => {
   }
 };
 
-const SubmissionHistory = ({ submissions }) => (
-  <section className="history-section">
-    <h2>Submission History</h2>
-    {submissions.map((s) => (
-      <div key={s.id} className="submission-card">
-        <div className="submission-header">
-          <div className="date-time">
-            <Calendar size={16} />
-            <span>{s.date} at {s.time}</span>
-            {s.hasImage && (
-              <div className="image-tag"><Camera size={14} /> Image attached</div>
-            )}
+const formatDate = (timestamp) => {
+  const date = new Date(timestamp);
+  return `${date.toLocaleDateString()} at ${date.toLocaleTimeString()}`;
+};
+
+const SubmissionHistory = ({ submissions }) => {
+  return (
+    <section className="history-section">
+      <h2>Submission History</h2>
+      {submissions.length === 0 ? (
+        <p>No submissions yet. Submit your symptoms above!</p>
+      ) : (
+        submissions.map((s) => (
+          <div key={s.id} className="submission-card">
+            <div className="submission-header">
+              <div className="date-time">
+                <Calendar size={16} />
+                <span>{formatDate(s.submittedAt)}</span>
+                {s.images && s.images.length > 0 && (
+                  <div className="image-tag"><Camera size={14} /> Image attached</div>
+                )}
+              </div>
+              <div className={getStatusClass(s.status)}>
+                {getStatusIcon(s.status)} <span>{s.status}</span>
+              </div>
+            </div>
+            <p>{s.symptoms}</p>
           </div>
-          <div className={getStatusClass(s.status)}>
-            {getStatusIcon(s.status)} <span>{s.status}</span>
-          </div>
-        </div>
-        <p>{s.symptoms}</p>
-      </div>
-    ))}
-  </section>
-);
+        ))
+      )}
+    </section>
+  );
+};
 
 export default SubmissionHistory;

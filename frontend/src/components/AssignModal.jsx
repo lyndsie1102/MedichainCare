@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, ChevronDown } from 'lucide-react';
 import { getMedicalLabs } from '../api';
+import { getTestTypes } from '../api'; // Import the getTestTypes API function
 
 const AssignModal = ({
     selectedSubmission,
@@ -12,7 +13,11 @@ const AssignModal = ({
     handleCloseModal
 }) => {
     const [labs, setLabs] = useState([]);
+    const [testTypes, setTestTypes] = useState([]); // State to hold test types
+    const [selectedTestType, setSelectedTestType] = useState('');
+    const [showTestTypeDropdown, setShowTestTypeDropdown] = useState(false);
 
+    // Fetch labs data
     useEffect(() => {
         const fetchLabs = async () => {
             try {
@@ -27,6 +32,21 @@ const AssignModal = ({
         fetchLabs();
     }, []);
 
+    // Fetch test types from the API
+    useEffect(() => {
+        const fetchTestTypes = async () => {
+            try {
+                const token = localStorage.getItem('access_token');
+                const data = await getTestTypes(token); // Fetch test types from the API
+                setTestTypes(data); // Update state with the fetched test types
+            } catch (err) {
+                console.error('Error fetching test types:', err);
+            }
+        };
+
+        fetchTestTypes();
+    }, []);
+
     return (
         <div className="modal-overlay">
             <div className="modal-container assign-modal">
@@ -38,6 +58,7 @@ const AssignModal = ({
                 </div>
                 <div className="modal-body">
                     <div className="modal-content">
+                        {/* Lab Selection */}
                         <h4 className="section-title">Select Lab for Assignment</h4>
                         <div className="dropdown-container">
                             <button
@@ -68,9 +89,39 @@ const AssignModal = ({
                             )}
                         </div>
 
-                        {selectedLab && (
+                        {/* Test Type Selection */}
+                        <h4 className="section-title">Select Test Type</h4>
+                        <div className="dropdown-container">
+                            <button
+                                onClick={() => setShowTestTypeDropdown(!showTestTypeDropdown)}
+                                className="dropdown-button dropdown-button-orange"
+                            >
+                                <span>{selectedTestType || 'Select Test Type'}</span>
+                                <ChevronDown className={`dropdown-icon ${showTestTypeDropdown ? 'dropdown-icon-rotated' : ''}`} />
+                            </button>
+
+                            {showTestTypeDropdown && (
+                                <div className="dropdown-menu">
+                                    {testTypes.map((testType) => (
+                                        <button
+                                            key={testType.id}
+                                            onClick={() => {
+                                                setSelectedTestType(testType.name); // Update the selected test type name
+                                                setShowTestTypeDropdown(false);
+                                            }}
+                                            className="dropdown-item"
+                                        >
+                                            <div className="test-type-name">{testType.name}</div>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Confirm Button */}
+                        {selectedLab && selectedTestType && (
                             <button onClick={handleAssignToLab} className="btn btn-confirm">
-                                Confirm Assignment to {selectedLab.name}
+                                Confirm Assignment to {selectedLab.name} for {selectedTestType}
                             </button>
                         )}
                     </div>

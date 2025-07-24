@@ -2,23 +2,6 @@ import axios from 'axios';
 
 const API_URL = 'http://localhost:8000';
 
-export const uploadImage = async (file) => {
-  const formData = new FormData();
-  formData.append('file', file);
-  const res = await axios.post(`${API_URL}/upload-image/`, formData);
-  return res.data;
-};
-
-export const submitSymptom = async (symptom) => {
-  const res = await axios.post(`${API_URL}/symptoms/`, symptom);
-  return res.data;
-};
-
-export const getSymptomHistory = async (patientId) => {
-  const res = await axios.get(`${API_URL}/symptoms/history/${patientId}`);
-  return res.data;
-};
-
 export const login = async ({ username, password }) => {
   const params = new URLSearchParams();
   params.append('username', username);
@@ -32,6 +15,48 @@ export const login = async ({ username, password }) => {
 
   return res.data;
 };
+
+//Patient dashboard APIs
+export const getPatientInfo = async (token) => {
+  const res = await axios.get(`${API_URL}/patient/me`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+  return res.data;
+};
+
+export const uploadImage = async (file) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  const res = await axios.post(`${API_URL}/upload-image/`, formData);
+  return res.data;
+};
+
+export const submitSymptom = async (symptom, token) => {
+  token = token || localStorage.getItem('token');
+  if(!token) {
+    throw new Error('No token provided');
+  }
+  const res = await axios.post(`${API_URL}/symptoms/`, symptom, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    }
+  });
+  return res.data;
+};
+
+export const getSymptomHistory = async (token) => {
+  const res = await axios.get(`${API_URL}/symptoms-history/`, {
+    headers: {
+      Authorization: `Bearer ${token}`, 
+      'Content-Type': 'application/json'
+    }
+  });
+  return res.data;
+};
+
 
 
 //Doctor dasboard APIs
@@ -115,5 +140,15 @@ export const createReferral = async (token, symptomId, doctorId) => {
       }
     }
   );
+  return res.data;
+};
+
+export const getTestTypes = async (token) => {
+  const res = await axios.get(`${API_URL}/test-types/`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    }
+  });
   return res.data;
 };

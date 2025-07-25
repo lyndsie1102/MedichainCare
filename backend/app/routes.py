@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, File, UploadFile, HTTPException, FastAPI
 from sqlalchemy.orm import Session
 from database import SessionLocal, get_db
 from models import User, Symptom, RoleEnum, Consent, Patient, ConsentPurpose, Diagnosis, Doctor, MedicalLab, TestRequest, SymptomStatus, Referral, TestResults, TestType
-from schemas import UserCreate, UserOut, SymptomCreate, SymptomOut, ConsentOut, PatientOut, DiagnosisOut, PatientSymptomDetails, DoctorOut, DiagnosisCreate, MedicalLabs, LabAssignmentCreate, LabAssignmentOut, ReferralCreate
+from schemas import UserCreate, UserOut, SymptomCreate, SymptomOut, ConsentOut, PatientOut, DiagnosisOut, PatientSymptomDetails, DoctorOut, DiagnosisCreate, MedicalLabs, LabAssignmentCreate, LabAssignmentOut, ReferralCreate, SymptomHistory
 from fastapi.security import OAuth2PasswordRequestForm
 import os
 import shutil
@@ -39,6 +39,7 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
     db.refresh(new_user)
     return new_user
 
+
 @router.get("/users", response_model=List[UserOut])
 def get_users(db: Session = Depends(get_db)):
     # Query all users from the database
@@ -46,6 +47,7 @@ def get_users(db: Session = Depends(get_db)):
     if not users:
         raise HTTPException(status_code=404, detail="No users found")
     return users
+
     
 @router.get("/patients", response_model=List[UserOut])
 def get_patients(db: Session = Depends(get_db)):
@@ -54,6 +56,7 @@ def get_patients(db: Session = Depends(get_db)):
     if not patients:
         raise HTTPException(status_code=404, detail="No patients found")
     return patients
+
 
 @router.get("/doctors", response_model=List[DoctorOut])
 def get_doctors(
@@ -189,7 +192,7 @@ def submit_symptoms(
     return {"message": "Symptom submitted", "id": new_symptom.id}
 
 
-@router.get("/symptoms-history/", response_model=List[SymptomOut])
+@router.get("/symptoms-history/", response_model=List[SymptomHistory])
 def get_symptom_history(
     current_user: User = Depends(verify_role(RoleEnum.PATIENT)), 
     db: Session = Depends(get_db)):
@@ -204,7 +207,7 @@ def get_symptom_history(
         consent_types = [consent.consent_type for consent in consents if consent.is_granted]
         
         # Add symptom data along with consent types
-        result.append(SymptomOut(
+        result.append(SymptomHistory(
             id=s.id,
             symptoms=s.symptoms,
             image_path=s.image_path,

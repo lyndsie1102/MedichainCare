@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar, Camera, Clock, CheckCircle, AlertCircle, BadgeCheck } from 'lucide-react';
+import { Calendar, Camera, Clock, CheckCircle, AlertCircle, BadgeCheck, Eye } from 'lucide-react';
 
 const getStatusClass = (status) => {
   switch (status) {
@@ -21,12 +21,19 @@ const getStatusIcon = (status) => {
   }
 };
 
-const formatDate = (timestamp) => {
-  const date = new Date(timestamp);
-  return `${date.toLocaleDateString()} at ${date.toLocaleTimeString()}`;
+
+const formatDate = (dateString) => {
+  return new Date(dateString).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
 };
 
-const SubmissionHistory = ({ submissions }) => {
+
+const SubmissionHistory = ({ submissions, handleViewClick }) => {
   return (
     <section className="history-section">
       <h2>Submission History</h2>
@@ -38,13 +45,22 @@ const SubmissionHistory = ({ submissions }) => {
             <div className="submission-header">
               <div className="date-time">
                 <Calendar size={16} />
-                <span>{formatDate(s.submittedAt)}</span>
+                <span>{formatDate(s.submitted_at)}</span>
                 {s.images && s.images.length > 0 && (
                   <div className="image-tag"><Camera size={14} /> Image attached</div>
                 )}
               </div>
-              <div className={getStatusClass(s.status)}>
-                {getStatusIcon(s.status)} <span>{s.status}</span>
+              <div className="status-action">
+                <div className={getStatusClass(s.status)}>
+                  {getStatusIcon(s.status)} <span>{s.status}</span>
+                </div>
+                <button
+                  onClick={() => handleViewClick(s)}
+                  className="btn btn-view"
+                >
+                  <Eye className="btn-icon" />
+                  <span>View</span>
+                </button>
               </div>
             </div>
             <p>{s.symptoms}</p>

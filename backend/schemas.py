@@ -23,6 +23,11 @@ class ConsentOut(BaseModel):
     treatment: bool
     referral: bool
     research: Optional[bool] = False
+    
+class TestResultOut(BaseModel):
+    uploadedAt: datetime
+    files: List[dict]  # Each file contains name, url, and type
+    summary: Optional[str] = None
 
 class SymptomCreate(BaseModel):
     symptoms: str
@@ -48,6 +53,14 @@ class DiagnosisCreate(BaseModel):
     patient_id: int
     diagnosis_content: str
 
+class SymptomHistory(BaseModel):
+    id: int
+    symptoms: str
+    image_path: Optional[str] = None,
+    status: SymptomStatus
+    submitted_at: datetime
+    testResults: Optional[List[TestResultOut]] = []
+    consents: List[str]
 
 class SymptomOut(BaseModel):
     id: int
@@ -55,7 +68,7 @@ class SymptomOut(BaseModel):
     image_path: Optional[List[str]]
     status: str
     submitted_at: datetime
-    consents: List[str] 
+    patient: PatientOut 
 
 class DiagnosisOut(BaseModel):
     id: str
@@ -81,10 +94,6 @@ class LabAssignmentOut(BaseModel):
     doctor_id: int
     upload_token: str
 
-class TestResultOut(BaseModel):
-    uploadedAt: datetime
-    files: List[dict]  # Each file contains name, url, and type
-    summary: Optional[str] = None
 
 class PatientSymptomDetails(BaseModel):
     id: str

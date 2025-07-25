@@ -164,8 +164,10 @@ form button {
 button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
-  background-color: #ccc; /* optional: change background */
-  color: white;            /* optional: dim text color */
+  background-color: #ccc;
+  /* optional: change background */
+  color: white;
+  /* optional: dim text color */
 }
 
 
@@ -212,6 +214,12 @@ button:disabled {
   color: #6b7280;
 }
 
+.status-action {
+  margin-left: 1.5rem;
+  display: flex;
+  gap: 0.5rem;
+}
+
 .status {
   display: flex;
   align-items: center;
@@ -245,6 +253,7 @@ button:disabled {
 .container-landing {
   padding-bottom: 2rem;
 }
+
 .text-orange {
   color: #f97316;
 }
@@ -311,7 +320,7 @@ button:disabled {
   border: 1px solid #e5e7eb;
   border-radius: 1rem;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   transition: transform 0.3s ease;
   background: white;
   display: flex;
@@ -421,7 +430,8 @@ button:disabled {
   justify-content: space-between;
   align-items: flex-start;
   gap: 3rem;
-  flex-wrap: wrap; /* Ensures responsiveness */
+  flex-wrap: wrap;
+  /* Ensures responsiveness */
   padding: 3rem 1rem;
   background: #f9fafb;
   border-top: 1px solid #e5e7eb;
@@ -632,7 +642,7 @@ button:disabled {
 
 .input-group {
   position: relative;
-  display: flex; 
+  display: flex;
   align-items: center;
 }
 
@@ -680,7 +690,7 @@ button:disabled {
   border: none;
   color: #9ca3af;
   cursor: pointer;
-  z-index: 10; 
+  z-index: 10;
   padding: 0.25rem;
 }
 
@@ -806,21 +816,29 @@ button:disabled {
 }
 
 .consent-section input[type="checkbox"]:focus {
-  outline: none; /* Remove default focus outline */
-  border-color: #FFA500; /* Keep the orange border on focus */
+  outline: none;
+  /* Remove default focus outline */
+  border-color: #FFA500;
+  /* Keep the orange border on focus */
 }
 
 .consent-section label {
-  font-size: 0.875rem; /* Tailwind's text-sm */
-  color: #374151; /* Tailwind's gray-700 */
+  font-size: 0.875rem;
+  /* Tailwind's text-sm */
+  color: #374151;
+  /* Tailwind's gray-700 */
 }
 
 /* Style for required symbol */
 .required {
-  color: red;  /* Color for the required symbol */
-  font-size: 16px; /* Adjust the size as needed */
-  margin-left: 5px; /* Space between the text and the asterisk */
-  font-weight: bold; /* Make the asterisk bold */
+  color: red;
+  /* Color for the required symbol */
+  font-size: 16px;
+  /* Adjust the size as needed */
+  margin-left: 5px;
+  /* Space between the text and the asterisk */
+  font-weight: bold;
+  /* Make the asterisk bold */
 }
 
 .user-icon-patient {

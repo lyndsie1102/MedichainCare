@@ -249,31 +249,31 @@
   gap: 0.25rem;
 }
 
-.status-badge-orange {
+.status-badge-pending {
   background-color: #fed7aa;
   color: #9a3412;
   border-color: #fdba74;
 }
 
-.status-badge-blue {
+.status-badge-review {
   background-color: #dbeafe;
   color: #1e40af;
   border-color: #93c5fd;
 }
 
-.status-badge-green {
+.status-badge-diagnosed {
   background-color: #dcfce7;
   color: #166534;
   border-color: #86efac;
 }
 
-.status-badge-purple {
+.status-badge-completed {
   background-color: #e9d5ff;
   color: #7c2d12;
   border-color: #c4b5fd;
 }
 
-.status-badge-indigo {
+.status-badge-referred {
   background-color: #e0e7ff;
   color: #3730a3;
   border-color: #a5b4fc;
@@ -290,23 +290,23 @@
   width: 1rem;
 }
 
-.status-icon-orange {
+.status-icon-pending {
   color: #f97316;
 }
 
-.status-icon-blue {
+.status-icon-review {
   color: #3b82f6;
 }
 
-.status-icon-green {
+.status-icon-diagnosed {
   color: #10b981;
 }
 
-.status-icon-purple {
+.status-icon-completed {
   color: #8b5cf6;
 }
 
-.status-icon-indigo {
+.status-icon-review {
   color: #6366f1;
 }
 

@@ -71,8 +71,6 @@ class SymptomOut(BaseModel):
     patient: PatientOut 
 
 class DiagnosisOut(BaseModel):
-    id: str
-    doctorId: str
     doctorName: str
     analysis: str
     createdAt: datetime
@@ -104,6 +102,16 @@ class PatientSymptomDetails(BaseModel):
     images: List[str] 
     submittedAt: datetime
     status: SymptomStatus
+    diagnoses: List[DiagnosisOut]
+    consent: ConsentOut
+
+class SymptomDetails(BaseModel):
+    id: str
+    symptoms: str
+    testType: Optional[str] = None
+    testResults: Optional[List[TestResultOut]] = []
+    images: List[str] 
+    submittedAt: datetime
     diagnoses: List[DiagnosisOut]
     consent: ConsentOut
 

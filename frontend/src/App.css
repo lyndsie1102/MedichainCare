@@ -865,10 +865,38 @@ button:disabled {
   border-radius: 0.5rem;
 }
 
+.preview-item {
+  position: relative;
+  display: inline-block;
+  margin: 10px;
+}
+
 .preview-item img {
   width: 100px;
   height: 100px;
   object-fit: cover;
   object-position: center;
-  border-radius: 4px; /* optional, for nicer visuals */
+  border-radius: 4px; /* Optional: rounded corners for the image */
 }
+
+.remove-icon {
+  position: absolute;
+  top: -8px; /* Adjust so the icon is outside the image */
+  right: -8px; /* Position the icon outside the top-right corner */
+  font-size: 20px; /* Size of the "X" icon */
+  color: #fff; /* White color for the "X" */
+  background-color: rgba(0, 0, 0, 0.6); /* Semi-transparent black background */
+  border-radius: 50%;
+  width: 20px; /* Size of the icon circle */
+  height: 20px; /* Size of the icon circle */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  z-index: 10; /* Ensure it appears on top of the image */
+}
+
+.remove-icon:hover {
+  background-color: rgba(0, 0, 0, 0.8); /* Darken on hover */
+}
+

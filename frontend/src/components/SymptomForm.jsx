@@ -34,44 +34,42 @@ const SymptomForm = ({ onSubmitSuccess, patientId }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+  
     // Check if required consents are given
     if (!symptoms.trim() || !treatmentConsent || !referralConsent) {
       alert('Please agree to the required consents (Treatment and Referral)');
       return;
     }
-
+  
     setIsSubmitting(true);
-
+  
     try {
       let uploadedPaths = [];
       if (selectedImages.length) {
-        const formData = new FormData();
-        selectedImages.forEach(img => formData.append('files', img.file));
-        const res = await uploadImage(formData);
+        // Pass only the file objects to uploadImage
+        const res = await uploadImage(selectedImages.map(img => img.file));
         uploadedPaths = res.image_paths; // should be array returned by API
       }
-
+  
       const consentType = {
         treatment: treatmentConsent,
         referral: referralConsent,
         research: researchConsent,
       };
-
+  
       // Submit symptom along with consents
       const response = await submitSymptom({
         symptoms,
         image_paths: uploadedPaths,
         patient_id: patientId,
-        consent_type: consentType,setSelectedImages
-      },
-        token);
-
+        consent_type: consentType,
+      }, token);
+  
       if (response.message === 'Symptom submitted') {
         // Reset form fields after submission
         setSymptoms('');
-        setSelectedImages(null);
-        fileInputRef.current.value = ''; // ⬅️ clear file input
+        setSelectedImages([]);  // Reset selected images
+        fileInputRef.current.value = '';  // Clear file input
         setTreatmentConsent(false);
         setReferralConsent(false);
         setResearchConsent(false);
@@ -83,7 +81,7 @@ const SymptomForm = ({ onSubmitSuccess, patientId }) => {
       setIsSubmitting(false);
     }
   };
-
+  
   useEffect(() => {
     return () => {
       selectedImages.forEach(img => URL.revokeObjectURL(img.preview));
@@ -116,16 +114,24 @@ const SymptomForm = ({ onSubmitSuccess, patientId }) => {
           multiple
           ref={fileInputRef} // ⬅️ attach ref
         />
-        {selectedImages && <div className="preview">Selected: {selectedImages.name}</div>}
+        {selectedImages.length > 0 && (
+          <div className="preview">
+            Selected Images: {selectedImages.map(img => img.file.name).join(', ')}
+          </div>
+        )}
+
 
         <div className="image-previews">
           {selectedImages.map(img => (
             <div key={img.id} className="preview-item">
               <img src={img.preview} alt={img.file.name} />
-              <button onClick={() => removeImage(img.id)}>Remove</button>
+              <span className="remove-icon" onClick={() => removeImage(img.id)}>
+                &times; {/* You can also use an icon here, e.g., Font Awesome or any SVG */}
+              </span>
             </div>
           ))}
         </div>
+
 
         {/* Consent checkboxes */}
         <div className="consent-section">

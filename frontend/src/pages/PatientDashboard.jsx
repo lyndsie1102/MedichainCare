@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Heart, User } from 'lucide-react';
 import SymptomForm from '../components/SymptomForm';
 import SubmissionHistory from '../components/SubmissionHistory';
+import SubmissionViewModal from '../components/SubmissionViewModal';
 import { getSymptomHistory, getPatientInfo } from '../api';
 
 const PatientDashboard = () => {

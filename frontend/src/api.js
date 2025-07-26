@@ -26,12 +26,31 @@ export const getPatientInfo = async (token) => {
   return res.data;
 };
 
-export const uploadImage = async (file) => {
+
+
+export const uploadImage = async (files) => {
   const formData = new FormData();
-  formData.append('file', file);
-  const res = await axios.post(`${API_URL}/upload-image/`, formData);
-  return res.data;
+  
+  // Loop through each image and append each to FormData
+  files.forEach(file => {
+    formData.append('files', file);
+  });
+
+  try {
+    const res = await axios.post(`${API_URL}/upload-image/`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data', // Ensure the correct content type
+      },
+    });
+
+    return res.data; // return the response with the image paths
+  } catch (error) {
+    console.error('Upload failed:', error);
+    throw error;
+  }
 };
+
+
 
 export const submitSymptom = async (symptom, token) => {
   token = token || localStorage.getItem('token');

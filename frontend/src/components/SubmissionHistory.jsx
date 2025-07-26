@@ -1,27 +1,43 @@
 import React from 'react';
-import { Calendar, Camera, Clock, CheckCircle, AlertCircle, BadgeCheck, Eye } from 'lucide-react';
+import { Calendar, Camera, Clock, CheckCircle, AlertCircle, BadgeCheck, Eye, ArrowRight } from 'lucide-react';
 
-const getStatusClass = (status) => {
-  switch (status) {
-    case 'Pending': return 'status pending';
-    case 'Diagnosed': return 'status reviewed';
-    case 'Under Review': return 'status inprogress';
-    case 'Completed': return 'status completed';
-    default: return 'status';
-  }
-};
-
+// Updated getStatusIcon to include the new status "Referred" and respective class names
 const getStatusIcon = (status) => {
   switch (status) {
-    case 'Pending': return <Clock size={16} />;
-    case 'Diagnosed': return <CheckCircle size={16} />;
-    case 'Under Review': return <AlertCircle size={16} />;
-    case 'Completed': return <BadgeCheck size={16} />;
-    default: return <Clock size={16} />;
+    case 'Pending':
+      return <Clock className="status-icon status-icon-pending" />;
+    case 'Under Review':
+      return <AlertCircle className="status-icon status-icon-review" />;
+    case 'Diagnosed':
+      return <CheckCircle className="status-icon status-icon-diagnosed" />;
+    case 'Completed':
+      return <BadgeCheck className="status-icon status-icon-completed" />;
+    case 'Referred':
+      return <ArrowRight className="status-icon status-icon-referred" />;
+    default:
+      return <Clock className="status-icon status-icon-gray" />;
   }
 };
 
+// Updated getStatusColor to apply different color classes based on the status
+const getStatusColor = (status) => {
+  switch (status) {
+    case 'Pending':
+      return 'status-badge status-badge-pending';
+    case 'Under Review':
+      return 'status-badge status-badge-review';
+    case 'Diagnosed':
+      return 'status-badge status-badge-diagnosed';
+    case 'Completed':
+      return 'status-badge status-badge-completed';
+    case 'Referred':
+      return 'status-badge status-badge-referred';
+    default:
+      return 'status-badge status-badge-gray';
+  }
+};
 
+// Format the date and time into a human-readable format
 const formatDate = (dateString) => {
   return new Date(dateString).toLocaleDateString('en-US', {
     month: 'short',
@@ -31,7 +47,6 @@ const formatDate = (dateString) => {
     minute: '2-digit'
   });
 };
-
 
 const SubmissionHistory = ({ submissions, handleViewClick }) => {
   return (
@@ -51,7 +66,7 @@ const SubmissionHistory = ({ submissions, handleViewClick }) => {
                 )}
               </div>
               <div className="status-action">
-                <div className={getStatusClass(s.status)}>
+                <div className={getStatusColor(s.status)}>
                   {getStatusIcon(s.status)} <span>{s.status}</span>
                 </div>
                 <button

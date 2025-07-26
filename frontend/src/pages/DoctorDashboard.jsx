@@ -64,15 +64,15 @@ const DoctorDashboard = () => {
     const getStatusIcon = (status) => {
         switch (status) {
             case 'Pending':
-                return <Clock className="status-icon status-icon-orange" />;
+                return <Clock className="status-icon status-icon-pending" />;
             case 'Under Review':
-                return <AlertCircle className="status-icon status-icon-blue" />;
+                return <AlertCircle className="status-icon status-icon-review" />;
             case 'Diagnosed':
-                return <CheckCircle className="status-icon status-icon-green" />;
+                return <CheckCircle className="status-icon status-icon-diagnosed" />;
             case 'Completed':
-                return <BadgeCheck className="status-icon status-icon-purple" />;
+                return <BadgeCheck className="status-icon status-icon-completed" />;
             case 'Referred':
-                return <ArrowRight className="status-icon status-icon-indigo" />;
+                return <ArrowRight className="status-icon status-icon-referred" />;
             default:
                 return <Clock className="status-icon status-icon-gray" />;
         }
@@ -81,15 +81,15 @@ const DoctorDashboard = () => {
     const getStatusColor = (status) => {
         switch (status) {
             case 'Pending':
-                return 'status-badge status-badge-orange';
+                return 'status-badge status-badge-pending';
             case 'Under Review':
-                return 'status-badge status-badge-blue';
+                return 'status-badge status-badge-review';
             case 'Diagnosed':
-                return 'status-badge status-badge-green';
+                return 'status-badge status-badge-diagnosed';
             case 'Completed':
-                return 'status-badge status-badge-purple';
+                return 'status-badge status-badge-completed';
             case 'Referred':
-                return 'status-badge status-badge-indigo';
+                return 'status-badge status-badge-referred';
             default:
                 return 'status-badge status-badge-gray';
         }

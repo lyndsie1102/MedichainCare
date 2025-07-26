@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, File, UploadFile, HTTPException, FastAPI
 from sqlalchemy.orm import Session
 from database import SessionLocal, get_db
 from models import User, Symptom, RoleEnum, Consent, Patient, ConsentPurpose, Diagnosis, Doctor, MedicalLab, TestRequest, SymptomStatus, Referral, TestResults, TestType
-from schemas import UserCreate, UserOut, SymptomCreate, SymptomOut, ConsentOut, PatientOut, DiagnosisOut, PatientSymptomDetails, DoctorOut, DiagnosisCreate, MedicalLabs, LabAssignmentCreate, LabAssignmentOut, ReferralCreate, SymptomHistory
+from schemas import UserCreate, UserOut, SymptomCreate, SymptomOut, ConsentOut, PatientOut, DiagnosisOut, PatientSymptomDetails, DoctorOut, DiagnosisCreate, MedicalLabs, LabAssignmentCreate, LabAssignmentOut, ReferralCreate, SymptomHistory, SymptomDetails, TestResultOut
 from fastapi.security import OAuth2PasswordRequestForm
 import os
 import shutil
@@ -201,6 +201,99 @@ def submit_symptoms(
     return {"message": "Symptom submitted", "id": new_symptom.id}
 
 
+@router.get("/symptom/{symptom_id}", response_model=SymptomDetails)
+def get_symptom_details(
+    symptom_id: int,
+    current_user: User = Depends(verify_role(RoleEnum.PATIENT)),
+    db: Session = Depends(get_db)
+):
+     # Fetch the symptom based on the symptom ID
+    symptom = db.query(Symptom).filter(Symptom.id == symptom_id).first()
+    if not symptom:
+        raise HTTPException(status_code=404, detail="Symptom not found")
+
+    # Get all diagnoses related to the symptom from different doctors
+    diagnoses = (
+        db.query(Diagnosis)
+        .filter(Diagnosis.symptom_id == symptom_id)
+        .all()
+    )
+
+    diagnosis_responses = []
+    for diagnosis in diagnoses:
+        doctor = db.query(Doctor).filter(Doctor.id == diagnosis.doctor_id).first()
+        if doctor:
+            doctor_name = doctor.user.name  # Access the User object associated with the Doctor
+        else:
+            doctor_name = "Unknown Doctor"
+
+        diagnosis_responses.append(DiagnosisOut(
+            doctorName=f"Dr. {doctor_name}",
+            analysis=diagnosis.diagnosis_content,
+            createdAt=diagnosis.timestamp
+        ))
+
+    # Get all test requests related to the symptom
+    test_requests = (
+        db.query(TestRequest)
+        .filter(TestRequest.symptom_id == symptom_id)
+        .all()
+    )
+
+    test_results_responses = []
+    test_type_name = None
+    for test_request in test_requests:
+        # Get the test type for each test request
+        test_type = db.query(TestType).filter(TestType.id == test_request.test_type_id).first()
+        if test_type:
+            test_type_name = test_type.name  # Assuming we only need to store one test type name for the symptom
+
+        test_results = db.query(TestResults).filter(TestResults.test_request_id == test_request.id).all()
+
+        for test_result in test_results:
+            # Construct the files list
+            files_info = []
+            for file in test_result.files:
+                files_info.append({
+                    "name": file.get("name", "Unknown"),
+                    "url": file.get("url", "")
+                })
+
+            # Append the TestResultOut response object
+            test_results_responses.append(TestResultOut(
+                uploadedAt=test_result.uploaded_at,
+                files=files_info,  # List of file details
+                summary=test_result.summary
+            ))
+
+    # Get consents related to the symptom
+    consents = (
+        db.query(Consent)
+        .filter(Consent.symptom_id == symptom_id, Consent.patient_id == current_user.id)
+        .all()
+    )
+
+    # Consent details directly from the Symptom model
+    consent_data = ConsentOut(
+        treatment=symptom.consent_treatment,
+        referral=symptom.consent_referral,
+        research=symptom.consent_research
+    )
+
+    # Prepare the response data
+    symptom_detail = SymptomDetails(
+        id=str(symptom.id),  # Convert ID to string (UUID or integer as needed)
+        symptoms=symptom.symptoms,
+        testType=test_type_name,  # Include test type if found
+        testResults=test_results_responses,
+        images=symptom.image_paths,  # Return images if available
+        submittedAt=symptom.timestamp,
+        diagnoses=diagnosis_responses,
+        consent=consent_data
+    )
+
+    return symptom_detail
+
 @router.get("/symptoms-history/", response_model=List[SymptomHistory])
 def get_symptom_history(
     current_user: User = Depends(verify_role(RoleEnum.PATIENT)), 
@@ -323,8 +416,6 @@ def get_full_symptom_record(symptom_id: int, current_user: User = Depends(verify
 
         diagnosis_list.append(
             DiagnosisOut(
-                id=str(diag.id),
-                doctorId=str(diag.doctor_id),
                 doctorName=doctor_user.name if doctor_user else "Unknown Doctor",
                 analysis=diag.diagnosis_content,
                 createdAt=diag.timestamp

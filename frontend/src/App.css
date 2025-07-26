@@ -864,3 +864,11 @@ button:disabled {
   padding: 0.5rem;
   border-radius: 0.5rem;
 }
+
+.preview-item img {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  object-position: center;
+  border-radius: 4px; /* optional, for nicer visuals */
+}

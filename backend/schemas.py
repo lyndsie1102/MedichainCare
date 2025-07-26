@@ -31,7 +31,7 @@ class TestResultOut(BaseModel):
 
 class SymptomCreate(BaseModel):
     symptoms: str
-    image_path: Optional[str] = None
+    image_paths: Optional[List[str]] = None
     consent_type: ConsentOut
 
 class PatientOut(BaseModel):
@@ -56,7 +56,7 @@ class DiagnosisCreate(BaseModel):
 class SymptomHistory(BaseModel):
     id: int
     symptoms: str
-    image_path: Optional[str] = None,
+    image_path: Optional[List[str]] = None
     status: SymptomStatus
     submitted_at: datetime
     testResults: Optional[List[TestResultOut]] = []

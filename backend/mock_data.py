@@ -144,11 +144,14 @@ def create_symptom(db: Session, patient: Patient) -> Symptom:
     consent_treatment = True
     consent_referral = True
     consent_research = random.choice([True, False])
+       
+    # Create a list of image paths
+    image_paths = ["https://unsplash.com/photos/woman-with-dslr-camera-e616t35Vbeg", "https://unsplash.com/photos/tall-grass-in-front-of-a-city-skyline-pHmpxFlqAus"] if random.random() < 0.5 else []
 
     symptom = Symptom(
         patient_id=patient.id,
         symptoms=fake.text(max_nb_chars=50),
-        image_path="images/sample.png" if random.random() < 0.5 else None,
+        image_paths=image_paths,
         status=random.choice(list(SymptomStatus)),
         timestamp=datetime.now(timezone.utc),
         consent_treatment=consent_treatment,

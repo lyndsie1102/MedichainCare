@@ -1,10 +1,10 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Send } from 'lucide-react';
 import { uploadImage, submitSymptom } from '../api';
 
 const SymptomForm = ({ onSubmitSuccess, patientId }) => {
   const [symptoms, setSymptoms] = useState('');
-  const [selectedImage, setSelectedImage] = useState(null);
+  const [selectedImages, setSelectedImages] = useState([]);
   const [treatmentConsent, setTreatmentConsent] = useState(false);
   const [referralConsent, setReferralConsent] = useState(false);
   const [researchConsent, setResearchConsent] = useState(false);
@@ -13,10 +13,24 @@ const SymptomForm = ({ onSubmitSuccess, patientId }) => {
 
   const token = localStorage.getItem('access_token'); // Get token from local storage
   const handleImageChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      setSelectedImage(e.target.files[0]);
+    const files = e.target.files;
+    if (files?.length) {
+      const arr = Array.from(files).map(file => ({
+        id: URL.createObjectURL(file),
+        file,
+        preview: URL.createObjectURL(file),
+      }));
+      setSelectedImages(prev => [...prev, ...arr]);
     }
   };
+
+  const removeImage = (id) => {
+    setSelectedImages(prev => {
+      const filtered = prev.filter(img => img.id !== id);
+      return filtered;
+    });
+  };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -30,10 +44,12 @@ const SymptomForm = ({ onSubmitSuccess, patientId }) => {
     setIsSubmitting(true);
 
     try {
-      let imagePath = null;
-      if (selectedImage) {
-        const res = await uploadImage(selectedImage);
-        imagePath = res.image_path;
+      let uploadedPaths = [];
+      if (selectedImages.length) {
+        const formData = new FormData();
+        selectedImages.forEach(img => formData.append('files', img.file));
+        const res = await uploadImage(formData);
+        uploadedPaths = res.image_paths; // should be array returned by API
       }
 
       const consentType = {
@@ -45,16 +61,16 @@ const SymptomForm = ({ onSubmitSuccess, patientId }) => {
       // Submit symptom along with consents
       const response = await submitSymptom({
         symptoms,
-        image_path: imagePath,
+        image_paths: uploadedPaths,
         patient_id: patientId,
-        consent_type: consentType,
+        consent_type: consentType,setSelectedImages
       },
         token);
 
       if (response.message === 'Symptom submitted') {
         // Reset form fields after submission
         setSymptoms('');
-        setSelectedImage(null);
+        setSelectedImages(null);
         fileInputRef.current.value = ''; // ⬅️ clear file input
         setTreatmentConsent(false);
         setReferralConsent(false);
@@ -67,6 +83,12 @@ const SymptomForm = ({ onSubmitSuccess, patientId }) => {
       setIsSubmitting(false);
     }
   };
+
+  useEffect(() => {
+    return () => {
+      selectedImages.forEach(img => URL.revokeObjectURL(img.preview));
+    };
+  }, [selectedImages]);
 
   return (
     <section className="form-container">
@@ -91,9 +113,19 @@ const SymptomForm = ({ onSubmitSuccess, patientId }) => {
           type="file"
           onChange={handleImageChange}
           accept="image/*"
+          multiple
           ref={fileInputRef} // ⬅️ attach ref
         />
-        {selectedImage && <div className="preview">Selected: {selectedImage.name}</div>}
+        {selectedImages && <div className="preview">Selected: {selectedImages.name}</div>}
+
+        <div className="image-previews">
+          {selectedImages.map(img => (
+            <div key={img.id} className="preview-item">
+              <img src={img.preview} alt={img.file.name} />
+              <button onClick={() => removeImage(img.id)}>Remove</button>
+            </div>
+          ))}
+        </div>
 
         {/* Consent checkboxes */}
         <div className="consent-section">

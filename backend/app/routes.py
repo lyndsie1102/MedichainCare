@@ -1,3 +1,4 @@
+import uuid
 from fastapi import APIRouter, Depends, File, UploadFile, HTTPException, FastAPI
 from sqlalchemy.orm import Session
 from database import SessionLocal, get_db
@@ -130,11 +131,19 @@ def login(form: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get
 
 
 @router.post("/upload-image/")
-def upload_image(file: UploadFile = File(...)):
-    file_location = f"{PATIENT_IMAGE_DIR}/{file.filename}"
-    with open(file_location, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-    return {"image_path": file_location}
+def upload_image(files: list[UploadFile] = File(...)):
+    saved_paths = []
+    for file in files:
+        file_extension = file.filename.split(".")[-1]
+        unique_filename = f"{uuid.uuid4()}.{file_extension}"
+        file_location = os.path.join(PATIENT_IMAGE_DIR, unique_filename)
+
+        with open(file_location, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+
+        saved_paths.append(str(file_location))
+
+    return {"image_paths": saved_paths}
 
 
 @router.post("/symptoms/")
@@ -155,7 +164,7 @@ def submit_symptoms(
     new_symptom = Symptom(
         patient_id=current_user.id,
         symptoms=symptom.symptoms,
-        image_path=symptom.image_path,
+        image_paths=symptom.image_paths,
         consent_treatment=True,
         consent_referral=True,
         consent_research = symptom.consent_type.research or False, 
@@ -210,7 +219,7 @@ def get_symptom_history(
         result.append(SymptomHistory(
             id=s.id,
             symptoms=s.symptoms,
-            image_path=s.image_path,
+            image_paths=s.image_paths,
             status=s.status,
             submitted_at=s.timestamp,
             consents=consent_types  # Pass the consent types

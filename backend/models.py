@@ -1,6 +1,8 @@
 from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Boolean
 from sqlalchemy.types import Enum as SQLEnum, JSON
 from sqlalchemy.orm import relationship
+from sqlalchemy.types import PickleType
+from sqlalchemy.ext.mutable import MutableList
 from database import Base
 from datetime import datetime
 from enum import Enum, IntEnum 
@@ -81,7 +83,7 @@ class Symptom(Base):
     id = Column(Integer, primary_key=True)
     patient_id = Column(Integer, ForeignKey("users.id"))
     symptoms = Column(Text, nullable=False)  # e.g., "fever, cough, headache"
-    image_path = Column(String, nullable=True)
+    image_paths = Column(MutableList.as_mutable(PickleType), default=[])
     status = Column(SQLEnum(SymptomStatus, native_enum=False), default=SymptomStatus.PENDING)
     timestamp = Column(DateTime, default=datetime.utcnow)
     consent_treatment = Column(Boolean, default=False)

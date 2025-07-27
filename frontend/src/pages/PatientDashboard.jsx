@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Heart, User } from 'lucide-react';
+import { Heart, UserIcon } from 'lucide-react';
 import SymptomForm from '../components/SymptomForm';
 import SubmissionHistory from '../components/SubmissionHistory';
 import SubmissionViewModal from '../components/SubmissionViewModal';
@@ -75,7 +75,7 @@ const PatientDashboard = () => {
         {/* User Info */}
         <div className="user-info">
           <div className="user-icon-patient">
-            <User className="patient-user-icon" />
+            <UserIcon className="patient-user-icon" />
           </div>
           <div className="user-details">
             <p className="user-name">

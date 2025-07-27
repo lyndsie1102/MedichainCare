@@ -71,32 +71,34 @@ const SubmissionViewModal = ({
                         </div>
 
                         { /* Images */}
-                        {selectedSymptom.image_path && selectedSymptom.image_path.length > 0 && (
-                            <div>
-                                <h4 className="section-title">Uploaded Images</h4>
+                        <div>
+                            <h4 className="section-title">Uploaded Images</h4>
+                            {selectedSymptom.image_path && selectedSymptom.image_path.length > 0 ? (
                                 <div className="modal-images-grid">
-                                    {selectedSymptom.image_path.map((image, index) => {
+                                    {selectedSymptom.image_path.map((image, index) => (
                                         <img
                                             key={index}
                                             src={image}
                                             alt={`Symptom ${index + 1}`}
                                             className="modal-image"
                                         />
-                                    })}
+                                    ))}
                                 </div>
-                            </div>
-                        )}
+                            ) : (
+                                <p className="section-placeholder">No images uploaded.</p>
+                            )}
+                        </div>
 
                         { /* Test Results Section */}
-                        {selectedSymptom.testResults && selectedSymptom.testResults.length > 0 && (
-                            <div>
-                                <h4 className="section-title">Test Results</h4>
+                        <div>
+                            <h4 className="section-title">Test Results</h4>
+                            {selectedSymptom.testResults && selectedSymptom.testResults.length > 0 ? (
                                 <div className="test-results-card">
                                     {selectedSymptom.testResults.map((testResult, index) => (
                                         <div key={index} className="test-results">
                                             <div className="test-results-header">
                                                 <div className="test-results-info">
-                                                    <h5 className="test-results-type">{selectedSymptom.testType?.name}</h5>
+                                                    <h5 className="test-results-type">{selectedSymptom.testType?.name || 'N/A'}</h5>
                                                     <p className="test-results-date">
                                                         <Calendar className="test-results-icon" />
                                                         Results uploaded: {formatDate(testResult.uploadedAt)}
@@ -117,9 +119,7 @@ const SubmissionViewModal = ({
                                                             <FileText className="test-results-file-icon" />
                                                             <div className="test-results-file-info">
                                                                 <span className="test-results-file-name">{file.name}</span>
-                                                                <span className="test-results-file-type">{file.type}</span>
-
-                                                                {/* Open the file in a new tab */}
+                                                                <span className="test-results-file-type">{file.type || 'Unknown'}</span>
                                                                 <a
                                                                     href={file.url}
                                                                     target="_blank"
@@ -136,12 +136,15 @@ const SubmissionViewModal = ({
                                         </div>
                                     ))}
                                 </div>
-                            </div>
-                        )}
+                            ) : (
+                                <p className="section-placeholder">No test results uploaded yet.</p>
+                            )}
+                        </div>
 
                         { /* Doctor Diagnosis */}
                         <div>
-                            <h4 className="section-title">Doctor Diagnoses</h4>
+                            <h4 className="section-title">Doctor Diagnoses</h4> 
+                            {selectedSymptom.diagnoses && selectedSymptom.diagnoses > 0 ?  (
                             <div className="diagnosis-list">
                                 {selectedSymptom.diagnoses.map((diagnosis) => (
                                     <div key={diagnosis.id} className="diagnosis-card">
@@ -152,8 +155,10 @@ const SubmissionViewModal = ({
                                         <p className="diagnosis-text">{diagnosis.analysis}</p>
                                     </div>
                                 ))}
-
                             </div>
+                            ) : (
+                                <p className="section-placeholder">No diagnoses updated yet.</p>
+                            )}
                         </div>
 
                     </div>

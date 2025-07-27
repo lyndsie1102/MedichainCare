@@ -97,7 +97,7 @@ const SymptomForm = ({ onSubmitSuccess, patientId }) => {
       <form onSubmit={handleSubmit} className="form-section">
         <label className="required-label">
           Describe Your Symptoms
-          <span className="required">*</span>
+          <span className="required"> *</span>
         </label>
         <textarea
           value={symptoms}
@@ -142,8 +142,8 @@ const SymptomForm = ({ onSubmitSuccess, patientId }) => {
               onChange={() => setReferralConsent(!referralConsent)}
               required
             />
-            By ticking this checkbox I consent to sharing my medical records with the referring doctor if necessary. (Required)
-            <span className="required">*</span>
+            By ticking this checkbox I consent to sharing my medical records with the referring doctor if necessary.
+            <span className="required"> (Required)*</span>
           </label>
           <label>
             <input
@@ -152,8 +152,8 @@ const SymptomForm = ({ onSubmitSuccess, patientId }) => {
               onChange={() => setTreatmentConsent(!treatmentConsent)}
               required
             />
-            By ticking this checkbox I consent to sharing my data with the doctor for the purpose of diagnosis and treatment. (Required)
-            <span className="required">*</span>
+            By ticking this checkbox I consent to sharing my data with the doctor for the purpose of diagnosis and treatment.
+            <span className="required"> (Required)*</span>
           </label>
           <label>
             <input

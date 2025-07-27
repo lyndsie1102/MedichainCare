@@ -255,7 +255,7 @@ const DoctorDashboard = () => {
                 </div>
                 {/* User Info */}
                 <div className="user-info">
-                    <div className="user-icon">
+                    <div className="user-icon-doctor">
                         <Stethoscope className="stethoscope-icon" />
                     </div>
                     <div className="user-details">

@@ -1,6 +1,7 @@
 body {
   margin: 0;
-  font-family: 'Inter', Arial, sans-serif;
+  font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", 
+  "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   background: linear-gradient(to bottom right, #fff7ed, #f9fafb);
 }
 
@@ -807,7 +808,8 @@ button:disabled {
 .consent-section {
   display: flex;
   flex-direction: column;
-  margin-top: 5px;
+  cursor: pointer;
+  flex: 1;
 }
 
 .consent-section input[type="checkbox"] {
@@ -823,28 +825,17 @@ button:disabled {
 }
 
 .consent-section label {
-  font-size: 0.875rem;
-  /* Tailwind's text-sm */
-  color: #374151;
-  /* Tailwind's gray-700 */
+  font-size: 12px;
+  color: #6b7280;
+  line-height: 1.4;
 }
 
 /* Style for required symbol */
 .required {
-  color: red;
-  /* Color for the required symbol */
-  font-size: 16px;
-  /* Adjust the size as needed */
-  margin-left: 5px;
-  /* Space between the text and the asterisk */
-  font-weight: bold;
-  /* Make the asterisk bold */
-}
-
-.user-icon-patient {
-  height: 2rem;
-  width: 1.25rem;
-  color: white;
+  color: #dc2626;
+  font-size: 11px;
+  margin-bottom: 0.25px;
+  font-weight: 500;
 }
 
 .user-details {
@@ -857,12 +848,22 @@ button:disabled {
   color: #111827;
 }
 
+.user-icon-patient{
+  width: 1.5rem;
+  height: 1.5rem;
+  background-color: #f97316;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 0.5rem;
+}
+
 
 .patient-user-icon {
-  flex-shrink: 0;
-  background: linear-gradient(to right, #FF8C00, #FFA500);
-  padding: 0.5rem;
-  border-radius: 0.5rem;
+  width: 0.875rem;
+  height: 0.875rem;
+  color: white;
 }
 
 .preview-item {
@@ -906,4 +907,25 @@ button:disabled {
   color: #fed7aa;
   margin-top: 0.5rem;
   opacity: 0.9;
+}
+
+.section-placeholder {
+  font-size: 0.875rem;
+  color: #64748b;
+  text-align: center;
+  padding: 2rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  border-radius: 0.5rem;
+  border: 2px dashed #cbd5e1;
+  color: #64748b;
+}
+
+textarea::placeholder {         /* Match your normal text color */
+  font-size: 1rem;     /* Match your text size */
+  color: #6b7280;
+  font-size: 13px;
+}
+
+button, input, select, textarea {
+  font-family: inherit;
 }

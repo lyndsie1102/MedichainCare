@@ -76,6 +76,15 @@ export const getSymptomHistory = async (token) => {
   return res.data;
 };
 
+export const getSymptom = async(symptom_id, token) => {
+  const res = await axios.get(`${API_URL}/symptom/${symptom_id}`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+  return res.data;
+};
+
 
 
 //Doctor dasboard APIs

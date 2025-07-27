@@ -363,7 +363,7 @@ def get_doctor_dashboard(
         symptoms_out.append(SymptomOut(
             id=symptom.id,
             symptoms=symptom.symptoms,
-            image_path=[symptom.image_path] if symptom.image_path else [],
+            image_paths=symptom.image_paths if symptom.image_paths else [],
             status=symptom.status,
             submitted_at=symptom.timestamp,
             patient=PatientOut(
@@ -462,7 +462,7 @@ def get_full_symptom_record(symptom_id: int, current_user: User = Depends(verify
         symptoms=symptom.symptoms,
         testType=test_type_name,
         testResults=test_result_out,
-        images=[symptom.image_path] if symptom.image_path else [],
+        images=symptom.image_paths if symptom.image_paths else [],
         submittedAt=symptom.timestamp,
         status=symptom.status,
         diagnoses=diagnosis_list,

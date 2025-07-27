@@ -1,11 +1,20 @@
 import React from 'react'
-import { X, FileText, Shield } from 'lucide-react'
+import { X, FileText, Shield, Calendar } from 'lucide-react'
 
-const SubmissionViewModal = (
+const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+};
+
+const SubmissionViewModal = ({
     selectedSymptom,
-    formatDate,
     handleCloseModal
-) => {
+}) => {
     return (
         <div className="modal-overlay">
             <div className="modal-container modal-large">
@@ -13,7 +22,7 @@ const SubmissionViewModal = (
                 <div className="modal-header modal-header-orange">
                     <div className="title">
                         <h3 className="modal-title">Symptom Record Details</h3>
-                        <p className="modal-subtitle">Submitted at {selectedSymptom.submitted_at}</p>
+                        <p className="modal-subtitle">Submitted at {formatDate(selectedSymptom.submittedAt)}</p>
                     </div>
                     <button onClick={handleCloseModal} className="modal-close">
                         <X className="close-icon" />
@@ -66,14 +75,14 @@ const SubmissionViewModal = (
                             <div>
                                 <h4 className="section-title">Uploaded Images</h4>
                                 <div className="modal-images-grid">
-                                    {selectedSymptom.image_path.map((image, index) => (
+                                    {selectedSymptom.image_path.map((image, index) => {
                                         <img
                                             key={index}
                                             src={image}
                                             alt={`Symptom ${index + 1}`}
                                             className="modal-image"
                                         />
-                                    ))}
+                                    })}
                                 </div>
                             </div>
                         )}

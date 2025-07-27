@@ -65,7 +65,7 @@ class SymptomHistory(BaseModel):
 class SymptomOut(BaseModel):
     id: int
     symptoms: str
-    image_path: Optional[List[str]]
+    image_paths: Optional[List[str]]
     status: str
     submitted_at: datetime
     patient: PatientOut 

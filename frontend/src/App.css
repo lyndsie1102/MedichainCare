@@ -900,3 +900,10 @@ button:disabled {
   background-color: rgba(0, 0, 0, 0.8); /* Darken on hover */
 }
 
+
+.modal-subtitle {
+  font-size: 0.875rem;
+  color: #fed7aa;
+  margin-top: 0.5rem;
+  opacity: 0.9;
+}

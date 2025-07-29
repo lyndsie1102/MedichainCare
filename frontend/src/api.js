@@ -66,20 +66,21 @@ export const submitSymptom = async (symptom, token) => {
   return res.data;
 };
 
-export const getSymptomHistory = async (token, { status, startDate, endDate}) => {
+export const getSymptomHistory = async (token, status = null, startDate = null, endDate = null) => {
+  const params = {};
+  if (status && status !== 'all') params.status = status;
+  if (startDate) params.startDate = startDate;
+  if (endDate) params.endDate = endDate;
+
   try {
-    const response = await axios.get(`${API_URL}/symptoms-history/`, {
+    const res = await axios.get(`${API_URL}/symptoms-history/`, {
       headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json'
+        Authorization: `Bearer ${token}`
       },
-      params: {
-        status,
-        start_date: startDate,
-        end_date: endDate
+      params
       }
-    });
-    return response.data;
+    );
+    return res.data;
   } catch (error) {
     console.error('Failed to fetch symptom history', error);
     throw error;
@@ -101,7 +102,7 @@ export const getSymptom = async(symptom_id, token) => {
 //Doctor dasboard APIs
 export const getDoctorDashboard = async (token, status = null, search = null) => {
   const params = {};
-  if (status) params.status = status;
+  if (status && status !== 'all') params.status = status;
   if (search) params.search = search;
 
   const res = await axios.get(`${API_URL}/doctor-dashboard/`, {

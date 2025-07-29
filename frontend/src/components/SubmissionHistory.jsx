@@ -59,18 +59,12 @@ const formatDate = (dateString) => {
 
 
 
-const SubmissionHistory = ({ submissions, handleViewClick, fetchFilteredSubmissions }) => {
+const SubmissionHistory = ({ submissions, handleViewClick}) => {
   // States for filter/search
   const [statusFilter, setStatusFilter] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
-  // Trigger search every time a filter changes
-  useEffect(() => {
-    const start = startDate ? new Date(startDate).toISOString().split('T')[0] : '';
-    const end = endDate ? new Date(endDate).toISOString().split('T')[0] : '';
-    fetchFilteredSubmissions({ status: statusFilter, startDate: start, endDate: end });
-  }, [statusFilter, startDate, endDate, fetchFilteredSubmissions]);
 
 
   return (

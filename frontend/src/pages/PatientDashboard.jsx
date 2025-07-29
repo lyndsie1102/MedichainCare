@@ -9,97 +9,97 @@ const PatientDashboard = () => {
   const [submissions, setSubmissions] = useState([]);
   const [selectedSubmission, setSelectedSubmission] = useState(null);
   const [user, setUser] = useState(null);
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
 
-  // Fetch the user information from localStorage or elsewhere
-  const fetchUserInfo = async () => {
-    const token = localStorage.getItem('access_token');
-    if (token) {
+  // Fetch user info once on mount
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      const token = localStorage.getItem('access_token');
+      if (!token) {
+        console.error('No access token found');
+        return;
+      }
       try {
-        const data = await getPatientInfo(token); // Fetch patient details using the token
-        setUser(data); // Store user data in state (e.g., name, etc.)
+        const data = await getPatientInfo(token);
+        setUser(data);
       } catch (err) {
         console.error('Failed to load user info', err);
       }
-    } else {
-      console.error('No access token found');
-    }
-  };
+    };
 
-  // Function to fetch the symptom history for the patient
-  // Function to fetch the symptom history for the patient
-  // Fetch symptom submissions with filters
-  const fetchSubmissions = async ({ status = '', startDate = '', endDate = '' } = {}) => {
-    try {
-      const token = localStorage.getItem('access_token');
-      if (token) {
-        const data = await getSymptomHistory(token, { status, startDate, endDate });
+    fetchUserInfo();
+  }, []);
+
+  // Fetch all submissions once on mount or optionally refetch periodically or on demand
+  useEffect(() => {
+    const fetchSubmissions = async () => {
+      try {
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+          console.error('No access token found');
+          return;
+        }
+        const data = await getSymptomHistory(token); // no filters here
         setSubmissions(data);
-      } else {
-        console.error('No access token found');
+      } catch (err) {
+        console.error('Failed to load submissions', err);
       }
-    } catch (err) {
-      console.error('Failed to load submissions', err);
-    }
-  };
+    };
 
+    fetchSubmissions();
+  }, []);
+
+  // Filter submissions locally based on statusFilter, startDate, endDate
+  const filteredSubmissions = submissions.filter(submission => {
+    // Status filter
+    const matchesStatus =
+      statusFilter === 'all' || submission.status?.toLowerCase() === statusFilter.toLowerCase();
+
+    // Date filters
+    const submissionDate = new Date(submission.submitted_at);
+    const matchesStartDate = startDate ? submissionDate >= new Date(startDate) : true;
+    const matchesEndDate = endDate ? submissionDate <= new Date(endDate) : true;
+
+    return matchesStatus && matchesStartDate && matchesEndDate;
+  });
+
+  // Handle viewing a submission
   const handleViewClick = async (submission) => {
     try {
       const token = localStorage.getItem('access_token');
       const data = await getSymptom(submission.id, token);
-      console.log("Selected Symptom Data: ", data);  // Log the data
       setSelectedSubmission(data);
     } catch (err) {
-      console.error(['Failed to fetch symptom details:', err]);
+      console.error('Failed to fetch symptom details:', err);
     }
   };
 
   const handleCloseModal = () => {
     setSelectedSubmission(null);
-  }
-
-
-  useEffect(() => {
-    // Fetch user info and submissions when the component mounts
-    fetchUserInfo();
-    fetchSubmissions();
-  }, []); // Empty dependency array means it will only run once after the component mounts
+  };
 
   return (
     <div className="container">
-      <header className="header">
-        <div className="logo">
-          <Heart size={40} className="icon-heart" />
-          <div>
-            <h1>HealthCare Portal</h1>
-            <p>Patient Dashboard</p>
-          </div>
-        </div>
-        {/* User Info */}
-        <div className="user-info">
-          <div className="user-icon-patient">
-            <UserIcon className="patient-user-icon" />
-          </div>
-          <div className="user-details">
-            <p className="user-name">
-              {user ? user.name : 'Loading...'}
-            </p>
-          </div>
-        </div>
-      </header>
+      {/* Header and User info as before */}
+      {/* Filters: add UI to update statusFilter, startDate, endDate */}
 
-      <main className="main-content-patient">
-        {/* SymptomForm component that handles submission */}
-        <SymptomForm onSubmitSuccess={fetchSubmissions} />
+      <SymptomForm onSubmitSuccess={async () => {
+        // Refetch submissions after a new submission
+        const token = localStorage.getItem('access_token');
+        if (token) {
+          const data = await getSymptomHistory(token);
+          setSubmissions(data);
+        }
+      }} />
 
-        {/* Submission history, which shows a list of previously submitted symptoms */}
-        <SubmissionHistory
-          submissions={submissions}
-          handleViewClick={handleViewClick}
-          fetchFilteredSubmissions={fetchSubmissions}
-        />
-      </main>
+      <SubmissionHistory
+        submissions={filteredSubmissions}
+        handleViewClick={handleViewClick}
+      />
 
-      { /* View Modal */}
+
       {selectedSubmission && (
         <SubmissionViewModal
           selectedSymptom={selectedSubmission}

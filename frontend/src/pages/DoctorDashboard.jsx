@@ -226,11 +226,16 @@ const DoctorDashboard = () => {
     };
 
     const filteredSubmissions = submissions.filter(submission => {
-        const matchesSearch = submission.patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            submission.symptoms.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesStatus = statusFilter === 'all' || submission.status === statusFilter;
+        const patientName = submission?.patient?.name?.toLowerCase() || '';
+        const symptoms = submission?.symptoms?.toLowerCase() || '';
+        const matchesSearch = patientName.includes(searchTerm.toLowerCase()) || symptoms.includes(searchTerm.toLowerCase());
+
+        const matchesStatus = statusFilter === 'all' ||
+            submission.status?.toLowerCase() === statusFilter.toLowerCase();
+
         return matchesSearch && matchesStatus;
     });
+
 
     const formatDate = (dateString) => {
         return new Date(dateString).toLocaleDateString('en-US', {
@@ -308,7 +313,7 @@ const DoctorDashboard = () => {
                 </div >
 
                 {/* Submissions List */}
-                {submissions.length > 0 ? (
+                {filteredSubmissions.length > 0 ? (
                     <SubmissionList
                         submissions={filteredSubmissions}
                         getStatusIcon={getStatusIcon}

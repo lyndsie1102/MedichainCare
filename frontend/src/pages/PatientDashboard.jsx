@@ -26,11 +26,13 @@ const PatientDashboard = () => {
   };
 
   // Function to fetch the symptom history for the patient
-  const fetchSubmissions = async () => {
+  // Function to fetch the symptom history for the patient
+  // Fetch symptom submissions with filters
+  const fetchSubmissions = async ({ status = '', startDate = '', endDate = '' } = {}) => {
     try {
       const token = localStorage.getItem('access_token');
       if (token) {
-        const data = await getSymptomHistory(token);
+        const data = await getSymptomHistory(token, { status, startDate, endDate });
         setSubmissions(data);
       } else {
         console.error('No access token found');
@@ -93,6 +95,7 @@ const PatientDashboard = () => {
         <SubmissionHistory
           submissions={submissions}
           handleViewClick={handleViewClick}
+          fetchFilteredSubmissions={fetchSubmissions}
         />
       </main>
 

@@ -66,15 +66,26 @@ export const submitSymptom = async (symptom, token) => {
   return res.data;
 };
 
-export const getSymptomHistory = async (token) => {
-  const res = await axios.get(`${API_URL}/symptoms-history/`, {
-    headers: {
-      Authorization: `Bearer ${token}`, 
-      'Content-Type': 'application/json'
-    }
-  });
-  return res.data;
+export const getSymptomHistory = async (token, { status, startDate, endDate}) => {
+  try {
+    const response = await axios.get(`${API_URL}/symptoms-history/`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      params: {
+        status,
+        start_date: startDate,
+        end_date: endDate
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Failed to fetch symptom history', error);
+    throw error;
+  }
 };
+
 
 export const getSymptom = async(symptom_id, token) => {
   const res = await axios.get(`${API_URL}/symptom/${symptom_id}`, {

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Calendar, Camera, Clock, CheckCircle, AlertCircle, BadgeCheck, Eye, ArrowRight } from 'lucide-react';
 
 // Updated getStatusIcon to include the new status "Referred" and respective class names
@@ -39,19 +39,71 @@ const getStatusColor = (status) => {
 
 // Format the date and time into a human-readable format
 const formatDate = (dateString) => {
-  return new Date(dateString).toLocaleDateString('en-US', {
+  if (!dateString.endsWith('Z')) {
+    dateString += 'Z';
+  }
+  const utcDate = new Date(dateString);  // Parse the date string in UTC
+  const options = {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
     hour: '2-digit',
-    minute: '2-digit'
-  });
+    minute: '2-digit',
+    hour12: true,
+    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone  // Use the browser's local time zone, which takes DST into account
+  };
+
+  // Format the date in the user's local time zone (with DST adjustments)
+  return new Intl.DateTimeFormat('en-US', options).format(utcDate);
 };
 
-const SubmissionHistory = ({ submissions, handleViewClick }) => {
+
+
+const SubmissionHistory = ({ submissions, handleViewClick, fetchFilteredSubmissions }) => {
+  // States for filter/search
+  const [statusFilter, setStatusFilter] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+
+  // Trigger search every time a filter changes
+  useEffect(() => {
+    const start = startDate ? new Date(startDate).toISOString().split('T')[0] : '';
+    const end = endDate ? new Date(endDate).toISOString().split('T')[0] : '';
+    fetchFilteredSubmissions({ status: statusFilter, startDate: start, endDate: end });
+  }, [statusFilter, startDate, endDate, fetchFilteredSubmissions]);
+
+
   return (
     <section className="history-section">
       <h2>Submission History</h2>
+
+      {/* Filter section */}
+      <div className="filter-section">
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+        >
+          <option value="">All</option>
+          <option value="Pending">Pending</option>
+          <option value="Under Review">Under Review</option>
+          <option value="Diagnosed">Diagnosed</option>
+          <option value="Completed">Completed</option>
+          <option value="Referred">Referred</option>
+        </select>
+
+        <input
+          type="date"
+          value={startDate}
+          onChange={(e) => setStartDate(e.target.value)}
+        />
+        <input
+          type="date"
+          value={endDate}
+          onChange={(e) => setEndDate(e.target.value)}
+        />
+
+      </div>
+
       {submissions.length === 0 ? (
         <p>No submissions yet. Submit your symptoms above!</p>
       ) : (

@@ -266,13 +266,6 @@ def get_symptom_details(
                 summary=test_result.summary
             ))
 
-    # Get consents related to the symptom
-    consents = (
-        db.query(Consent)
-        .filter(Consent.symptom_id == symptom_id, Consent.patient_id == current_user.id)
-        .all()
-    )
-
     # Consent details directly from the Symptom model
     consent_data = ConsentOut(
         treatment=symptom.consent_treatment,
@@ -297,8 +290,36 @@ def get_symptom_details(
 @router.get("/symptoms-history/", response_model=List[SymptomHistory])
 def get_symptom_history(
     current_user: User = Depends(verify_role(RoleEnum.PATIENT)), 
-    db: Session = Depends(get_db)):
-    symptoms = db.query(Symptom).filter(Symptom.patient_id == current_user.id).order_by(Symptom.timestamp.desc()).all()
+    db: Session = Depends(get_db),
+    status: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None
+):
+
+    # Validate date range, if both start_date and end_date are provided
+    if start_date and end_date:
+        # Convert the strings to datetime objects for comparison
+        start_date_obj = datetime.strptime(start_date, "%Y-%m-%d")
+        end_date_obj = datetime.strptime(end_date, "%Y-%m-%d")
+        
+        if start_date_obj > end_date_obj:
+            raise HTTPException(
+                status_code=400,
+                detail="Start date cannot be later than the end date.")
+
+    query = db.query(Symptom).filter(Symptom.patient_id == current_user.id)
+
+    if status and status != "all":
+        query = query.filter(Symptom.status == status)
+
+    if start_date:
+        start_date_obj = datetime.strptime(start_date, "%Y-%m-%d")
+        query = query.filter(Symptom.timestamp >= start_date_obj)
+    if end_date:
+        end_date_obj = datetime.strptime(end_date, "%Y-%m-%d")
+        query = query.filter(Symptom.timestamp <= end_date_obj)
+
+    symptoms = query.order_by(Symptom.timestamp.desc()).all()
     
     result = []
     for s in symptoms:

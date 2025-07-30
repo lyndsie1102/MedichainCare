@@ -332,19 +332,6 @@ const DoctorDashboard = () => {
                         <p className="empty-text">Try adjusting your search or filter criteria.</p>
                     </div>
                 )}
-
-
-                {
-                    filteredSubmissions.length === 0 && (
-                        <div className="empty-state">
-                            <div className="empty-icon">
-                                <Search className="empty-search-icon" />
-                            </div>
-                            <h3 className="empty-title">No submissions found</h3>
-                            <p className="empty-text">Try adjusting your search or filter criteria.</p>
-                        </div>
-                    )
-                }
             </main >
 
             {/* View Modal */}

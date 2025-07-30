@@ -10,7 +10,6 @@ import shutil
 from typing import List, Optional
 from .auth import authenticate_user, create_access_token, get_password_hash, verify_role
 from datetime import datetime
-from uuid import uuid4
 
 router = APIRouter()
 
@@ -314,9 +313,11 @@ def get_symptom_history(
 
     if start_date:
         start_date_obj = datetime.strptime(start_date, "%Y-%m-%d")
+        start_date_obj = start_date_obj.replace(hour=0, minute=0, second=0, microsecond=0)
         query = query.filter(Symptom.timestamp >= start_date_obj)
     if end_date:
         end_date_obj = datetime.strptime(end_date, "%Y-%m-%d")
+        end_date_obj = end_date_obj.replace(hour=23, minute=59, second=59, microsecond=999999)
         query = query.filter(Symptom.timestamp <= end_date_obj)
 
     symptoms = query.order_by(Symptom.timestamp.desc()).all()

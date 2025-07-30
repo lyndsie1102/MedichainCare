@@ -58,14 +58,13 @@ const formatDate = (dateString) => {
 };
 
 
-
-const SubmissionHistory = ({ submissions, handleViewClick}) => {
-  // States for filter/search
-  const [statusFilter, setStatusFilter] = useState('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-
-
+const SubmissionHistory = ({ submissions, handleViewClick, setStatusFilter, setStartDate, setEndDate }) => {
+  // Clear all filters
+  const clearAllFilters = () => {
+    setStatusFilter("all");
+    setStartDate("");
+    setEndDate("");
+  };
 
   return (
     <section className="history-section">
@@ -73,29 +72,38 @@ const SubmissionHistory = ({ submissions, handleViewClick}) => {
 
       {/* Filter section */}
       <div className="filter-section">
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
+        <label> Status
+          <select
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            <option value="">All Status</option>
+            <option value="Pending">Pending</option>
+            <option value="Under Review">Under Review</option>
+            <option value="Diagnosed">Diagnosed</option>
+            <option value="Completed">Completed</option>
+            <option value="Referred">Referred</option>
+          </select>
+        </label>
+
+        <label>Start Date
+          <input
+            type="date"
+            onChange={(e) => setStartDate(e.target.value)}
+          />
+        </label>
+        <label>End Date
+          <input
+            type="date"
+            onChange={(e) => setEndDate(e.target.value)}
+          />
+        </label>
+
+        <button
+          onClick={clearAllFilters}
+          className="clear-filters-btn btn-outline-sm"
         >
-          <option value="">All</option>
-          <option value="Pending">Pending</option>
-          <option value="Under Review">Under Review</option>
-          <option value="Diagnosed">Diagnosed</option>
-          <option value="Completed">Completed</option>
-          <option value="Referred">Referred</option>
-        </select>
-
-        <input
-          type="date"
-          value={startDate}
-          onChange={(e) => setStartDate(e.target.value)}
-        />
-        <input
-          type="date"
-          value={endDate}
-          onChange={(e) => setEndDate(e.target.value)}
-        />
-
+          Clear All
+        </button>
       </div>
 
       {submissions.length === 0 ? (

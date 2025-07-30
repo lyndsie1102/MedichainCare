@@ -929,3 +929,15 @@ textarea::placeholder {         /* Match your normal text color */
 button, input, select, textarea {
   font-family: inherit;
 }
+
+/* Add this CSS to style the labels and select boxes */
+.filter-section label {
+  display: block; /* Makes label a block element, causing select to go below */
+  margin-bottom: 8px; /* Optional, adds space between label and select */
+}
+
+.filter-section select {
+  display: block; /* Ensures select takes full width */
+  margin-bottom: 16px; /* Optional, adds space between inputs */
+  text-align: center;
+}

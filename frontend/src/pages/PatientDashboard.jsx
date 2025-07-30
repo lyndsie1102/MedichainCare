@@ -12,6 +12,9 @@ const PatientDashboard = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
 
   // Fetch user info once on mount
   useEffect(() => {
@@ -32,24 +35,32 @@ const PatientDashboard = () => {
     fetchUserInfo();
   }, []);
 
-  // Fetch all submissions once on mount or optionally refetch periodically or on demand
-  useEffect(() => {
-    const fetchSubmissions = async () => {
-      try {
-        const token = localStorage.getItem('access_token');
-        if (!token) {
-          console.error('No access token found');
-          return;
-        }
-        const data = await getSymptomHistory(token); // no filters here
-        setSubmissions(data);
-      } catch (err) {
-        console.error('Failed to load submissions', err);
-      }
-    };
+  // Fetch all submissions with filters (status, startDate, endDate)
+  const fetchSubmissions = async () => {
+    setLoading(true);
+    setError(null); // Reset error state on new fetch
 
+    try {
+      const token = localStorage.getItem('access_token');
+      if (!token) {
+        setError('No access token found');
+        return;
+      }
+
+      const data = await getSymptomHistory(token, statusFilter, startDate, endDate);
+      setSubmissions(data);
+    } catch (err) {
+      console.error('Failed to load submissions', err);
+      setError('Failed to load submissions');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Trigger fetchSubmissions whenever filters change
+  useEffect(() => {
     fetchSubmissions();
-  }, []);
+  }, [statusFilter, startDate, endDate]); // Trigger refetch when any of the filters change
 
   // Filter submissions locally based on statusFilter, startDate, endDate
   const filteredSubmissions = submissions.filter(submission => {
@@ -60,7 +71,7 @@ const PatientDashboard = () => {
     // Date filters
     const submissionDate = new Date(submission.submitted_at);
     const matchesStartDate = startDate ? submissionDate >= new Date(startDate) : true;
-    const matchesEndDate = endDate ? submissionDate <= new Date(endDate) : true;
+    const matchesEndDate = endDate ? submissionDate <= new Date(endDate + 'T23:59:59') : true; // Make sure the end date includes the entire day
 
     return matchesStatus && matchesStartDate && matchesEndDate;
   });
@@ -80,33 +91,59 @@ const PatientDashboard = () => {
     setSelectedSubmission(null);
   };
 
+  // Callback function to refetch submissions after form submission
+  const handleFormSubmitSuccess = async () => {
+    // Refetch submissions after new symptom submission, using the current filter values
+    await fetchSubmissions();
+  };
+
+
+
   return (
     <div className="container">
-      {/* Header and User info as before */}
-      {/* Filters: add UI to update statusFilter, startDate, endDate */}
+      <header className="header">
+        <div className="logo">
+          <Heart size={40} className="icon-heart" />
+          <div>
+            <h1>HealthCare Portal</h1>
+            <p>Patient Dashboard</p>
+          </div>
+        </div>
+        {/* User Info */}
+        <div className="user-info">
+          <div className="user-icon-patient">
+            <UserIcon className="patient-user-icon" />
+          </div>
+          <div className="user-details">
+            <p className="user-name">
+              {user ? user.name : 'Loading...'}
+            </p>
+          </div>
+        </div>
+      </header>
 
-      <SymptomForm onSubmitSuccess={async () => {
-        // Refetch submissions after a new submission
-        const token = localStorage.getItem('access_token');
-        if (token) {
-          const data = await getSymptomHistory(token);
-          setSubmissions(data);
-        }
-      }} />
 
-      <SubmissionHistory
-        submissions={filteredSubmissions}
-        handleViewClick={handleViewClick}
-      />
+      <main className="main-content-patient">
+        {/* Filters: add UI to update statusFilter, startDate, endDate */}
+        <SymptomForm onSubmitSuccess={handleFormSubmitSuccess} />
 
-
-      {selectedSubmission && (
-        <SubmissionViewModal
-          selectedSymptom={selectedSubmission}
-          handleCloseModal={handleCloseModal}
+        <SubmissionHistory
+          submissions={filteredSubmissions}
+          handleViewClick={handleViewClick}
+          setStatusFilter={setStatusFilter}  // Pass function to update filter state
+          setStartDate={setStartDate}         // Pass function to update start date
+          setEndDate={setEndDate}             // Pass function to update end date
         />
-      )}
-    </div>
+      </main>
+      {
+        selectedSubmission && (
+          <SubmissionViewModal
+            selectedSymptom={selectedSubmission}
+            handleCloseModal={handleCloseModal}
+          />
+        )
+      }
+    </div >
   );
 };
 

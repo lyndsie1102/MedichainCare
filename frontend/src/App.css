@@ -930,14 +930,104 @@ button, input, select, textarea {
   font-family: inherit;
 }
 
-/* Add this CSS to style the labels and select boxes */
-.filter-section label {
-  display: block; /* Makes label a block element, causing select to go below */
-  margin-bottom: 8px; /* Optional, adds space between label and select */
-}
 
-.filter-section select {
+
+
+
+.filter-group select {
   display: block; /* Ensures select takes full width */
   margin-bottom: 16px; /* Optional, adds space between inputs */
-  text-align: center;
+  width: fit-content;
+}
+
+
+/* Filters Section Styles */
+.filters-section {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-radius: 0.75rem;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.filters-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+
+.filters-title {
+  display: flex;
+  align-items: center;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.filters-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: #f97316;
+  margin-right: 0.75rem;
+}
+
+.clear-filters-btn {
+  font-size: 0.875rem;
+  height: 2rem;
+  padding: 0 0.75rem;
+  border: 1px solid #d1d5db;
+  background-color: white;
+  color: #374151;
+  border-radius: 0.375rem;
+  font-weight: 500;
+}
+
+.clear-filters-btn:hover {
+  background-color: #f9fafb;
+  border-color: #f97316;
+  color: #f97316;
+}
+
+.filters-grid {
+  display: flex;
+  grid-template-columns: 1fr 1.5fr;
+  gap: 10rem;
+  margin-bottom: 1rem;
+}
+
+
+.filter-group {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.filter-group.date-group {
+  display: flex;
+  flex-direction: row;
+  gap: 3rem;
+}
+
+.filter-date {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+
+.filters-section {
+  padding: 1rem;
+}
+
+.history-section {
+  flex: 1;
+  overflow: hidden;
+  border: 1px solid #f3f4f6;
+  box-shadow: 0px 4px 6px -4px rgba(0, 0, 0, 0.1), 0px 10px 15px -3px rgba(0, 0, 0, 0.1);
 }

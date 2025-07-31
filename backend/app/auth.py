@@ -2,10 +2,10 @@ from datetime import datetime, timedelta
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
-import models, database, schemas
+import models, uuid
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from models import User, RoleEnum
+from models import User, RoleEnum, TokenBlacklist
 from database import get_db
 
 # Configuration
@@ -33,7 +33,10 @@ def authenticate_user(db: Session, username: str, password: str):
 def create_access_token(data: dict, expires_delta: timedelta = None):
     to_encode = data.copy()
     expire = datetime.utcnow() + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
-    to_encode.update({"exp": expire})
+    to_encode.update({
+        "exp": expire,
+        "jti": str(uuid.uuid4()),
+        })
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
     
@@ -44,12 +47,19 @@ def get_current_user(
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
-        if username is None:
+        jti = payload.get("jti")
+        if username is None or jti is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid credentials",
                 headers={"WWW-Authenticate": "Bearer"},
             )
+        
+        # Check if jti is blacklisted
+        blacklisted = db.query(TokenBlacklist).filter(TokenBlacklist.jti == jti).first()
+        if blacklisted:
+            raise HTTPException(status_code=401, detail="Token has been revoked")
+        
     except JWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

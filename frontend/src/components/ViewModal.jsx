@@ -15,7 +15,7 @@ const ViewModal = ({
             <div className="modal-container modal-large">
                 {/* Modal Header */}
                 <div className="modal-header modal-header-orange">
-                    <h3 className="modal-title">Patient Details - {selectedSubmission.patient.name}</h3>
+                    <h3 className="modal-title">Patient Details {selectedSubmission?.patient?.name ? ` - ${selectedSubmission.patient.name}` : ''}</h3>
                     <button onClick={handleCloseModal} className="modal-close">
                         <X className="close-icon" />
                     </button>
@@ -24,6 +24,7 @@ const ViewModal = ({
                 <div className="modal-body">
                     <div className="modal-content">
                         {/* Patient Information */}
+                        {selectedSubmission?.patient && (
                         <div className="patient-details-card">
                             <h4 className="section-title">Patient Information</h4>
                             <div className="patient-info-list">
@@ -45,6 +46,7 @@ const ViewModal = ({
                                 </div>
                             </div>
                         </div>
+                        )}
 
                         {/* Consent Information */}
                         <div>

@@ -149,3 +149,8 @@ class TestResults(Base):
     uploaded_at = Column(DateTime, default=datetime.utcnow)
 
     test_request = relationship("TestRequest", back_populates="test_results")
+
+class TokenBlacklist(Base):
+    __tablename__ = "token_blacklist"
+    jti = Column(String, primary_key=True, index=True)
+    expired_at = Column(DateTime, default=datetime.utcnow)

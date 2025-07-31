@@ -93,7 +93,7 @@ const SubmissionHistory = ({ submissions, handleViewClick, setStatusFilter, setS
             <select
               onChange={(e) => setStatusFilter(e.target.value)}
             >
-              <option value="">All Status</option>
+              <option value="all">All Status</option>
               <option value="Pending">Pending</option>
               <option value="Under Review">Under Review</option>
               <option value="Diagnosed">Diagnosed</option>

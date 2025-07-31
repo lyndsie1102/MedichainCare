@@ -25,10 +25,10 @@ const LogoutModal = ({ showModal, onConfirmLogout, onCancelLogout }) => {
               </p>
 
               <div className="logout-actions">
-                <button onClick={onCancelLogout} className="logout-btn btn-cancel">
+                <button onClick={onCancelLogout} className="btn btn-cancel">
                   Cancel
                 </button>
-                <button onClick={onConfirmLogout} className="logout-btn btn-logout-confirm">
+                <button onClick={onConfirmLogout} className="btn btn-logout-confirm">
                   <LogOut className="btn-icon" />
                   <span>Logout</span>
                 </button>

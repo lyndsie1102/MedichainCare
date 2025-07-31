@@ -177,6 +177,17 @@ def create_consents_for_symptom(db: Session, symptom: Symptom, patient: Patient)
         granted_at=datetime.now(timezone.utc)
     )
     db.add(treatment_consent)
+    
+    #Referral consent
+    referral_consent = Consent(
+        symptom_id=symptom.id,
+        patient_id=patient.id,
+        doctor_id=gp_user.id,
+        consent_type=ConsentPurpose.REFERRAL,
+        is_granted=True,
+        granted_at=datetime.now(timezone.utc)
+    )
+    db.add(referral_consent)
 
     # Research consent
     if symptom.consent_research:

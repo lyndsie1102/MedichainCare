@@ -1,14 +1,15 @@
 import uuid
 from fastapi import APIRouter, Depends, File, UploadFile, HTTPException, FastAPI
 from sqlalchemy.orm import Session
+from jose import jwt
 from database import SessionLocal, get_db
-from models import User, Symptom, RoleEnum, Consent, Patient, ConsentPurpose, Diagnosis, Doctor, MedicalLab, TestRequest, SymptomStatus, Referral, TestResults, TestType
+from models import User, Symptom, RoleEnum, Consent, Patient, ConsentPurpose, Diagnosis, Doctor, MedicalLab, TestRequest, SymptomStatus, Referral, TestResults, TestType, TokenBlacklist
 from schemas import UserCreate, UserOut, SymptomCreate, SymptomOut, ConsentOut, PatientOut, DiagnosisOut, PatientSymptomDetails, DoctorOut, DiagnosisCreate, MedicalLabs, LabAssignmentCreate, LabAssignmentOut, ReferralCreate, SymptomHistory, SymptomDetails, TestResultOut
 from fastapi.security import OAuth2PasswordRequestForm
 import os
 import shutil
-from typing import List, Optional
-from .auth import authenticate_user, create_access_token, get_password_hash, verify_role
+from typing import List, Optional, Union
+from .auth import authenticate_user, create_access_token, get_password_hash, verify_role, oauth2_scheme, SECRET_KEY, ALGORITHM
 from datetime import datetime
 
 router = APIRouter()
@@ -127,6 +128,21 @@ def login(form: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get
     
     access_token = create_access_token(data={"sub": user.username, "role": user.role})
     return {"access_token": access_token, "token_type": "bearer"}
+
+
+@router.post("/logout")
+def logout(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    jti = payload.get("jti")
+    exp = payload.get("exp")
+    expired_at = datetime.utcfromtimestamp(exp)
+
+    # Save to blacklist
+    blacklisted_token = TokenBlacklist(jti=jti, expired_at=expired_at)
+    db.add(blacklisted_token)
+    db.commit()
+
+    return {"msg": "Successfully logged out"}
 
 
 @router.post("/upload-image/")
@@ -401,96 +417,117 @@ def get_doctor_dashboard(
     return symptoms_out
 
 
-@router.get("/symptom_details/{symptom_id}", response_model=PatientSymptomDetails)
-def get_full_symptom_record(symptom_id: int, current_user: User = Depends(verify_role(RoleEnum.DOCTOR)), db: Session = Depends(get_db)):
-    # Fetch symptom
+@router.get("/symptom_details/{symptom_id}", response_model=Union[PatientSymptomDetails, SymptomDetails])
+def get_symptom_details(
+    symptom_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(verify_role(RoleEnum.DOCTOR))
+):
     symptom = db.query(Symptom).filter(Symptom.id == symptom_id).first()
     if not symptom:
         raise HTTPException(status_code=404, detail="Symptom not found")
 
-    # Fetch patient info
     patient = db.query(Patient).filter(Patient.id == symptom.patient_id).first()
-    if not patient:
-        raise HTTPException(status_code=404, detail="Patient not found")
+    user = db.query(User).filter(User.id == symptom.patient_id).first()
+    doctor = db.query(Doctor).filter(Doctor.id == current_user.id).first()
 
-    user = db.query(User).filter(User.id == patient.id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+    if not all([patient, user, doctor]):
+        raise HTTPException(status_code=404, detail="Related data not found")
 
-    # Initialize consent booleans from the Symptom model itself
-    consent_out = ConsentOut(
-        treatment=symptom.consent_treatment,
-        referral=symptom.consent_referral,
-        research=symptom.consent_research
-    )
+    # Check if GP
+    is_gp = patient.gp_id == current_user.id
 
-    # Fetch diagnoses for the symptom
-    diagnoses = db.query(Diagnosis).filter(Diagnosis.symptom_id == symptom.id).all()
-    diagnosis_list = []
+    # Check if referred doctor
+    referral = db.query(Referral).filter(
+        Referral.symptom_id == symptom.id,
+        Referral.referral_doctor_id == doctor.id
+    ).first()
+    is_referred_doctor = referral is not None
 
-    for diag in diagnoses:
-        doctor_user = (
-            db.query(User)
-            .join(Doctor, Doctor.id == User.id)
-            .filter(User.id == diag.doctor_id)
-            .first()
-        )
+    # Permissions logic
+    if not any([symptom.consent_treatment, symptom.consent_referral, symptom.consent_research]):
+        raise HTTPException(status_code=403, detail="Access denied: no consents available.")
 
-        diagnosis_list.append(
-            DiagnosisOut(
-                doctorName=doctor_user.name if doctor_user else "Unknown Doctor",
-                analysis=diag.diagnosis_content,
-                createdAt=diag.timestamp
+    if is_gp or is_referred_doctor:
+        # ✅ Full access
+        return PatientSymptomDetails(
+            id=str(symptom.id),
+            patient=PatientOut(
+                id=patient.id,
+                name=user.name,
+                age=user.age,
+                gender=user.gender,
+                phone=patient.phone_number,
+                email=patient.email,
+                address=patient.location
+            ),
+            symptoms=symptom.symptoms,
+            testType=_get_test_type(db, symptom.id),
+            testResults=_get_test_results(db, symptom.id),
+            images=symptom.image_paths or [],
+            submittedAt=symptom.timestamp,
+            status=symptom.status,
+            diagnoses=_get_diagnoses(db, symptom.id),
+            consent=ConsentOut(
+                treatment=symptom.consent_treatment,
+                referral=symptom.consent_referral,
+                research=symptom.consent_research
             )
         )
 
-    # Fetch TestRequest for the symptom
-    test_request = db.query(TestRequest).filter(TestRequest.symptom_id == symptom.id).first()
+    elif symptom.consent_research:
+        # ✅ Research-only access
+        return SymptomDetails(
+            id=str(symptom.id),
+            symptoms=symptom.symptoms,
+            testType=_get_test_type(db, symptom.id),
+            testResults=_get_test_results(db, symptom.id),
+            images=symptom.image_paths or [],
+            submittedAt=symptom.timestamp,
+            diagnoses=_get_diagnoses(db, symptom.id),
+            consent=ConsentOut(
+                treatment=symptom.consent_treatment,
+                referral=symptom.consent_referral,
+                research=symptom.consent_research
+            )
+        )
 
-    test_result_out = []
-    if test_request:
-        # Fetch all test results associated with this TestRequest
-        test_results = db.query(TestResults).filter(TestResults.test_request_id == test_request.id).all()
+    raise HTTPException(status_code=403, detail="Access denied: not authorized.")
 
-        # Loop through test results and prepare the response
-        for result in test_results:
-            test_result_out.append({
-                "uploadedAt": result.uploaded_at,
-                "files": [
-                    {"name": file["file_name"], "url": file["file_url"]} 
-                    for file in result.files
-                ],
-                "summary": result.summary
-            })
 
-    # Fetch the test type associated with the request
-    test_type_name = None
-    if test_request:
-        test_type = db.query(TestType).filter(TestType.id == test_request.test_type_id).first()
-        if test_type:
-            test_type_name = test_type.name
+# === Helper Functions ===
 
-    return PatientSymptomDetails(
-        id=str(symptom.id),
-        patient=PatientOut(
-            id=str(patient.id),
-            name=user.name,
-            age=user.age,
-            gender=user.gender,
-            phone=patient.phone_number,
-            email=patient.email,
-            address=patient.location
-        ),
-        symptoms=symptom.symptoms,
-        testType=test_type_name,
-        testResults=test_result_out,
-        images=symptom.image_paths if symptom.image_paths else [],
-        submittedAt=symptom.timestamp,
-        status=symptom.status,
-        diagnoses=diagnosis_list,
-        consent=consent_out
-    )
+def _get_test_type(db: Session, symptom_id: int) -> str:
+    request = db.query(TestRequest).filter(TestRequest.symptom_id == symptom_id).first()
+    if request:
+        test_type = db.query(TestType).filter(TestType.id == request.test_type_id).first()
+        return test_type.name if test_type else None
+    return None
 
+def _get_test_results(db: Session, symptom_id: int) -> List[TestResultOut]:
+    request = db.query(TestRequest).filter(TestRequest.symptom_id == symptom_id).first()
+    results = []
+    if request:
+        for result in request.test_results:
+            files = result.files if isinstance(result.files, list) else []
+            results.append(TestResultOut(
+                uploadedAt=result.uploaded_at,
+                files=files,
+                summary=result.summary
+            ))
+    return results
+
+def _get_diagnoses(db: Session, symptom_id: int) -> List[DiagnosisOut]:
+    diagnoses = db.query(Diagnosis).filter(Diagnosis.symptom_id == symptom_id).all()
+    output = []
+    for diag in diagnoses:
+        doctor_user = db.query(User).filter(User.id == diag.doctor_id).first()
+        output.append(DiagnosisOut(
+            doctorName=doctor_user.name if doctor_user else "Unknown",
+            analysis=diag.diagnosis_content,
+            createdAt=diag.timestamp
+        ))
+    return output
 
 
 router.get("/doctor/submissions", response_model=List[SymptomOut])

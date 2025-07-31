@@ -263,7 +263,7 @@ const DoctorDashboard = () => {
                     <div className="user-icon-doctor">
                         <Stethoscope className="stethoscope-icon" />
                     </div>
-                    <div className="user-details">
+                    <div className="user-details-doctor">
                         <p className="user-name">
                             {doctorInfo ? `Dr. ${doctorInfo.name}` : 'Loading...'}
                         </p>

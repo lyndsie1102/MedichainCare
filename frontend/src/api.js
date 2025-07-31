@@ -16,6 +16,15 @@ export const login = async ({ username, password }) => {
   return res.data;
 };
 
+export const logout = async (token) => {
+  return await axios.post(`${API_URL}/logout`, null, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+
 //Patient dashboard APIs
 export const getPatientInfo = async (token) => {
   const res = await axios.get(`${API_URL}/patient/me`, {

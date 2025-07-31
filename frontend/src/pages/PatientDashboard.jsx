@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Heart, UserIcon } from 'lucide-react';
+import { Heart, UserIcon, LogOut, ChevronDown, X } from 'lucide-react';
 import SymptomForm from '../components/SymptomForm';
 import SubmissionHistory from '../components/SubmissionHistory';
 import SubmissionViewModal from '../components/SubmissionViewModal';
-import { getSymptomHistory, getPatientInfo, getMedicalLabs, getSymptom } from '../api';
+import LogoutModal from '../components/LogoutModal';
+import { getSymptomHistory, getPatientInfo, getSymptom, logout } from '../api';
 
 const PatientDashboard = () => {
   const [submissions, setSubmissions] = useState([]);
@@ -14,6 +15,8 @@ const PatientDashboard = () => {
   const [endDate, setEndDate] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
 
 
   // Fetch user info once on mount
@@ -97,7 +100,38 @@ const PatientDashboard = () => {
     await fetchSubmissions();
   };
 
+  const handleLogoutClick = () => {
+    setShowUserDropdown(false);
+    setShowLogoutModal(true);
+  };
 
+  const handleLogoutCancel = () => {
+    setShowLogoutModal(false);
+  };
+
+  const handleLogoutConfirm = async () => {
+    setShowLogoutModal(false);
+    const token = localStorage.getItem('access_token');
+  
+    try {
+      const res = await logout(token);
+  
+      if (res.status !== 200) {
+        throw new Error('Logout failed on server');
+      }
+  
+      // Clear client-side session
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('user');
+  
+      alert('Successfully logged out. Redirecting to login page...');
+      window.location.href = '/login';
+    } catch (error) {
+      console.error('Logout error:', error);
+      alert('Logout failed. Please try again.');
+    }
+  };
+  
 
   return (
     <div className="container">
@@ -110,7 +144,7 @@ const PatientDashboard = () => {
           </div>
         </div>
         {/* User Info */}
-        <div className="user-info">
+        <div className="user-info" onClick={() => setShowUserDropdown(!showUserDropdown)}>
           <div className="user-icon-patient">
             <UserIcon className="patient-user-icon" />
           </div>
@@ -118,7 +152,21 @@ const PatientDashboard = () => {
             <p className="user-name">
               {user ? user.name : 'Loading...'}
             </p>
+            <ChevronDown className={`user-dropdown-icon ${showUserDropdown ? 'user-dropdown-icon-rotated' : ''}`} />
           </div>
+
+          {/* User Dropdown */}
+          {showUserDropdown && (
+            <div className="user-dropdown-menu">
+              <button
+                onClick={handleLogoutClick}
+                className="user-dropdown-item logout-item"
+              >
+                <LogOut className="dropdown-item-icon" />
+                <span>Log Out</span>
+              </button>
+            </div>
+          )}
         </div>
       </header>
 
@@ -143,6 +191,13 @@ const PatientDashboard = () => {
           />
         )
       }
+
+      {/* Logout Confirmation Modal */}
+      <LogoutModal
+        showModal={showLogoutModal}
+        onConfirmLogout={handleLogoutConfirm}
+        onCancelLogout={handleLogoutCancel}
+      />
     </div >
   );
 };

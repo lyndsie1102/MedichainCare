@@ -11,7 +11,7 @@ import uuid
 
 class SymptomStatus(str, Enum):
     PENDING = "Pending"
-    UNDER_REVIEW = "Under Review"
+    TESTED = "Tested"
     DIAGNOSED = "Diagnosed"
     COMPLETED = "Completed"
     REFERRED = "Referred"
@@ -29,6 +29,12 @@ class ConsentPurpose(str, Enum):
     TREATMENT = "treatment"
     REFERRAL = "referral"
     RESEARCH = "research"
+
+class TestRequestStatus(str, Enum):
+    PENDING = "pending"
+    UPLOADED = "uploaded"
+
+status = Column(SQLEnum(TestRequestStatus, native_enum=False), default=TestRequestStatus.PENDING)
 
 
 class User(Base):
@@ -91,6 +97,7 @@ class Symptom(Base):
     consent_research = Column(Boolean, default=False)
 
     consents = relationship("Consent", backref="symptom", cascade="all, delete-orphan")
+    test_requests = relationship("TestRequest", back_populates="symptom")
 
 
 class Diagnosis(Base):
@@ -123,9 +130,11 @@ class TestRequest(Base):
     upload_token = Column(String, unique=True, index=True, default=lambda: str(uuid.uuid4()))
     requested_at = Column(DateTime, default=datetime.utcnow)
     uploaded_result_path = Column(String, nullable=True)
-    status = Column(SQLEnum(SymptomStatus, native_enum=False), default=SymptomStatus.PENDING)
+    status = Column(SQLEnum(TestRequestStatus, native_enum=False), default=TestRequestStatus.PENDING)
 
     test_results = relationship("TestResults", back_populates="test_request")
+    symptom = relationship("Symptom", back_populates="test_requests")
+
 
 class Referral(Base):
     __tablename__ = "referrals"

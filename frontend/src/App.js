@@ -5,7 +5,7 @@ import DoctorDashboard from './pages/DoctorDashboard';
 import LabDashboard from './pages/LabDashboard';
 import LandingPage from './pages/LandingPage';
 import LoginForm from './components/LoginForm';
-import './App.css';
+import './LabStaffDashboard.css';
 
 const DashboardRouter = () => {
   const user = JSON.parse(localStorage.getItem('user'));

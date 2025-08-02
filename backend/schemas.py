@@ -84,6 +84,7 @@ class MedicalLabs(BaseModel):
 class LabAssignmentCreate(BaseModel):
     symptom_id: int
     lab_id: int
+    test_type_id: int
 
 class LabAssignmentOut(BaseModel):
     id: int

@@ -241,7 +241,7 @@ def create_test_request(db: Session, symptom: Symptom, lab: MedicalLab, doctor: 
         doctor_id=doctor.id,
         test_type_id=test_type.id,  # Associate test type
         requested_at=datetime.now(timezone.utc),
-        status=SymptomStatus.PENDING
+        status="pending"
     )
     db.add(test_request)
     db.commit()
@@ -274,6 +274,13 @@ def create_test_results(db: Session, test_request: TestRequest) -> TestResults:
 
     # Commit the new test result to the database
     db.add(test_result)
+
+    
+    # ✅ Update TestRequest and Symptom statuses
+    test_request.uploaded_result_path = files[0]["file_url"]
+    test_request.status = "uploaded"
+    test_request.symptom.status = SymptomStatus.TESTED  # update symptom status
+    
     db.commit()
     db.refresh(test_result)  # Refresh to get the updated record with the ID
 

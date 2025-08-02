@@ -643,9 +643,10 @@ def assign_lab(
 ):
     symptom = db.query(Symptom).filter_by(id=payload.symptom_id).first()
     lab = db.query(MedicalLab).filter_by(id=payload.lab_id).first()
+    test_type_id = db.query(TestType).filter_by(id=payload.test_type_id).first()
 
-    if not symptom or not lab:
-        raise HTTPException(status_code=404, detail="Symptom or Lab not found")
+    if not symptom or not lab or not test_type_id:
+        raise HTTPException(status_code=404, detail="Symptom or Lab or Test type not found")
     
     # ✅ Only allow assignment if symptom is in pending or referred state
     if symptom.status not in [SymptomStatus.PENDING, SymptomStatus.REFERRED]:
@@ -653,17 +654,20 @@ def assign_lab(
             status_code=400,
             detail="Only pending or referred symptoms can be assigned to labs"
         )
+    
+
 
     assignment = TestRequest(
         symptom_id=payload.symptom_id,
         lab_id=payload.lab_id,
         doctor_id=current_user.id,  # Use the current doctor's ID
+        test_type_id=test_type_id,
         upload_token=str(uuid4())
     )
     db.add(assignment)
 
-    # Update symptom status to UNDER_REVIEW
-    symptom.status = SymptomStatus.UNDER_REVIEW
+    # Update symptom status to Tested
+    symptom.status = SymptomStatus.TESTED
 
 
     db.commit()
@@ -692,28 +696,12 @@ def get_lab_dashboard(lab_id: int,
             "location": patient.location,
             "upload_token": assign.upload_token,
             "upload_url": f"/lab/upload/{assign.upload_token}",
-            "status": "Uploaded" if assign.uploaded_result_path else "Pending"
+            "status": "Uploaded" if assign.uploaded_result_path else "Pending",
+            "uploaded_result_path": assign.uploaded_result_path
         })
 
     return results
 
-
-@router.get("/upload/{token}")
-def get_upload_info(token: str,
-                    current_user: User = Depends(verify_role(RoleEnum.LAB_STAFF)),
-                    db: Session = Depends(get_db)):
-    assignment = db.query(TestRequest).filter_by(upload_token=token).first()
-    if not assignment:
-        raise HTTPException(status_code=404, detail="Invalid token")
-    
-    patient = db.query(User).filter_by(id=assignment.symptom.patient_id).first()
-
-    return {
-        "patient_name": patient.name,
-        "email": patient.email,
-        "phone": patient.phone_number,
-        "location": patient.location
-    }
 
 
 @router.post("/upload/{token}")
@@ -755,7 +743,7 @@ def upload_lab_result(
     # Update the TestRequest table with the uploaded result file paths and time
     assignment.uploaded_result_path = uploaded_files[0]["path"]  # You can choose how to represent the first file path
     assignment.uploaded_at = datetime.utcnow()
-    
+    assignment.status = SymptomStatus.COMPLETED
     db.commit()
 
     return {"message": f"{len(files)} file(s) uploaded successfully."}

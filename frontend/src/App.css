@@ -233,24 +233,6 @@ button:disabled {
   gap: 0.25rem;
 }
 
-.status.pending {
-  background-color: #ffedd5;
-  color: #c2410c;
-  border: 1px solid #fdba74;
-}
-
-.status.reviewed {
-  background-color: #d1fae5;
-  color: #065f46;
-  border: 1px solid #6ee7b7;
-}
-
-.status.inprogress {
-  background-color: #dbeafe;
-  color: #1e40af;
-  border: 1px solid #93c5fd;
-}
-
 /*Landing page styles
 /* Shared */
 .container-landing {

@@ -3,7 +3,7 @@ import {
     Heart,
     Stethoscope,
     Clock,
-    AlertCircle,
+    FileCheck,
     CheckCircle,
     BadgeCheck,
     Search,
@@ -65,8 +65,8 @@ const DoctorDashboard = () => {
         switch (status) {
             case 'Pending':
                 return <Clock className="status-icon status-icon-pending" />;
-            case 'Under Review':
-                return <AlertCircle className="status-icon status-icon-review" />;
+            case 'Tested':
+                return <FileCheck className="status-icon status-icon-review" />;
             case 'Diagnosed':
                 return <CheckCircle className="status-icon status-icon-diagnosed" />;
             case 'Completed':
@@ -82,7 +82,7 @@ const DoctorDashboard = () => {
         switch (status) {
             case 'Pending':
                 return 'status-badge status-badge-pending';
-            case 'Under Review':
+            case 'Tested':
                 return 'status-badge status-badge-review';
             case 'Diagnosed':
                 return 'status-badge status-badge-diagnosed';
@@ -137,7 +137,7 @@ const DoctorDashboard = () => {
             setSubmissions(prev =>
                 prev.map(sub =>
                     sub.id === selectedSubmission.id
-                        ? { ...sub, status: 'under_review' }
+                        ? { ...sub, status: 'tested' }
                         : sub
                 )
             );
@@ -302,7 +302,7 @@ const DoctorDashboard = () => {
                             >
                                 <option value="all">All Status</option>
                                 <option value="Pending">Pending</option>
-                                <option value="Under Review">Under Review</option>
+                                <option value="Tested">Tested</option>
                                 <option value="Diagnosed">Diagnosed</option>
                                 <option value="Referred">Referred</option>
                                 <option value="Completed">Completed</option>

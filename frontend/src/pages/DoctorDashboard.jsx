@@ -6,16 +6,20 @@ import {
     FileCheck,
     CheckCircle,
     BadgeCheck,
+    FlaskRound,
     Search,
     Filter,
-    ArrowRight
+    ArrowRight,
+    ChevronDown,
+    LogOut
 } from 'lucide-react';
 import '../DoctorDashboard.css';
 import AssignModal from '../components/AssignModal';
 import ReferModal from '../components/ReferModal';
 import SubmissionList from '../components/SubmissionList';
 import ViewModal from '../components/ViewModal';
-import { getDoctorDashboard, getDoctorDetails, getSymptomDetails, createDiagnosis, createReferral } from '../api';
+import LogoutModal from '../components/LogoutModal';
+import { getDoctorDashboard, getDoctorDetails, getSymptomDetails, createDiagnosis, createReferral, logout, createTestRequest } from '../api';
 
 
 const DoctorDashboard = () => {
@@ -26,10 +30,14 @@ const DoctorDashboard = () => {
     const [analysis, setAnalysis] = useState('');
     const [showLabDropdown, setShowLabDropdown] = useState(false);
     const [showDoctorDropdown, setShowDoctorDropdown] = useState(false);
+    const [showTestTypeDropdown, setShowTestTypeDropdown] = useState(false);
     const [selectedLab, setSelectedLab] = useState(null);
+    const [selectedTestType, setSelectedTestType] = useState('');
     const [selectedDoctor, setSelectedDoctor] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
+    const [showUserDropdown, setShowUserDropdown] = useState(false);
+    const [showLogoutModal, setShowLogoutModal] = useState(false);
 
     useEffect(() => {
         const fetchDashboard = async () => {
@@ -59,6 +67,36 @@ const DoctorDashboard = () => {
         fetchDoctor();
     }, []);
 
+    const handleLogoutClick = () => {
+        setShowUserDropdown(false);
+        setShowLogoutModal(true);
+    };
+
+    const handleLogoutCancel = () => {
+        setShowLogoutModal(false);
+    };
+
+    const handleLogoutConfirm = async () => {
+        setShowLogoutModal(false);
+        const token = localStorage.getItem('access_token');
+
+        try {
+            const res = await logout(token);
+
+            if (res.status !== 200) {
+                throw new Error('Logout failed on server');
+            }
+
+            // Clear client-side session
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('user');
+
+            window.location.href = '/login';
+        } catch (error) {
+            console.error('Logout error:', error);
+            alert('Logout failed. Please try again.');
+        }
+    };
 
 
     const getStatusIcon = (status) => {
@@ -66,7 +104,9 @@ const DoctorDashboard = () => {
             case 'Pending':
                 return <Clock className="status-icon status-icon-pending" />;
             case 'Tested':
-                return <FileCheck className="status-icon status-icon-review" />;
+                return <FileCheck className="status-icon status-icon-tested" />;
+            case 'Assigned to Lab':
+                return <FlaskRound className="status-icon status-icon-assigned" />;
             case 'Diagnosed':
                 return <CheckCircle className="status-icon status-icon-diagnosed" />;
             case 'Completed':
@@ -83,7 +123,9 @@ const DoctorDashboard = () => {
             case 'Pending':
                 return 'status-badge status-badge-pending';
             case 'Tested':
-                return 'status-badge status-badge-review';
+                return 'status-badge status-badge-tested';
+            case 'Assigned to Lab':
+                return 'status-badge status-badge-assigned';
             case 'Diagnosed':
                 return 'status-badge status-badge-diagnosed';
             case 'Completed':
@@ -112,7 +154,9 @@ const DoctorDashboard = () => {
         setModalType('assign');
         setAnalysis('');
         setSelectedLab(null);
+        setSelectedTestType(null);
         setShowLabDropdown(false);
+        setShowTestTypeDropdown(false);
     };
 
     const handleReferClick = (submission) => {
@@ -130,22 +174,60 @@ const DoctorDashboard = () => {
         setSelectedDoctor(null);
         setShowLabDropdown(false);
         setShowDoctorDropdown(false);
+        setShowTestTypeDropdown(false);
+        setSelectedTestType('');
     };
 
-    const handleAssignToLab = () => {
-        if (selectedLab && selectedSubmission) {
-            setSubmissions(prev =>
-                prev.map(sub =>
-                    sub.id === selectedSubmission.id
-                        ? { ...sub, status: 'tested' }
-                        : sub
-                )
-            );
 
-            alert(`Successfully assigned to ${selectedLab.name}`);
-            handleCloseModal();
+
+
+    const handleAssignToLab = async () => {
+
+        console.log("handleAssignToLab triggered");
+        console.log("selectedTestType", selectedTestType);
+        console.log("selectedLab", selectedLab);
+        console.log("selectedSubmission", selectedSubmission);
+
+
+        if (selectedTestType && selectedLab && selectedSubmission) {
+            const token = localStorage.getItem('access_token');
+            console.log("Token:", token); // Token should be logged here
+
+            if (!token) {
+                console.error("No access token found");
+                alert("You are not authorized. Please log in again.");
+                window.location.href = "/login";
+                return;
+            }
+
+            try {
+                // Call the API to assign the symptom to the lab
+                console.log('Assigning test request...');
+                const response = await createTestRequest(token, {
+                    symptom_id: selectedSubmission.id,
+                    lab_id: selectedLab.id,
+                    test_type_id: selectedTestType.id
+                });
+
+                // Update the submission list and the status of the submission
+                setSubmissions(prev =>
+                    prev.map(sub =>
+                        sub.id === selectedSubmission.id
+                            ? { ...sub, status: 'Assigned' }
+                            : sub
+                    )
+                );
+
+                // Close the modal after successful assignment
+                alert(`Successfully assigned to ${selectedLab.name}`);
+                handleCloseModal();
+            } catch (error) {
+                console.error('Failed to assign to lab:', error);
+                alert('Lab assignment failed. Please try again.');
+            }
         }
     };
+
 
     const handleReferToDoctor = async () => {
         if (!selectedDoctor || !selectedSubmission) return;
@@ -225,6 +307,8 @@ const DoctorDashboard = () => {
         }
     };
 
+
+    
     const filteredSubmissions = submissions.filter(submission => {
         const patientName = submission?.patient?.name?.toLowerCase() || '';
         const symptoms = submission?.symptoms?.toLowerCase() || '';
@@ -259,7 +343,7 @@ const DoctorDashboard = () => {
                     </div>
                 </div>
                 {/* User Info */}
-                <div className="user-info">
+                <div className="user-info" onClick={() => setShowUserDropdown(!showUserDropdown)}>
                     <div className="user-icon-doctor">
                         <Stethoscope className="stethoscope-icon" />
                     </div>
@@ -271,6 +355,20 @@ const DoctorDashboard = () => {
                             {doctorInfo ? doctorInfo.specialty : ''}
                         </p>
                     </div>
+                    <ChevronDown className={`user-dropdown-icon ${showUserDropdown ? 'user-dropdown-icon-rotated' : ''}`} />
+
+                    {/* User Dropdown */}
+                    {showUserDropdown && (
+                        <div className="user-dropdown-menu">
+                            <button
+                                onClick={handleLogoutClick}
+                                className="user-dropdown-item logout-item"
+                            >
+                                <LogOut className="dropdown-item-icon" />
+                                <span>Log Out</span>
+                            </button>
+                        </div>
+                    )}
                 </div>
             </header >
 
@@ -302,6 +400,7 @@ const DoctorDashboard = () => {
                             >
                                 <option value="all">All Status</option>
                                 <option value="Pending">Pending</option>
+                                <option value="Assigned">Assigned to Lab</option>
                                 <option value="Tested">Tested</option>
                                 <option value="Diagnosed">Diagnosed</option>
                                 <option value="Referred">Referred</option>
@@ -352,8 +451,12 @@ const DoctorDashboard = () => {
                     selectedSubmission={selectedSubmission}
                     selectedLab={selectedLab}
                     setSelectedLab={setSelectedLab}
+                    selectedTestType={selectedTestType}
+                    setSelectedTestType={setSelectedTestType}
                     showLabDropdown={showLabDropdown}
                     setShowLabDropdown={setShowLabDropdown}
+                    showTestTypeDropdown={showTestTypeDropdown}
+                    setShowTestTypeDropdown={setShowTestTypeDropdown}
                     handleAssignToLab={handleAssignToLab}
                     handleCloseModal={handleCloseModal}
                 />
@@ -370,6 +473,13 @@ const DoctorDashboard = () => {
                     handleCloseModal={handleCloseModal}
                 />
             )}
+
+            {/* Logout Confirmation Modal */}
+            <LogoutModal
+                showModal={showLogoutModal}
+                onConfirmLogout={handleLogoutConfirm}
+                onCancelLogout={handleLogoutCancel}
+            />
         </div >
     );
 };

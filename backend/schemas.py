@@ -38,7 +38,7 @@ class PatientOut(BaseModel):
     id: int
     name: str
     age: int
-    gender: str
+    gender: Optional[str] = None
     phone: Optional[str] = None
     email: Optional[str] = None
     address: Optional[str] = None
@@ -115,6 +115,16 @@ class SymptomDetails(BaseModel):
     submittedAt: datetime
     diagnoses: List[DiagnosisOut]
     consent: ConsentOut
+
+class TestRequestOut(BaseModel):
+    id: str
+    doctor: DoctorOut  # Use DoctorOut schema for doctor details
+    request_time: Optional[str] = None
+    patient: PatientOut  # Use PatientOut schema for patient details
+    test_type: str
+    status: str
+    upload_token: str
+    uploaded_result_path: Optional[str] = None
 
 class ReferralCreate(BaseModel):
     symptom_id: int

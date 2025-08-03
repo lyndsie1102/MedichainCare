@@ -3,14 +3,15 @@ from fastapi import APIRouter, Depends, File, UploadFile, HTTPException, FastAPI
 from sqlalchemy.orm import Session
 from jose import jwt
 from database import SessionLocal, get_db
-from models import User, Symptom, RoleEnum, Consent, Patient, ConsentPurpose, Diagnosis, Doctor, MedicalLab, TestRequest, SymptomStatus, Referral, TestResults, TestType, TokenBlacklist
-from schemas import UserCreate, UserOut, SymptomCreate, SymptomOut, ConsentOut, PatientOut, DiagnosisOut, PatientSymptomDetails, DoctorOut, DiagnosisCreate, MedicalLabs, LabAssignmentCreate, LabAssignmentOut, ReferralCreate, SymptomHistory, SymptomDetails, TestResultOut
+from models import User, Symptom, RoleEnum, Consent, Patient, ConsentPurpose, Diagnosis, Doctor, MedicalLab, TestRequest, SymptomStatus, Referral, TestResults, TestType, TokenBlacklist, LabStaff, TestRequestStatus
+from schemas import UserCreate, UserOut, SymptomCreate, SymptomOut, ConsentOut, PatientOut, DiagnosisOut, PatientSymptomDetails, DoctorOut, DiagnosisCreate, MedicalLabs, LabAssignmentCreate, LabAssignmentOut, ReferralCreate, SymptomHistory, SymptomDetails, TestResultOut, TestRequestOut
 from fastapi.security import OAuth2PasswordRequestForm
 import os
 import shutil
 from typing import List, Optional, Union
 from .auth import authenticate_user, create_access_token, get_password_hash, verify_role, oauth2_scheme, SECRET_KEY, ALGORITHM
-from datetime import datetime
+from datetime import datetime, date, time
+from uuid import uuid4
 
 router = APIRouter()
 
@@ -118,7 +119,18 @@ def get_patient_details(
     # Return patient name (from the User table)
     return {"name": patient.name}
 
-
+@router.get("/lab-staff/me")
+def get_lab_staff_details(
+    current_user: User = Depends(verify_role(RoleEnum.LAB_STAFF)),
+    db: Session = Depends(get_db)
+):
+    lab_staff = db.query(User).filter(User.id == current_user.id).first()
+    
+    if not lab_staff:
+        raise HTTPException(status_code=404, detail="Lab staff details not found")
+    
+    return {"name": lab_staff.name}
+    
     
 @router.post("/login")
 def login(form: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
@@ -361,43 +373,55 @@ def get_symptom_history(
 
 @router.get("/doctor-dashboard/", response_model=List[SymptomOut])
 def get_doctor_dashboard(
-    status: Optional[str] = None, search: Optional[str] = None,
+    status: Optional[str] = None,  # Status filter added
+    search: Optional[str] = None,
     current_user: User = Depends(verify_role(RoleEnum.DOCTOR)),
     db: Session = Depends(get_db)
 ):
     symptoms_out = []
 
-    # Query for symptoms related to the current doctor as a GP, referred doctor, and research symptoms
-    gp_symptoms = (
-        db.query(Symptom)
-        .select_from(Symptom)
-        .join(Patient, Patient.id == Symptom.patient_id)
-        .filter(Patient.gp_id == current_user.id)
-        .all()
-    )
+    # Base query for symptoms related to the current doctor
+    base_query = db.query(Symptom).join(Patient, Patient.id == Symptom.patient_id)
+
+    # Query for GP symptoms (GP for current doctor)
+    gp_symptoms = base_query.filter(Patient.gp_id == current_user.id).all()
+
+    # Query for referred symptoms (where current doctor is the referral doctor)
     referred_symptoms = db.query(Symptom).join(Consent).filter(
         Consent.doctor_id == current_user.id,
         Consent.consent_type == ConsentPurpose.REFERRAL,
         Consent.is_granted == True
     ).all()
+
+    # Query for research symptoms (where current doctor is involved in research)
     research_symptoms = db.query(Symptom).join(Consent).filter(
         Consent.consent_type == ConsentPurpose.RESEARCH,
         Consent.is_granted == True
     ).all()
 
     # Combine all symptoms
-    all_symptoms = {s.id: s for s in gp_symptoms + referred_symptoms + research_symptoms}.values()
+    all_symptoms = gp_symptoms + referred_symptoms + research_symptoms
 
+    # Apply status filter if provided
+    if status:
+        status = status.lower()  # Normalize to lowercase
+        all_symptoms = [s for s in all_symptoms if s.status.lower() == status]
+
+    # Sort symptoms by timestamp in descending order
     sorted_symptoms = sorted(all_symptoms, key=lambda s: s.timestamp, reverse=True)
+
+    # Filter by search term if provided
     for symptom in sorted_symptoms:
         patient = db.query(Patient).filter(Patient.id == symptom.patient_id).first()
         user = db.query(User).filter(User.id == symptom.patient_id).first()
+
         if search:
             search_text = search.lower()
+            # Filter symptoms by symptom description or patient name
             if search_text not in symptom.symptoms.lower() and (user.name is None or search_text not in user.name.lower()):
                 continue
         
-        # Prepare the symptom data once (common for all cases)
+        # Prepare the symptom data
         symptoms_out.append(SymptomOut(
             id=symptom.id,
             symptoms=symptom.symptoms,
@@ -412,10 +436,10 @@ def get_doctor_dashboard(
                 phone=patient.phone_number,
                 email=patient.email,
                 address=patient.location
-                )
-            ))
+            )
+        ))
+    
     return symptoms_out
-
 
 @router.get("/symptom_details/{symptom_id}", response_model=Union[PatientSymptomDetails, SymptomDetails])
 def get_symptom_details(
@@ -643,9 +667,9 @@ def assign_lab(
 ):
     symptom = db.query(Symptom).filter_by(id=payload.symptom_id).first()
     lab = db.query(MedicalLab).filter_by(id=payload.lab_id).first()
-    test_type_id = db.query(TestType).filter_by(id=payload.test_type_id).first()
+    test_type = db.query(TestType).filter_by(id=payload.test_type_id).first()
 
-    if not symptom or not lab or not test_type_id:
+    if not symptom or not lab or not test_type:
         raise HTTPException(status_code=404, detail="Symptom or Lab or Test type not found")
     
     # ✅ Only allow assignment if symptom is in pending or referred state
@@ -655,56 +679,98 @@ def assign_lab(
             detail="Only pending or referred symptoms can be assigned to labs"
         )
     
-
-
     assignment = TestRequest(
         symptom_id=payload.symptom_id,
         lab_id=payload.lab_id,
         doctor_id=current_user.id,  # Use the current doctor's ID
-        test_type_id=test_type_id,
+        test_type_id=test_type.id,
         upload_token=str(uuid4())
     )
     db.add(assignment)
 
     # Update symptom status to Tested
-    symptom.status = SymptomStatus.TESTED
-
+    symptom.status = SymptomStatus.ASSIGNED
 
     db.commit()
     db.refresh(assignment)
     return assignment
 
 
-@router.get("/dashboard/{lab_id}")
-def get_lab_dashboard(lab_id: int, 
-                      current_user: User = Depends(verify_role(RoleEnum.LAB_STAFF)),
-                      db: Session = Depends(get_db)):
+@router.get("/test-requests", response_model=List[TestRequestOut])
+def get_lab_dashboard(
+    status: Optional[str] = None,
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None,
+    current_user: User = Depends(verify_role(RoleEnum.LAB_STAFF)),
+    db: Session = Depends(get_db)
+):
+    # Get lab staff information
+    lab_staff = db.query(LabStaff).filter_by(id=current_user.id).first()
+    lab_id = lab_staff.lab_id
+    
+    # Start the base query
+    query = db.query(TestRequest).filter_by(lab_id=lab_id)
+    
+    # Apply filters based on the query parameters
+    if status:
+        query = query.filter(TestRequest.status == status.upper())  # Normalize to uppercase
+    
+    if start_date:
+        # Convert start_date (date) to datetime at the start of the day
+        start_datetime = datetime.combine(start_date, time.min)
+        query = query.filter(TestRequest.requested_at >= start_datetime)
+    
+    if end_date:
+        # Convert end_date (date) to datetime at the end of the day
+        end_datetime = datetime.combine(end_date, time.max)
+        query = query.filter(TestRequest.requested_at <= end_datetime)
+
+    # Sort by `requested_at` in descending order
+    query = query.order_by(TestRequest.requested_at.desc())
+        
+    # Join the necessary tables
     assignments = (
-        db.query(TestRequest)
-        .filter_by(lab_id=lab_id)
-        .join(Symptom)
+        query.join(Symptom, Symptom.id == TestRequest.symptom_id)  # Join TestRequest and Symptom
+        .join(Doctor, Doctor.id == TestRequest.doctor_id)  # Join Doctor
+        .join(Patient, Patient.id == Symptom.patient_id)  # Join Patient via Symptom
+        .join(TestType, TestType.id == TestRequest.test_type_id)  # Join TestType
         .all()
     )
 
     results = []
     for assign in assignments:
-        patient = db.query(User).filter_by(id=assign.symptom.patient_id).first()
-        results.append({
-            "patient_name": patient.name,
-            "email": patient.email,
-            "phone": patient.phone_number,
-            "location": patient.location,
-            "upload_token": assign.upload_token,
-            "upload_url": f"/lab/upload/{assign.upload_token}",
-            "status": "Uploaded" if assign.uploaded_result_path else "Pending",
-            "uploaded_result_path": assign.uploaded_result_path
-        })
+        # Get associated data
+        patient = db.query(Patient).filter_by(id=assign.symptom.patient_id).first()
+        user = db.query(User).filter_by(id=patient.id).first()
+        doctor = db.query(Doctor).filter_by(id=assign.doctor_id).first()
+        test_type = db.query(TestType).filter_by(id=assign.test_type_id).first()
 
+        # Prepare response for each test request
+        results.append(TestRequestOut(
+                id=str(assign.id),
+                doctor=DoctorOut(
+                    id=doctor.id,
+                    name=doctor.user.name,
+                    specialty=doctor.specialty
+                ),
+                request_time=assign.requested_at.isoformat() if assign.requested_at else None,
+                patient=PatientOut(
+                    id=patient.id,
+                    name=user.name,
+                    age=user.age,
+                    phone=patient.phone_number,
+                    email=patient.email,
+                    location=patient.location
+                ),
+                test_type=test_type.name if test_type else "Unknown Test Type",
+                status="Uploaded" if assign.uploaded_result_path else "Pending",
+                upload_token=assign.upload_token,
+                uploaded_result_path=assign.uploaded_result_path
+        ))
     return results
 
 
-
-@router.post("/upload/{token}")
+@router.post("/lab/upload/{token}")
 def upload_lab_result(
     token: str, 
     files: List[UploadFile] = File(...),  # Accepting multiple files
@@ -743,10 +809,11 @@ def upload_lab_result(
     # Update the TestRequest table with the uploaded result file paths and time
     assignment.uploaded_result_path = uploaded_files[0]["path"]  # You can choose how to represent the first file path
     assignment.uploaded_at = datetime.utcnow()
-    assignment.status = SymptomStatus.COMPLETED
+    assignment.symptom.status = SymptomStatus.TESTED
+    assignment.status = TestRequestStatus.UPLOADED
     db.commit()
 
-    return {"message": f"{len(files)} file(s) uploaded successfully."}
+    return {"message": f"{len(files)} file(s) uploaded successfully.", "status": "Uploaded"}
 
 
 @router.post("/refer")

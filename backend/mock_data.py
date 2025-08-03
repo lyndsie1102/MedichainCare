@@ -72,11 +72,12 @@ def create_patient(db: Session, user: User, doctors: list[User]) -> Patient:
     return patient
 
 
-def create_lab_staff(db: Session, user: User) -> LabStaff:
+def create_lab_staff(db: Session, user: User, lab: MedicalLab) -> LabStaff:
     lab_staff = LabStaff(
         id=user.id,
         location=fake.city(),
-        specialties=fake.word()
+        specialties=fake.word(),
+        lab_id=lab.id
     )
     db.add(lab_staff)
     db.commit()
@@ -152,7 +153,7 @@ def create_symptom(db: Session, patient: Patient) -> Symptom:
         patient_id=patient.id,
         symptoms=fake.text(max_nb_chars=50),
         image_paths=image_paths,
-        status=random.choice(list(SymptomStatus)),
+        status=SymptomStatus.PENDING,  # Initial status is "PENDING"
         timestamp=datetime.now(timezone.utc),
         consent_treatment=consent_treatment,
         consent_referral=consent_referral,
@@ -162,6 +163,7 @@ def create_symptom(db: Session, patient: Patient) -> Symptom:
     db.commit()
     db.refresh(symptom)
     return symptom
+
 
 def create_consents_for_symptom(db: Session, symptom: Symptom, patient: Patient):
     # Get GP user
@@ -235,6 +237,7 @@ def create_consent(db: Session, symptom: Symptom, patient: Patient, doctor: User
 
 
 def create_test_request(db: Session, symptom: Symptom, lab: MedicalLab, doctor: Doctor, test_type: TestType) -> TestRequest:
+    # Create the TestRequest entry
     test_request = TestRequest(
         symptom_id=symptom.id,
         lab_id=lab.id,
@@ -246,7 +249,14 @@ def create_test_request(db: Session, symptom: Symptom, lab: MedicalLab, doctor: 
     db.add(test_request)
     db.commit()
     db.refresh(test_request)
+
+    # After creating the test request, update the symptom status to "Assigned"
+    symptom.status = SymptomStatus.ASSIGNED
+    db.commit()
+    db.refresh(symptom)  # Refresh to get the updated status
+
     return test_request
+
 
 def create_test_results(db: Session, test_request: TestRequest) -> TestResults:
     # Randomly generating test result data
@@ -275,16 +285,16 @@ def create_test_results(db: Session, test_request: TestRequest) -> TestResults:
     # Commit the new test result to the database
     db.add(test_result)
 
-    
     # ✅ Update TestRequest and Symptom statuses
     test_request.uploaded_result_path = files[0]["file_url"]
     test_request.status = "uploaded"
-    test_request.symptom.status = SymptomStatus.TESTED  # update symptom status
+    test_request.symptom.status = SymptomStatus.TESTED  # Update symptom status to "Tested"
     
     db.commit()
     db.refresh(test_result)  # Refresh to get the updated record with the ID
 
     return test_result
+
 
 def seed_db():
     print("Seeding database...")
@@ -293,6 +303,7 @@ def seed_db():
     try:
         users = []
         doctors = []
+        labs = []  # Track created medical labs
 
         # Step 1: Create users with different roles
         for role in ['DOCTOR', 'PATIENT', 'LAB_STAFF']:
@@ -303,11 +314,14 @@ def seed_db():
                     create_doctor(db, user)
                     doctors.append(user)
                 elif role == 'LAB_STAFF':
-                    create_lab_staff(db, user)
+                    # Assign each lab staff to a medical lab
+                    lab = random.choice(labs) if labs else create_medical_lab(db)
+                    create_lab_staff(db, user, lab)
 
-        # Step 2: Create medical labs
+        # Step 2: Create medical labs (if not already created)
         for _ in range(5):  # Create 5 medical labs
-            create_medical_lab(db)
+            lab = create_medical_lab(db)
+            labs.append(lab)
 
         # Step 3: Create test types
         create_test_type(db)
@@ -343,7 +357,8 @@ def seed_db():
                     
                     # Now create test results for the test request
                     create_test_results(db, test_request)
-            print("✅ Database seeded successfully.")
+
+        print("✅ Database seeded successfully.")
     finally:
         db.close()
 

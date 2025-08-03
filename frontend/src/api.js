@@ -201,3 +201,68 @@ export const getTestTypes = async (token) => {
   });
   return res.data;
 };
+
+export const createTestRequest = async (token, payload) => {
+  try {
+    const res = await axios.post(`${API_URL}/assign-lab/`, payload, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      }
+    });
+    return res.data;
+  } catch (error) {
+    console.error('Error creating test request:', error);
+    throw error;
+  }
+};
+
+//Lab dashboard API
+export const getLabStaffInfo = async (token) => {
+  const res = await axios.get(`${API_URL}/lab-staff/me`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+  return res.data;
+};
+
+export const getTestRequests = async(token) => {
+  const res = await axios.get(`${API_URL}/test-requests/`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+  return res.data;
+};
+
+
+export const uploadLabResult = async (upload_token, access_token, files) => {
+  const formData = new FormData();
+  
+  // Ensure files are iterable (FileList or Array)
+  if (files.length === 0) {
+    throw new Error("No files selected.");
+  }
+
+  files.forEach((file) => {
+    formData.append("files", file);  // Use the correct key name
+  });
+
+  try {
+    const res = await axios.post(`${API_URL}/lab/upload/${upload_token}`, formData, {
+      headers: {
+        Authorization: `Bearer ${access_token}`,  // Bearer token for authorization
+        "Content-Type": "multipart/form-data",
+      }
+    });
+
+    if (res.status === 200) {
+      return res.data;
+    } else {
+      throw new Error(`Failed to upload. Status: ${res.status}`);
+    }
+  } catch (error) {
+    throw new Error(error.response ? error.response.data.message : "Failed to upload lab results");
+  }
+};

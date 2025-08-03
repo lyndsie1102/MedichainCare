@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Camera, Clock, CheckCircle, ClipboardCheck, BadgeCheck, Eye, ArrowRight, FilterIcon } from 'lucide-react';
+import { Calendar, Camera, Clock, CheckCircle, BadgeCheck, Eye, ArrowRight, FilterIcon, FileCheck, FlaskRound } from 'lucide-react';
 
 // Updated getStatusIcon to include the new status "Referred" and respective class names
 const getStatusIcon = (status) => {
@@ -7,7 +7,9 @@ const getStatusIcon = (status) => {
     case 'Pending':
       return <Clock className="status-icon status-icon-pending" />;
     case 'Tested':
-      return <ClipboardCheck className="status-icon status-icon-review" />;
+      return <FileCheck className="status-icon status-icon-tested" />;
+    case 'Assigned to Lab':
+      return <FlaskRound className="status-icon status-icon-assigned" />;
     case 'Diagnosed':
       return <CheckCircle className="status-icon status-icon-diagnosed" />;
     case 'Completed':
@@ -25,7 +27,9 @@ const getStatusColor = (status) => {
     case 'Pending':
       return 'status-badge status-badge-pending';
     case 'Tested':
-      return 'status-badge status-badge-review';
+      return 'status-badge status-badge-tested';
+    case 'Assigned to Lab':
+      return 'status-badge status-badge-assigned';
     case 'Diagnosed':
       return 'status-badge status-badge-diagnosed';
     case 'Completed':
@@ -36,6 +40,7 @@ const getStatusColor = (status) => {
       return 'status-badge status-badge-gray';
   }
 };
+
 
 // Format the date and time into a human-readable format
 const formatDate = (dateString) => {
@@ -95,6 +100,7 @@ const SubmissionHistory = ({ submissions, handleViewClick, setStatusFilter, setS
             >
               <option value="all">All Status</option>
               <option value="Pending">Pending</option>
+              <option value="Assigned">Assigned to Lab</option>
               <option value="Tested">Tested</option>
               <option value="Diagnosed">Diagnosed</option>
               <option value="Completed">Completed</option>

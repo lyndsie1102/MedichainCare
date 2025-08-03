@@ -1,21 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { X, ChevronDown } from 'lucide-react';
 import { getMedicalLabs } from '../api';
-import { getTestTypes } from '../api'; // Import the getTestTypes API function
+import { getTestTypes } from '../api';
 
 const AssignModal = ({
     selectedSubmission,
     selectedLab,
     setSelectedLab,
+    selectedTestType,
+    setSelectedTestType,
     showLabDropdown,
     setShowLabDropdown,
+    showTestTypeDropdown,
+    setShowTestTypeDropdown,
     handleAssignToLab,
     handleCloseModal
 }) => {
     const [labs, setLabs] = useState([]);
-    const [testTypes, setTestTypes] = useState([]); // State to hold test types
-    const [selectedTestType, setSelectedTestType] = useState('');
-    const [showTestTypeDropdown, setShowTestTypeDropdown] = useState(false);
+    const [testTypes, setTestTypes] = useState([]);
 
     // Fetch labs data
     useEffect(() => {
@@ -96,7 +98,7 @@ const AssignModal = ({
                                 onClick={() => setShowTestTypeDropdown(!showTestTypeDropdown)}
                                 className="dropdown-button dropdown-button-orange"
                             >
-                                <span>{selectedTestType || 'Select Test Type'}</span>
+                                <span>{selectedTestType ? selectedTestType.name : 'Select Test Type'}</span>
                                 <ChevronDown className={`dropdown-icon ${showTestTypeDropdown ? 'dropdown-icon-rotated' : ''}`} />
                             </button>
 
@@ -106,7 +108,7 @@ const AssignModal = ({
                                         <button
                                             key={testType.id}
                                             onClick={() => {
-                                                setSelectedTestType(testType.name); // Update the selected test type name
+                                                setSelectedTestType(testType); // Update the selected test type name
                                                 setShowTestTypeDropdown(false);
                                             }}
                                             className="dropdown-item"
@@ -120,8 +122,9 @@ const AssignModal = ({
 
                         {/* Confirm Button */}
                         {selectedLab && selectedTestType && (
+                            console.log("Rendering the Confirm button"),
                             <button onClick={handleAssignToLab} className="btn btn-confirm">
-                                Confirm Assignment to {selectedLab.name} for {selectedTestType}
+                                Confirm Assignment to {selectedLab.name} for {selectedTestType.name}
                             </button>
                         )}
                     </div>

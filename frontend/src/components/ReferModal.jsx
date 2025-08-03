@@ -1,4 +1,3 @@
-// components/ReferModal.jsx
 import React, { useEffect, useState } from 'react';
 import { X, ChevronDown } from 'lucide-react';
 import { getAllDoctors } from '../api';

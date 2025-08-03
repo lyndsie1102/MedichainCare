@@ -10,7 +10,6 @@ body {
   margin: 0 auto;
   padding: 0 1rem;
   min-height: 100vh;
-  /* ensures full viewport height */
   display: flex;
   flex-direction: column;
 }
@@ -78,7 +77,6 @@ body {
 .form-container {
   display: flex;
   flex-direction: column;
-  /* vertical stacking */
   height: 100%;
 }
 
@@ -88,7 +86,6 @@ body {
   padding: 1.5rem;
   border-radius: 1rem 1rem 0 0;
   margin: 0;
-  /* no margin here */
 }
 
 .form-section {
@@ -97,7 +94,6 @@ body {
   border-radius: 0 0 1rem 1rem;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
   margin-top: 0;
-  /* no gap between header & form */
   flex-grow: 1;
 }
 
@@ -105,16 +101,13 @@ body {
 .form-header h2 {
   color: white;
   font-size: 1.25rem;
-  /* equivalent to text-xl */
   font-weight: bold;
   margin-bottom: 0.5rem;
 }
 
 .form-header p {
   color: #ffedd5;
-  /* tailwind's orange-100 */
   font-size: 0.875rem;
-  /* text-sm */
 }
 
 
@@ -135,9 +128,7 @@ form textarea {
   border: 1px solid #d1d5db;
   resize: none;
   min-height: 150px;
-  /* or any height you want */
   box-sizing: border-box;
-  /* ensure padding is included in height */
 }
 
 form input[type="file"] {
@@ -168,9 +159,7 @@ button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
   background-color: #ccc;
-  /* optional: change background */
   color: white;
-  /* optional: dim text color */
 }
 
 
@@ -233,8 +222,7 @@ button:disabled {
   gap: 0.25rem;
 }
 
-/*Landing page styles
-/* Shared */
+/*Landing page styles*/
 .container-landing {
   padding-bottom: 2rem;
 }
@@ -416,7 +404,6 @@ button:disabled {
   align-items: flex-start;
   gap: 3rem;
   flex-wrap: wrap;
-  /* Ensures responsiveness */
   padding: 3rem 1rem;
   background: #f9fafb;
   border-top: 1px solid #e5e7eb;
@@ -803,9 +790,7 @@ button:disabled {
 
 .consent-section input[type="checkbox"]:focus {
   outline: none;
-  /* Remove default focus outline */
   border-color: #FFA500;
-  /* Keep the orange border on focus */
 }
 
 .consent-section label {
@@ -922,28 +907,28 @@ button:disabled {
   height: 100px;
   object-fit: cover;
   object-position: center;
-  border-radius: 4px; /* Optional: rounded corners for the image */
+  border-radius: 4px;
 }
 
 .remove-icon {
   position: absolute;
-  top: -8px; /* Adjust so the icon is outside the image */
-  right: -8px; /* Position the icon outside the top-right corner */
-  font-size: 20px; /* Size of the "X" icon */
-  color: #fff; /* White color for the "X" */
-  background-color: rgba(0, 0, 0, 0.6); /* Semi-transparent black background */
+  top: -8px;
+  right: -8px; 
+  font-size: 20px; 
+  color: #fff; 
+  background-color: rgba(0, 0, 0, 0.6);
   border-radius: 50%;
-  width: 20px; /* Size of the icon circle */
-  height: 20px; /* Size of the icon circle */
+  width: 20px; 
+  height: 20px;
   display: flex;
   justify-content: center;
   align-items: center;
   cursor: pointer;
-  z-index: 10; /* Ensure it appears on top of the image */
+  z-index: 10;
 }
 
 .remove-icon:hover {
-  background-color: rgba(0, 0, 0, 0.8); /* Darken on hover */
+  background-color: rgba(0, 0, 0, 0.8);
 }
 
 /* Modal styles*/
@@ -978,8 +963,8 @@ button:disabled {
   color: #64748b;
 }
 
-textarea::placeholder {         /* Match your normal text color */
-  font-size: 1rem;     /* Match your text size */
+textarea::placeholder {         
+  font-size: 1rem;  
   color: #6b7280;
   font-size: 13px;
 }
@@ -1053,8 +1038,8 @@ button, input, select, textarea {
 
 
 .filter-group select {
-  display: block; /* Ensures select takes full width */
-  margin-bottom: 16px; /* Optional, adds space between inputs */
+  display: block;
+  margin-bottom: 16px;
   width: fit-content;
 }
 
@@ -1062,11 +1047,13 @@ button, input, select, textarea {
 /* Filters Section Styles */
 .filters-section {
   margin-bottom: 2rem;
-  padding: 1.5rem;
+  padding: 1rem;
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
   border-radius: 0.75rem;
   border: 1px solid #e2e8f0;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  height: 150px;
+  flex:0;
 }
 
 .filters-header {
@@ -1138,13 +1125,9 @@ button, input, select, textarea {
   gap: 0.75rem;
 }
 
-
-.filters-section {
-  padding: 1rem;
-}
-
 .history-section {
-  flex: 1;
+   display: flex;
+  flex-direction: column;
   overflow: auto;
   border: 1px solid #f3f4f6;
   box-shadow: 0px 4px 6px -4px rgba(0, 0, 0, 0.1), 0px 10px 15px -3px rgba(0, 0, 0, 0.1);

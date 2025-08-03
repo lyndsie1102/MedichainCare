@@ -255,10 +255,16 @@
   border-color: #fdba74;
 }
 
-.status-badge-review {
+.status-badge-tested {
   background-color: #dbeafe;
   color: #1e40af;
   border-color: #93c5fd;
+}
+
+.status-badge-assigned {
+  background-color: #fef3c7; /* Light Amber/Yellow */
+  color: #f59e0b; /* Amber */
+  border-color: #fcd34d; /* Slightly darker yellow */
 }
 
 .status-badge-diagnosed {
@@ -294,8 +300,12 @@
   color: #f97316;
 }
 
-.status-icon-review {
+.status-icon-tested {
   color: #3b82f6;
+}
+
+.status-icon-assigned {
+  color: #fbbf24;
 }
 
 .status-icon-diagnosed {
@@ -306,12 +316,16 @@
   color: #8b5cf6;
 }
 
-.status-icon-review {
+.status-icon-tested {
   color: #6366f1;
 }
 
 .status-icon-gray {
   color: #6b7280;
+}
+
+.status-icon-assigned {
+  color: #f59e0b;
 }
 
 .status-text {

@@ -124,7 +124,6 @@ const PatientDashboard = () => {
       localStorage.removeItem('access_token');
       localStorage.removeItem('user');
   
-      alert('Successfully logged out. Redirecting to login page...');
       window.location.href = '/login';
     } catch (error) {
       console.error('Logout error:', error);

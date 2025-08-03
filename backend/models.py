@@ -15,6 +15,7 @@ class SymptomStatus(str, Enum):
     DIAGNOSED = "Diagnosed"
     COMPLETED = "Completed"
     REFERRED = "Referred"
+    ASSIGNED = "Assigned to Lab"
 
 class GenderEnum(str, Enum):
     MALE = "male"
@@ -66,12 +67,13 @@ class Patient(Base):
     location = Column(String, nullable=False)
     phone_number = Column(String, nullable=True)
     email = Column(String, nullable=True)
-    
+
 class LabStaff(Base):
     __tablename__ = "lab_staff"
     id = Column(Integer, ForeignKey("users.id"), primary_key=True)
     location = Column(String, nullable=False)   
     specialties = Column(String, nullable=False)
+    lab_id = Column(Integer, ForeignKey("medical_labs.id"))
 
 class MedicalLab(Base):
     __tablename__ = "medical_labs"

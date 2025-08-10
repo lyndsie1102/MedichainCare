@@ -7,20 +7,16 @@ import {
     Upload,
     Calendar,
     ChevronDown,
-    LogOut,
     User,
     Phone,
     Mail,
     MapPin,
     Clock,
-    FileCheck,
-    FlaskRound,
     CheckCircle,
-    BadgeCheck,
-    ArrowRight,
-    X,
-    Hand
+    LogOut,
+    X
 } from 'lucide-react';
+import LogoutModal from '../components/LogoutModal';  // Import your LogoutModal component
 import { getTestRequests, uploadLabResult, logout, getLabStaffInfo } from '../api.js';  // Import your API functions
 
 const getStatusIcon = (status) => {
@@ -50,6 +46,7 @@ const LabStaffDashboard = ({ accessToken }) => {
     const [testRequests, setTestRequests] = useState([]);
     const [selectedRequest, setSelectedRequest] = useState(null);
     const [modalType, setModalType] = useState(null);
+    const [resultSummary, setResultSummary] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
     const [showUserDropdown, setShowUserDropdown] = useState(false);
@@ -390,6 +387,12 @@ const LabStaffDashboard = ({ accessToken }) => {
                 </div>
             )}
 
+            {/* Logout Confirmation Modal */}
+            <LogoutModal
+                showModal={showLogoutModal}
+                onConfirmLogout={handleLogoutConfirm}
+                onCancelLogout={handleLogoutCancel}
+            />
         </div >
     );
 };

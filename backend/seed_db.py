@@ -9,24 +9,46 @@ from models import (
 )
 from database import SessionLocal
 from passlib.hash import bcrypt
+from brownie import accounts, network
 
 fake = Faker()
 
-def create_user(db: Session, role: str) -> User:
+
+def create_user(db: Session, role: str, account_index: int) -> User:
+    # Check if you're already connected to Ganache
+    if network.is_connected():
+        print("Already connected to Ganache.")
+    else:
+        network.connect('ganache-local')  # Ensure you're connected to the Ganache network
+
+    # Get Ganache accounts
+    ganache_accounts = accounts  # Brownie automatically loads accounts
+    if account_index >= len(ganache_accounts):
+        raise ValueError(f"Account index {account_index} is out of range. Ganache only has {len(ganache_accounts)} accounts.")
+
+    # Get the Ganache account based on account_index
+    user_account = ganache_accounts[account_index]
+    print(f"Creating user {role} with account: {user_account.address}")
+
+    # Create the user
     user = User(
         username=fake.user_name(),
-        hashed_password = bcrypt.hash("test123"),
+        hashed_password=bcrypt.hash("test123"),
         role=RoleEnum[role.upper()],
         name=fake.name(),
         gender=random.choice([GenderEnum.MALE, GenderEnum.FEMALE]),
         age=random.randint(18, 80),
         is_active=True,
         timestamp=datetime.now(timezone.utc),
+        eth_address=user_account.address,  # Store Ethereum address
     )
+
+    # Add user to DB
     db.add(user)
     db.commit()
     db.refresh(user)
     return user
+
 
 
 def create_doctor(db: Session, user: User) -> Doctor:
@@ -307,9 +329,11 @@ def seed_db():
 
         # Step 1: Create users with different roles
         for role in ['DOCTOR', 'PATIENT', 'LAB_STAFF']:
-            for _ in range(3):  # Create 3 users for each role
-                user = create_user(db, role)
+            for i in range(3):  # Create 3 users for each role
+                # Map Ganache account to user (using account_index)
+                user = create_user(db, role, account_index=i)
                 users.append(user)
+
                 if role == 'DOCTOR':
                     create_doctor(db, user)
                     doctors.append(user)
@@ -317,6 +341,7 @@ def seed_db():
                     # Assign each lab staff to a medical lab
                     lab = random.choice(labs) if labs else create_medical_lab(db)
                     create_lab_staff(db, user, lab)
+
 
         # Step 2: Create medical labs (if not already created)
         for _ in range(5):  # Create 5 medical labs

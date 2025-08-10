@@ -22,13 +22,18 @@ def verify_password(plain_password, hashed_password):
 def get_password_hash(password):
     return pwd_context.hash(password)
 
-def authenticate_user(db: Session, username: str, password: str):
+def authenticate_user(db: Session, username: str, password: str) -> User:
     user = db.query(models.User).filter(models.User.username == username).first()
+    
     if not user:
         return None
+
+    # Verify the password first
     if not verify_password(password, user.hashed_password):
         return None
+
     return user
+
 
 def create_access_token(data: dict, expires_delta: timedelta = None):
     to_encode = data.copy()

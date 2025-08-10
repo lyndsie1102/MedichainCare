@@ -12,6 +12,7 @@ from typing import List, Optional, Union
 from .auth import authenticate_user, create_access_token, get_password_hash, verify_role, oauth2_scheme, SECRET_KEY, ALGORITHM
 from datetime import datetime, date, time
 from uuid import uuid4
+from web3 import Web3
 
 router = APIRouter()
 
@@ -22,6 +23,9 @@ PATIENT_IMAGE_DIR = "uploads/lab_images"
 # Ensure directories exist
 os.makedirs(LAB_RESULT_DIR, exist_ok=True)
 os.makedirs(PATIENT_IMAGE_DIR, exist_ok=True)
+
+
+web3 = Web3(Web3.HTTPProvider('http://127.0.0.1:7545'))
 
 
 
@@ -138,7 +142,10 @@ def login(form: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get
     if not user:
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
-    access_token = create_access_token(data={"sub": user.username, "role": user.role})
+    access_token = create_access_token(data={"sub": user.username, 
+                                             "role": user.role, 
+                                             "eth_address": user.eth_address, 
+                                             "jti": str(uuid.uuid4())})
     return {"access_token": access_token, "token_type": "bearer"}
 
 

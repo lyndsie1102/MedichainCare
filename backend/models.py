@@ -49,6 +49,7 @@ class User(Base):
     age = Column(Integer, nullable=True)
     is_active = Column(Boolean, default=True)
     timestamp = Column(DateTime, default=datetime.utcnow)
+    eth_address = Column(String, nullable=False)  # Store the Ethereum address
 
     doctor = relationship("Doctor", back_populates="user", uselist=False)
 

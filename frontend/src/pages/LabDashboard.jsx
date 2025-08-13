@@ -114,11 +114,6 @@ const LabStaffDashboard = ({ accessToken }) => {
         return ''; // If no available day, return an empty string
     };
 
-    useEffect(() => {
-        const earliestAvailableDay = getEarliestAvailableDay(); // Get the earliest available date
-        handleDateSelect(earliestAvailableDay);
-    }, []);
-
     // Fetch lab staff info
     useEffect(() => {
         const fetchLabStaffInfo = async () => {
@@ -150,7 +145,7 @@ const LabStaffDashboard = ({ accessToken }) => {
 
     const handleDateSelect = (dateString) => {
         console.log('handleDateSelect called with:', dateString);
-        if (isDateInPast(dateString) || isDateFullyBooked(dateString)) {
+        if (!dateString || isDateInPast(dateString) || isDateFullyBooked(dateString)) {
             return;
         }
 
@@ -170,12 +165,6 @@ const LabStaffDashboard = ({ accessToken }) => {
 
         setAvailableSlots(available);
     };
-
-    // Auto-select earliest available date
-    useEffect(() => {
-        const earliest = getEarliestAvailableDay();
-        handleDateSelect(earliest);
-    }, []);
 
     //handle upload button click
     const handleUploadClick = (request) => {
@@ -205,10 +194,17 @@ const LabStaffDashboard = ({ accessToken }) => {
     const handleScheduleClick = (request) => {
         setSelectedRequest(request);
         setModalType('schedule');
-        setSelectedDate('');
         setSelectedTimeSlot('');
         setSelectedSuggestedSlot(null);
-        setAvailableSlots([]);
+        
+        // Auto-select the earliest available date when opening the modal
+        const earliestDate = getEarliestAvailableDay();
+        if (earliestDate) {
+            handleDateSelect(earliestDate);
+        } else {
+            setSelectedDate('');
+            setAvailableSlots([]);
+        }
     };
 
     // Handle upload results

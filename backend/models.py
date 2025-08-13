@@ -1,10 +1,10 @@
 from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Boolean
 from sqlalchemy.types import Enum as SQLEnum, JSON
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, Session
 from sqlalchemy.types import PickleType
 from sqlalchemy.ext.mutable import MutableList
 from database import Base
-from datetime import datetime
+from datetime import datetime, timedelta
 from enum import Enum, IntEnum 
 import uuid
 
@@ -13,7 +13,7 @@ class SymptomStatus(str, Enum):
     PENDING = "Pending"
     TESTED = "Tested"
     DIAGNOSED = "Diagnosed"
-    COMPLETED = "Completed"
+    WAITING = "Waiting for Test"
     REFERRED = "Referred"
     ASSIGNED = "Assigned to Lab"
 
@@ -35,8 +35,10 @@ class TestRequestStatus(str, Enum):
     PENDING = "pending"
     UPLOADED = "uploaded"
 
-status = Column(SQLEnum(TestRequestStatus, native_enum=False), default=TestRequestStatus.PENDING)
-
+class AppointmentStatus(str, Enum):
+    PENDING_PATIENT = "Pending_Patient"
+    PENDING_LAB = "Pending_Lab"
+    CONFIRMED = "Confirmed"
 
 class User(Base):
     __tablename__ = "users"
@@ -69,13 +71,6 @@ class Patient(Base):
     phone_number = Column(String, nullable=True)
     email = Column(String, nullable=True)
 
-class LabStaff(Base):
-    __tablename__ = "lab_staff"
-    id = Column(Integer, ForeignKey("users.id"), primary_key=True)
-    location = Column(String, nullable=False)   
-    specialties = Column(String, nullable=False)
-    lab_id = Column(Integer, ForeignKey("medical_labs.id"))
-
 class MedicalLab(Base):
     __tablename__ = "medical_labs"
     id = Column(Integer, primary_key=True)
@@ -86,6 +81,90 @@ class MedicalLab(Base):
     @property
     def specialties_list(self):
         return self.specialties.split(',')
+
+class Slot(Base):
+    __tablename__ = "slots"
+    
+    id = Column(Integer, primary_key=True)
+    lab_staff_id = Column(Integer, ForeignKey("lab_staff.id"), nullable=False)
+    start_time = Column(DateTime, nullable=False)  # Start time of the slot
+    end_time = Column(DateTime, nullable=False)  # End time of the slot
+    is_available = Column(Boolean, default=True)  # Whether the slot is available
+    
+    # Relationships
+    lab_staff = relationship("LabStaff", back_populates="slots")
+    appointments = relationship("Appointment", back_populates="slot")  # Fixed this to "appointments"
+    
+    @staticmethod
+    def generate_slots(lab_staff_id: int, date: datetime):
+        """
+        Generates slots for a given lab staff on a specific date.
+        Each slot is 30 minutes and the lunch break is between 12:00 PM - 1:30 PM.
+        """
+        slots = []
+        start_of_day = datetime.combine(date, datetime.min.time()) + timedelta(hours=9)  # 9:00 AM
+        end_of_day = datetime.combine(date, datetime.min.time()) + timedelta(hours=17)  # 5:00 PM
+        lunch_start = datetime.combine(date, datetime.min.time()) + timedelta(hours=12)  # 12:00 PM
+        lunch_end = datetime.combine(date, datetime.min.time()) + timedelta(hours=13, minutes=30)  # 1:30 PM
+
+        current_time = start_of_day
+        
+        while current_time < end_of_day:
+            # Skip the lunch break
+            if lunch_start <= current_time < lunch_end:
+                current_time = lunch_end
+                continue
+
+            # Create a new slot
+            slot_end_time = current_time + timedelta(minutes=30)
+            slots.append(Slot(
+                lab_staff_id=lab_staff_id,
+                start_time=current_time,
+                end_time=slot_end_time,
+                is_available=True
+            ))
+
+            # Move to the next slot
+            current_time = slot_end_time
+
+        return slots
+    
+class LabStaff(Base):
+    __tablename__ = "lab_staff"
+    id = Column(Integer, ForeignKey("users.id"), primary_key=True)
+    location = Column(String, nullable=False)
+    specialties = Column(String, nullable=False)
+    lab_id = Column(Integer, ForeignKey("medical_labs.id"))
+
+    appointments = relationship('Appointment', back_populates='lab_staff')
+    slots = relationship("Slot", back_populates="lab_staff")
+
+    @staticmethod
+    def get_slots_for_date(db: Session, lab_staff_id: int, date: datetime):
+        """Get all slots for a specific lab staff on a specific date."""
+        return db.query(Slot).filter(
+            Slot.lab_staff_id == lab_staff_id,
+            Slot.start_time >= datetime.combine(date, datetime.min.time()) + timedelta(hours=9),
+            Slot.end_time <= datetime.combine(date, datetime.min.time()) + timedelta(hours=17)
+        ).all()
+
+class Appointment(Base):
+    __tablename__ = "appointments"
+    
+    id = Column(Integer, primary_key=True)
+    slot_id = Column(Integer, ForeignKey("slots.id"), nullable=False)
+    test_request_id = Column(Integer, ForeignKey("test_requests.id"), nullable=True)
+    patient_id = Column(Integer, ForeignKey("patients.id"), nullable=False)
+    lab_staff_id = Column(Integer, ForeignKey("lab_staff.id"), nullable=False)
+    status = Column(SQLEnum(AppointmentStatus, native_enum=False), nullable=True)
+    confirmed_at = Column(DateTime, nullable=True)
+    rejected_at = Column(DateTime, nullable=True)
+
+    # Relationships
+    slot = relationship("Slot", back_populates="appointments")  # This is correct, references "appointments"
+    lab_staff = relationship('LabStaff', back_populates='appointments')
+
+
 
 class Symptom(Base):
     __tablename__ = "symptoms"

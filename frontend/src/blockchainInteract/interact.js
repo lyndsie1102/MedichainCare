@@ -1,81 +1,106 @@
 import Web3 from 'web3';
-import contractABI from '../abis/LogAudits.json'; // The ABI of your contract
+import { jwtDecode } from 'jwt-decode';
+import contractAddress from '../abis/contractAddress.json';
 
+
+// Declare global variables
 let web3;
 let contract;
+let currentAccount;
 
-// Check if MetaMask is available
-if (window.ethereum) {
-  // Initialize Web3 instance
-  web3 = new Web3(window.ethereum);
-  
-  try {
-    // Request account access
-    window.ethereum.request({ method: 'eth_requestAccounts' }).then(() => {
-      console.log("Metamask connected");
-    });
-  } catch (error) {
-    console.error("User denied account access");
+// Initialize Web3 (MetaMask or RPC)
+const initializeWeb3 = async () => {
+  if (web3) {
+    // If web3 is already initialized, skip initialization
+    console.log("Web3 already initialized");
+    return web3;
   }
-} else {
-  console.error("Metamask is not installed. Please install it.");
-}
 
-// Load Contract Address from JSON File
-const loadContractAddress = async () => {
-  try {
-    const response = await fetch("/contractAddress.json");
-    const data = await response.json();
-    return data.address;
-  } catch (error) {
-    console.error("Error loading contract address", error);
+  // Proceed with initialization if Web3 is not initialized
+  if (window.ethereum) {
+    try {
+      web3 = new Web3(window.ethereum);
+      
+      // Check if account is already connected
+      const accounts = await web3.eth.getAccounts();
+      if (accounts.length > 0) {
+        currentAccount = accounts[0];
+        console.log('MetaMask already connected:', currentAccount);
+      } else {
+        // Request MetaMask connection
+        await window.ethereum.request({ method: 'eth_requestAccounts' });
+        currentAccount = accounts[0];  // Set first account as the current account
+        console.log('MetaMask connected:', currentAccount);
+      }
+      console.log('Web3 initialized with MetaMask');
+    } catch (error) {
+      console.error('Error initializing Web3:', error);
+    }
+  } else {
+    // Fallback to local provider if MetaMask is not available
+    console.warn('MetaMask not detected, falling back to local provider.');
+    web3 = new Web3(new Web3.providers.HttpProvider('http://127.0.0.1:7545'));
   }
+
+  return web3;
 };
 
-// Load Account Dynamically
-const loadAccount = async () => {
-  try {
-    const accounts = await window.ethereum.request({
-      method: "eth_requestAccounts",
-    });
-    const account = web3.utils.toChecksumAddress(accounts[0]);
-    console.log("Account loaded: ", account);
-    return account;
-  } catch (error) {
-    console.error("Error loading account", error);
-  }
-};
 
-// Load Contract Dynamically
+// Load the contract address from a JSON file
 const loadContract = async () => {
+  console.log("Loading contract from address:", contractAddress.address);
+  return contractAddress.address;
+};
+
+
+// Get the current account from localStorage or MetaMask
+const loadAccount = () => {
+  const token = localStorage.getItem('access_token');
+  if (!token) {
+    throw new Error("No access token found.");
+  }
+
   try {
-    const contractAddress = await loadContractAddress(); // Fetch the address
-    contract = new web3.eth.Contract(contractABI, contractAddress); // Create contract instance with ABI and address
-    console.log("Contract loaded at:", contractAddress);
-    return contract;
+    const decodedToken = jwtDecode(token);
+    currentAccount = decodedToken.eth_address
+    console.log("Current account loaded:", currentAccount);
+    return decodedToken.eth_address || null;
   } catch (error) {
-    console.error("Error loading contract", error);
+    console.error("Error decoding token:", error);
+    return null;
   }
 };
 
-// Example function to submit symptom (using the dynamic account and contract)
-const submitSymptom = async (symptomDescription, treatmentConsent, referralConsent, researchConsent) => {
-  const account = await loadAccount(); // Dynamically load the account
-  const contract = await loadContract(); // Dynamically load the contract
 
+// Sign and send a transaction
+const signAndSendTransaction = async (method, params) => {
   try {
-    const tx = await contract.methods.submitSymptom(
-      symptomDescription,
-      treatmentConsent,
-      referralConsent,
-      researchConsent
-    ).send({ from: account });
+    if (!web3 || !currentAccount || !contract) {
+      throw new Error('Web3 or Contract not initialized.');
+    }
 
-    console.log("Transaction successful:", tx);
+    // Check if the method exists
+    if (!contract.methods[method]) {
+      throw new Error(`Method ${method} not found in contract.`);
+    }
+
+    // Execute contract method with given params
+    const transaction = await contract.methods[method](...params).send({
+      from: currentAccount,
+    });
+
+    console.log('Transaction successful:', transaction);
+    return transaction;
   } catch (error) {
-    console.error("Error submitting symptom:", error);
+    console.error('Error in signing and sending transaction:', error);
+    throw error;
   }
 };
 
-// Export the functions for use in your components
-export { loadAccount, loadContract, submitSymptom };
+// Export the functions for reuse in components
+export {
+  initializeWeb3,
+  loadContract,
+  loadAccount,
+  signAndSendTransaction,
+};

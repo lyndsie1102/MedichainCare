@@ -39,7 +39,7 @@ export const getPatientInfo = async (token) => {
 
 export const uploadImage = async (files) => {
   const formData = new FormData();
-  
+
   // Loop through each image and append each to FormData
   files.forEach(file => {
     formData.append('files', file);
@@ -63,7 +63,7 @@ export const uploadImage = async (files) => {
 
 export const submitSymptom = async (symptom, token) => {
   token = token || localStorage.getItem('token');
-  if(!token) {
+  if (!token) {
     throw new Error('No token provided');
   }
   const res = await axios.post(`${API_URL}/symptoms/`, symptom, {
@@ -87,7 +87,7 @@ export const getSymptomHistory = async (token, status = null, startDate = null, 
         Authorization: `Bearer ${token}`
       },
       params
-      }
+    }
     );
     return res.data;
   } catch (error) {
@@ -97,7 +97,7 @@ export const getSymptomHistory = async (token, status = null, startDate = null, 
 };
 
 
-export const getSymptom = async(symptom_id, token) => {
+export const getSymptom = async (symptom_id, token) => {
   const res = await axios.get(`${API_URL}/symptom/${symptom_id}`, {
     headers: {
       Authorization: `Bearer ${token}`
@@ -165,7 +165,7 @@ export const getMedicalLabs = async (token) => {
 
 
 export const getAllDoctors = async (token) => {
-   const res = await axios.get(`${API_URL}/doctors/`, {
+  const res = await axios.get(`${API_URL}/doctors/`, {
     headers: {
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json'
@@ -227,7 +227,7 @@ export const getLabStaffInfo = async (token) => {
   return res.data;
 };
 
-export const getTestRequests = async(token) => {
+export const getTestRequests = async (token) => {
   const res = await axios.get(`${API_URL}/test-requests/`, {
     headers: {
       Authorization: `Bearer ${token}`
@@ -237,9 +237,9 @@ export const getTestRequests = async(token) => {
 };
 
 
-export const uploadLabResult = async (upload_token, access_token, files) => {
+export const uploadLabResult = async (upload_token, access_token, files, summary) => {
   const formData = new FormData();
-  
+
   // Ensure files are iterable (FileList or Array)
   if (files.length === 0) {
     throw new Error("No files selected.");
@@ -248,6 +248,11 @@ export const uploadLabResult = async (upload_token, access_token, files) => {
   files.forEach((file) => {
     formData.append("files", file);  // Use the correct key name
   });
+
+  // Append the summary to the form data
+  if (summary) {
+    formData.append("summary", summary);  // Include the summary
+  }
 
   try {
     const res = await axios.post(`${API_URL}/lab/upload/${upload_token}`, formData, {

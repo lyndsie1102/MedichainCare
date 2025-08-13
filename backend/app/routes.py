@@ -1,16 +1,17 @@
 import uuid
-from fastapi import APIRouter, Depends, File, UploadFile, HTTPException, FastAPI
+from fastapi import APIRouter, Depends, File, UploadFile, HTTPException, FastAPI, Form
 from sqlalchemy.orm import Session
+from sqlalchemy import and_
 from jose import jwt
 from database import SessionLocal, get_db
-from models import User, Symptom, RoleEnum, Consent, Patient, ConsentPurpose, Diagnosis, Doctor, MedicalLab, TestRequest, SymptomStatus, Referral, TestResults, TestType, TokenBlacklist, LabStaff, TestRequestStatus
+from models import User, Symptom, RoleEnum, Consent, Patient, ConsentPurpose, Diagnosis, Doctor, MedicalLab, TestRequest, SymptomStatus, Referral, TestResults, TestType, TokenBlacklist, LabStaff, TestRequestStatus, AppointmentStatus, Appointment, Slot
 from schemas import UserCreate, UserOut, SymptomCreate, SymptomOut, ConsentOut, PatientOut, DiagnosisOut, PatientSymptomDetails, DoctorOut, DiagnosisCreate, MedicalLabs, LabAssignmentCreate, LabAssignmentOut, ReferralCreate, SymptomHistory, SymptomDetails, TestResultOut, TestRequestOut
 from fastapi.security import OAuth2PasswordRequestForm
 import os
 import shutil
 from typing import List, Optional, Union
 from .auth import authenticate_user, create_access_token, get_password_hash, verify_role, oauth2_scheme, SECRET_KEY, ALGORITHM
-from datetime import datetime, date, time
+from datetime import datetime, date, time, timedelta
 from uuid import uuid4
 from web3 import Web3
 
@@ -781,9 +782,11 @@ def get_lab_dashboard(
 def upload_lab_result(
     token: str, 
     files: List[UploadFile] = File(...),  # Accepting multiple files
+    summary: str = Form(None),
     current_user: User = Depends(verify_role(RoleEnum.LAB_STAFF)),
     db: Session = Depends(get_db)
 ):
+
     # Retrieve the test request based on the token
     assignment = db.query(TestRequest).filter_by(upload_token=token).first()
     
@@ -807,7 +810,7 @@ def upload_lab_result(
     test_result = TestResults(
         test_request_id=assignment.id,
         files=uploaded_files,  # Storing multiple files in the 'files' field
-        summary=None,  # Optionally add a summary
+        summary=summary,  # Optionally add a summary
         uploaded_at=datetime.utcnow()
     )
     
@@ -880,3 +883,195 @@ def get_test_types(db: Session = Depends(get_db), current_user: User = Depends(v
         raise HTTPException(status_code=404, detail="No test types found")
     
     return [{"id": tt.id, "name": tt.name} for tt in test_types]
+
+
+@router.post("/appointments/{test_request_id}/schedule")
+async def schedule_appointment(test_request_id: int, slot_id: int, 
+                               db: Session = Depends(get_db), 
+                               current_user: User = Depends(verify_role([RoleEnum.PATIENT, RoleEnum.LAB_STAFF]))):
+
+    # Check if test request exists
+    test_request = db.query(TestRequest).filter(TestRequest.id == test_request_id).first()
+    if not test_request:
+        raise HTTPException(status_code=404, detail="Test request not found")
+    
+    # Check if there's already confirmed
+    existing_appointment = db.query(Appointment).filter(Appointment.test_request_id == test_request_id).first()
+
+    # Access the associated symptom and patient_id
+    symptom = test_request.symptom  # This assumes that TestRequest has a relationship with Symptom
+    if not symptom:
+        raise HTTPException(status_code=404, detail="Symptom not found for the test request")
+    
+    patient_id = symptom.patient_id  # Access patient_id from the symptom
+
+    # Handle Lab Staff scheduling the appointment
+    if current_user.role == RoleEnum.LAB_STAFF:
+        #Verify if the lab staff is allowed to schedule appointments for this test request
+        if existing_appointment and existing_appointment.status in [AppointmentStatus.CONFIRMED, AppointmentStatus.PENDING_PATIENT]:
+            raise HTTPException(status_code=400, detail="Can not schedule an appointment which confirmed or pending from patient side")
+
+        if slot_id:
+            # Find the slot and check availability
+            slot = db.query(Slot).filter(Slot.id == slot_id, Slot.is_available == True).first()
+            if not slot:
+                raise HTTPException(status_code=400, detail="Slot is not available")
+
+            # Create the appointment and set status to Pending
+            appointment = Appointment(
+                test_request_id=test_request_id,
+                lab_staff_id=current_user.id,
+                patient_id=patient_id,
+                slot_id=slot.id,
+                status=AppointmentStatus.PENDING_PATIENT,  # Initially set to Pending
+            )
+            db.add(appointment)
+
+            # Mark the slot as unavailable
+            slot.is_available = False
+            db.commit()
+
+            return {"message": "Appointment scheduled by Lab Staff", "appointment_id": appointment.id}
+        else:
+            raise HTTPException(status_code=400, detail="Slot ID is required for scheduling by Lab Staff")
+
+    # Patient suggesting a new schedule
+    elif current_user.role == RoleEnum.PATIENT:
+        #Verify if the appointment is already confirmed or pending from lab side
+        if existing_appointment and existing_appointment.status in [AppointmentStatus.CONFIRMED, AppointmentStatus.PENDING_LAB]:
+            raise HTTPException(status_code=400, detail="Can not schedule an appointment which confirmed or pending from lab side")
+
+        # If the current user is a patient, ensure they are scheduling their own test request
+        if current_user.role == RoleEnum.PATIENT:
+            if patient_id != current_user.id:
+                raise HTTPException(status_code=403, detail="You are not authorized to schedule or modify this test request")
+
+        # If the patient rejects the current schedule, they suggest a new slot
+        if slot_id:
+            # Find the suggested slot
+            suggested_slot = db.query(Slot).filter(Slot.id == slot_id, Slot.is_available == True).first()
+            if not suggested_slot:
+                raise HTTPException(status_code=400, detail="Suggested slot is not available")
+
+            # Update the appointment with the new slot and set status to Pending Lab Confirmation
+            appointment.slot_id = suggested_slot.id
+            appointment.status = AppointmentStatus.PENDING_LAB  # Reset to pending until lab confirms
+            suggested_slot.is_available = False
+            db.commit()
+
+            return {"message": "New schedule suggested by Patient", "appointment_id": appointment.id}
+
+        else:
+            raise HTTPException(status_code=400, detail="Suggested slot ID is required for rejecting the schedule")
+
+@router.post("/appointments/{appointment_id}/confirm")
+async def confirm_appointment(appointment_id: int, db: Session = Depends(get_db), 
+                               current_user: User = Depends(verify_role([RoleEnum.PATIENT, RoleEnum.LAB_STAFF]))):
+    
+    appointment = db.query(Appointment).filter(Appointment.id == appointment_id).first()
+    if not appointment:
+        raise HTTPException(status_code=404, detail="Appointment not found")
+    
+    # Check if the appointment is already confirmed
+    if appointment.status == AppointmentStatus.CONFIRMED:
+        raise HTTPException(status_code=400, detail="Appointment is already confirmed")
+
+    if current_user.role == RoleEnum.LAB_STAFF:
+        if appointment.lab_staff_id != current_user.id | appointment.status != AppointmentStatus.PENDING_LAB:
+            raise HTTPException(status_code=403, detail="You are not authorized to confirm this appointment")
+        
+    elif current_user.role == RoleEnum.PATIENT:
+        if appointment.patient_id != current_user.id or appointment.status != AppointmentStatus.PENDING_PATIENT:
+            raise HTTPException(status_code=403, detail="You are not authorized to confirm this appointment")
+
+    symptom = db.query(Symptom).join(TestRequest, TestRequest.symptom_id == Symptom.id).filter(
+        TestRequest.id == appointment.test_request_id  # Link to the correct test request
+    ).first()
+    # Update status
+    appointment.status = AppointmentStatus.CONFIRMED
+    symptom.status = SymptomStatus.WAITING  # Update symptom status to WAITING
+
+    appointment.confirmed_at = datetime.utcnow()  # Set the confirmed_at timestamp
+    db.commit()
+
+    return {"message": "Appointment confirmed", "appointment_id": appointment.id}
+
+
+@router.post("/appointments/{appointment_id}/reject")
+async def reject_appointment(appointment_id: int, db: Session = Depends(get_db), 
+                              current_user: User = Depends(verify_role([RoleEnum.PATIENT, RoleEnum.LAB_STAFF]))):
+
+    appointment = db.query(Appointment).filter(Appointment.id == appointment_id).first()
+    if not appointment:
+        raise HTTPException(status_code=404, detail="Appointment not found")
+    
+    # Check if the appointment is already confirmed
+    if appointment.status == AppointmentStatus.CONFIRMED:
+        raise HTTPException(status_code=400, detail="Can not reject a confirmed appointment")
+
+    if current_user.role == RoleEnum.LAB_STAFF:
+        if appointment.lab_staff_id != current_user.id | appointment.status != AppointmentStatus.PENDING_LAB:
+            raise HTTPException(status_code=403, detail="You are not authorized to reject this appointment")
+        
+        # Set status to Rejected and mark the slot as available again
+        appointment.status = AppointmentStatus.PENDING_PATIENT
+        rejected_slot = db.query(Slot).filter(Slot.id == appointment.slot_id).first()
+        if rejected_slot:
+            rejected_slot.is_available = True
+        db.commit()
+        
+    elif current_user.role == RoleEnum.PATIENT:
+        if appointment.patient_id != current_user.id or appointment.status != AppointmentStatus.PENDING_PATIENT:
+            raise HTTPException(status_code=403, detail="You are not authorized to reject this appointment")
+        
+        # Set status to Rejected and mark the slot as available again
+        appointment.status = None
+        appointment.confirmed_at = datetime.utcnow()  # Set the confirmed_at timestamp
+        rejected_slot = db.query(Slot).filter(Slot.id == appointment.slot_id).first()
+        rejected_slot.is_available = True
+        db.commit()
+
+    return {"message": "Appointment rejected", "appointment_id": appointment.id}
+
+
+@router.get("/slots/{lab_staff_id}/available")
+async def get_available_slots_for_lab_staff(
+    lab_staff_id: int,
+    date: str = None,  # Make sure 'date' is a string query parameter
+    db: Session = Depends(get_db)
+):
+    # Construct the base query: Get slots for a specific lab staff and where the slot is available
+    query = db.query(Slot).filter(Slot.lab_staff_id == lab_staff_id, Slot.is_available == True)
+    
+    # Filter by date if provided
+    if date:
+        try:
+            # Convert the date string to a datetime object
+            date_obj = datetime.strptime(date, "%Y-%m-%d").date()
+            start_of_day = datetime.combine(date_obj, datetime.min.time())
+            end_of_day = start_of_day + timedelta(hours=23, minutes=59, seconds=59)
+            
+            # Add the date filter to the query
+            query = query.filter(and_(Slot.start_time >= start_of_day, Slot.end_time <= end_of_day))
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD.")
+
+    # Fetch available slots for the given lab staff
+    available_slots = query.all()
+
+    # If no available slots are found, raise an error
+    if not available_slots:
+        raise HTTPException(status_code=404, detail="No available slots found for the specified lab staff")
+
+    # Return available slots data
+    return {
+        "available_slots": [
+            {
+                "id": slot.id,
+                "start_time": slot.start_time,
+                "end_time": slot.end_time,
+                "lab_staff_id": slot.lab_staff_id
+            }
+            for slot in available_slots
+        ]
+    }

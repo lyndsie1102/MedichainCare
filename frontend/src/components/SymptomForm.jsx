@@ -1,10 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send } from 'lucide-react';
 import { uploadImage, submitSymptom } from '../api';
+import { initializeWeb3, loadAccount, loadContract, setAccount, signAndSendTransaction } from '../blockchainInteract/interact';
 import Web3 from 'web3';
-import contractABI from '../abis/contractAddress.json';
-
-
 
 const SymptomForm = ({ onSubmitSuccess, patientId }) => {
   const [symptoms, setSymptoms] = useState('');
@@ -14,39 +12,9 @@ const SymptomForm = ({ onSubmitSuccess, patientId }) => {
   const [researchConsent, setResearchConsent] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef(); // ⬅️ file input reference
+  const [account, setAccount] = useState(); // State to hold current account
 
-  const [web3, setWeb3] = useState(null);
-  const [contract, setContract] = useState(null);
-  const [account, setAccount] = useState(null);
-  
   const token = localStorage.getItem('access_token'); // Get token from local storage
-  
-  useEffect(() => {
-    // Initialize Web3
-    if (window.ethereum) {
-      const web3Instance = new Web3(window.ethereum);
-      setWeb3(web3Instance);
-      window.ethereum.request({ method: 'eth_requestAccounts' })
-        .then(accounts => setAccount(accounts[0]))
-        .catch(err => console.error("MetaMask connection failed", err));
-    } else {
-      console.error("MetaMask is not installed.");
-    }
-  }, []);
-
-  useEffect(() => {
-    if (web3) {
-      const contractAddress = '/contractAddress.json';  // Adjust the path to where the contract address is saved
-      fetch(contractAddress)
-        .then(response => response.json())
-        .then(data => {
-          const contractInstance = new web3.eth.Contract(contractABI, data.address);
-          setContract(contractInstance);
-        })
-        .catch(err => console.error("Failed to load contract address", err));
-    }
-  }, [web3]);
-
   const handleImageChange = (e) => {
     const files = e.target.files;
     if (files?.length) {
@@ -65,6 +33,52 @@ const SymptomForm = ({ onSubmitSuccess, patientId }) => {
       return filtered;
     });
   };
+
+  /*
+  useEffect(() => {
+    const setupBlockchain = async () => {
+      try {
+        // Initialize Web3 and get the web3 instance
+        const web3Instance = await initializeWeb3();
+
+        // Use web3 instance to interact with the blockchain
+        const accounts = await web3Instance.eth.getAccounts();
+        if (accounts.length > 0) {
+          setAccount(accounts[0]);
+        } else {
+          alert("No accounts found");
+        }
+
+        // Load other contract details if needed
+        await loadContract();
+      } catch (error) {
+        console.error("Blockchain setup failed:", error);
+        alert("Error initializing Web3 or loading blockchain data.");
+      }
+    };
+
+    setupBlockchain();
+  }, []); // Empty dependency array ensures it runs only once
+
+  */
+
+  
+  const web3 = new Web3(window.ethereum || "http://localhost:7545");
+  useEffect(() => {
+    const setupBlockchain = async () => {
+      try {
+        await window.ethereum.request({ method: 'eth_requestAccounts' });
+        const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+        setAccount(accounts[0]);
+      } catch (error) {
+        console.error("Error initializing Web3:", error);
+      }
+    };
+
+    setupBlockchain();
+  }, []);
+
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -91,17 +105,15 @@ const SymptomForm = ({ onSubmitSuccess, patientId }) => {
         research: researchConsent,
       };
 
-      // Blockchain: Submit symptom to the contract
-      if (contract && account) {
-        const tx = await contract.methods.submitSymptom(
-          symptoms,
-          treatmentConsent,
-          referralConsent,
-          researchConsent
-        ).send({ from: account });
+      // Submit symptom along with consents
+      const response = await submitSymptom({
+        symptoms,
+        image_paths: uploadedPaths,
+        patient_id: patientId,
+        consent_type: consentType,
+      }, token);
 
-        console.log("Transaction successful: ", tx);
-
+      if (response.message === 'Symptom submitted') {
         // Reset form fields after submission
         setSymptoms('');
         setSelectedImages([]);  // Reset selected images
@@ -156,6 +168,7 @@ const SymptomForm = ({ onSubmitSuccess, patientId }) => {
           </div>
         )}
 
+
         <div className="image-previews">
           {selectedImages.map(img => (
             <div key={img.id} className="preview-item">
@@ -166,6 +179,7 @@ const SymptomForm = ({ onSubmitSuccess, patientId }) => {
             </div>
           ))}
         </div>
+
 
         {/* Consent checkboxes */}
         <div className="consent-section">

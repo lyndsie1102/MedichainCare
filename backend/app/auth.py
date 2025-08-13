@@ -7,6 +7,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from models import User, RoleEnum, TokenBlacklist
 from database import get_db
+from typing import Union, List
 
 # Configuration
 SECRET_KEY = "your-secret-key"
@@ -84,7 +85,11 @@ def get_current_user(
 
 
 #Verify if the user is authenticated and has the required role.
-def verify_role(required_role: RoleEnum):
+def verify_role(required_roles: Union[RoleEnum, List[RoleEnum]]):
+    # If a single role is passed, make it a list
+    if isinstance(required_roles, RoleEnum):
+        required_roles = [required_roles]
+        
     def role_dependency(current_user: User = Depends(get_current_user)):
         if not current_user:
             raise HTTPException(
@@ -93,10 +98,11 @@ def verify_role(required_role: RoleEnum):
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
-        if current_user.role != required_role:
+        # Check if the user's role is in the list of required roles
+        if current_user.role not in required_roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"User must have role {required_role.name.lower()} to access this endpoint."
+                detail=f"User must have one of the roles {', '.join([role.name.lower() for role in required_roles])} to access this endpoint."
             )
         
         return current_user

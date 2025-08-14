@@ -120,7 +120,8 @@ class TestRequestOut(BaseModel):
     id: str
     doctor: DoctorOut  # Use DoctorOut schema for doctor details
     request_time: Optional[str] = None
-    patient: PatientOut  # Use PatientOut schema for patient details
+    patient_name: str
+    patient_age: int
     test_type: str
     status: str
     upload_token: str

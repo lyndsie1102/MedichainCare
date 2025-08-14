@@ -762,14 +762,8 @@ def get_lab_dashboard(
                     specialty=doctor.specialty
                 ),
                 request_time=assign.requested_at.isoformat() if assign.requested_at else None,
-                patient=PatientOut(
-                    id=patient.id,
-                    name=user.name,
-                    age=user.age,
-                    phone=patient.phone_number,
-                    email=patient.email,
-                    location=patient.location
-                ),
+                patient_name=user.name,
+                patient_age=user.age,
                 test_type=test_type.name if test_type else "Unknown Test Type",
                 status="Uploaded" if assign.uploaded_result_path else "Pending",
                 upload_token=assign.upload_token,
@@ -1034,14 +1028,14 @@ async def reject_appointment(appointment_id: int, db: Session = Depends(get_db),
     return {"message": "Appointment rejected", "appointment_id": appointment.id}
 
 
-@router.get("/slots/{lab_staff_id}/available")
+@router.get("/slots/available")
 async def get_available_slots_for_lab_staff(
-    lab_staff_id: int,
-    date: str = None,  # Make sure 'date' is a string query parameter
-    db: Session = Depends(get_db)
+    date: str,
+    db: Session = Depends(get_db),
+    user: User = Depends(verify_role(RoleEnum.LAB_STAFF))
 ):
     # Construct the base query: Get slots for a specific lab staff and where the slot is available
-    query = db.query(Slot).filter(Slot.lab_staff_id == lab_staff_id, Slot.is_available == True)
+    query = db.query(Slot).filter(Slot.lab_staff_id == user.id, Slot.is_available == True)
     
     # Filter by date if provided
     if date:
@@ -1069,8 +1063,7 @@ async def get_available_slots_for_lab_staff(
             {
                 "id": slot.id,
                 "start_time": slot.start_time,
-                "end_time": slot.end_time,
-                "lab_staff_id": slot.lab_staff_id
+                "end_time": slot.end_time
             }
             for slot in available_slots
         ]

@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import random
 from faker import Faker
 import uuid
@@ -317,15 +317,27 @@ def create_test_results(db: Session, test_request: TestRequest) -> TestResults:
 
     return test_result
 
-def create_slots_for_lab_staff(db: Session, lab_staff: LabStaff, date: datetime):
+def get_end_of_next_month(current_date: datetime) -> datetime:
     """
-    Create available slots for lab staff on a specific date. 
-    Each slot is 30 minutes long, with a lunch break from 12:00 PM to 1:30 PM.
+    Calculate the last day of the next month from the current date.
     """
-    slots = Slot.generate_slots(lab_staff.id, date)
-    db.bulk_save_objects(slots)
-    db.commit()
-    print(f"✅ {len(slots)} slots created for lab staff {lab_staff.id} on {date.date()}")
+    # Get the first day of the current month
+    first_of_current_month = current_date.replace(day=1)
+    
+    # Add one month to it, and then subtract one day to get the last day of next month
+    next_month = first_of_current_month.replace(month=current_date.month % 12 + 1)
+    end_of_next_month = next_month - timedelta(days=1)
+    
+    return end_of_next_month
+
+def create_slots_for_lab_staff(db: Session, lab_staff: LabStaff, start_date: datetime, end_date: datetime):
+    current_date = start_date
+    while current_date <= end_date:
+        slots = Slot.generate_slots(lab_staff.id, current_date)
+        db.bulk_save_objects(slots)
+        db.commit()
+        print(f"✅ {len(slots)} slots created for lab staff {lab_staff.id} on {current_date.date()}")
+        current_date += timedelta(days=1)
 
 def create_appointments_for_patients(db: Session, patients: list[Patient], labs: list[MedicalLab], doctors: list[Doctor]):
     for patient in patients:
@@ -436,11 +448,14 @@ def seed_db():
                 test_type = random.choice(test_types)
                 test_request = create_test_request(db, symptom, lab, doctor, test_type)
 
-
-        # Step 6: Create slots for lab staff
+        # Step 6: Create slots for lab staff from now until the end of next month
         for lab_staff in lab_staffs:
-            # Create slots for a specific date (e.g., today)
-            create_slots_for_lab_staff(db, lab_staff, datetime.now())  # Use a fixed date for consistency
+            # Get today's date and the last date of next month
+            today = datetime.now()
+            end_of_next_month = get_end_of_next_month(today)
+
+            # Create slots for the period from today to the end of next month
+            create_slots_for_lab_staff(db, lab_staff, today, end_of_next_month)
 
         # Step 7: Create appointments for patients
         create_appointments_for_patients(db, patients, labs, doctors)

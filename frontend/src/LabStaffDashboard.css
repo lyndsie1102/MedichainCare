@@ -348,6 +348,14 @@ body {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  flex: 1;
+}
+
+.lab-doctor-time-status {
+  display: flex;
+  align-items: center;
+  gap: 4.5rem;
+  margin-top: 0.25rem;
 }
 
 .lab-doctor-avatar {
@@ -482,6 +490,20 @@ body {
   margin: 0 0 0.5rem 0;
 }
 
+.lab-patient-contact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.lab-contact-item {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
 .lab-contact-icon {
   height: 0.875rem;
   width: 0.875rem;
@@ -517,6 +539,8 @@ body {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  margin-left: auto;
+  padding: 1rem;
 }
 
 .lab-schedule-btn {
@@ -979,7 +1003,11 @@ body {
 
 /* Lab Logout confirmation styles */
 .lab-logout-confirmation {
+  display: flex;
+  flex-direction: column;
   text-align: center;
+  justify-content: center; /* Align vertically */
+  gap: 1.5rem; /* This will add space between the text and buttons */
 }
 
 .lab-logout-icon-container {
@@ -1061,18 +1089,7 @@ body {
 }
 
 /* Calendar Styles */
-.lab-date-time-picker-container {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 1.5rem;  /* Adjust gap for spacing */
-  margin-top: 1rem;
-}
-
 .lab-date-picker-section {
-  flex: 1 1 45%;  /* Flexbox: takes up 45% of the available width */
-  min-width: 300px;  /* Ensure a minimum width to avoid squishing */
-  box-sizing: border-box;
   background-color: #f9fafb;
   border-radius: 0.5rem;
   padding: 1rem;
@@ -1190,8 +1207,6 @@ body {
 
 /* Time Slots Styles */
 .lab-time-slots-section {
-  flex: 1 1 45%;
-  box-sizing: border-box;
   background-color: #f0fdf4;
   border-radius: 0.5rem;
   padding: 1rem;
@@ -1273,20 +1288,6 @@ body {
   line-height: 1.2;
 }
 
-/* Responsive Breakpoints */
-@media (max-width: 768px) {
-    .lab-date-time-picker-container {
-        flex-direction: column; /* Stack items vertically on smaller screens */
-        gap: 1rem;
-    }
-
-    .lab-date-picker-section,
-    .lab-time-slots-section {
-        flex: 1 1 100%;  /* Take full width on small screens */
-    }
-}
-
-
 /* Appointment Summary Styles */
 .lab-appointment-summary {
   background-color: #ecfdf5;
@@ -1341,91 +1342,42 @@ body {
   color: #9ca3af !important;
 }
 
-/* Patient Suggested Slots Styles */
-.lab-suggested-slots-section {
-  background-color: #eff6ff;
-  border: 1px solid #bfdbfe;
-  border-radius: 0.5rem;
-  padding: 1rem;
+/* Date and Time Picker Styles */
+.lab-date-time-pickers {
+  display: flex;
+  gap: 2rem;
+  margin-bottom: 1.5rem;
 }
 
-.lab-suggested-slots-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 0.75rem;
-  margin-top: 0.75rem;
-}
-
-.lab-suggested-slot {
+.lab-date-picker-container,
+.lab-datetime-picker-container {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem 0.75rem;
+  gap: 0.5rem;
+}
+
+.lab-picker-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.lab-date-input,
+.lab-datetime-input {
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
   border-radius: 0.5rem;
   font-size: 0.875rem;
-  cursor: pointer;
+  background-color: white;
   transition: all 0.2s;
-  border: 2px solid #bfdbfe;
-  background-color: #dbeafe;
-  color: #1e40af;
-  min-height: 4rem;
-  position: relative;
 }
 
-.lab-suggested-slot:hover {
-  border-color: #3b82f6;
-  background-color: #bfdbfe;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-}
-
-.lab-suggested-slot-selected {
-  background-color: #3b82f6 !important;
-  border-color: #3b82f6 !important;
-  color: white !important;
-  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3);
-}
-
-.lab-suggested-slot-date {
-  font-weight: 600;
-  margin-bottom: 0.25rem;
-  font-size: 0.875rem;
-}
-
-.lab-suggested-slot-time {
-  font-weight: 500;
-  margin-bottom: 0.5rem;
-  font-size: 1rem;
-}
-
-.lab-suggested-slot-label {
-  font-size: 0.625rem;
-  font-weight: 500;
-  opacity: 0.8;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  background-color: rgba(255, 255, 255, 0.2);
-  padding: 0.125rem 0.5rem;
-  border-radius: 9999px;
-  position: absolute;
-  top: 0.25rem;
-  right: 0.25rem;
-}
-
-.lab-suggested-slot-selected .lab-suggested-slot-label {
-  background-color: rgba(255, 255, 255, 0.3);
-}
-
-.lab-time-slots-note {
-  font-size: 0.875rem;
-  color: #6b7280;
-  font-style: italic;
-  margin-bottom: 0.75rem;
-  padding: 0.5rem;
-  background-color: #f9fafb;
-  border-radius: 0.375rem;
-  border-left: 3px solid #3b82f6;
+.lab-date-input:focus,
+.lab-datetime-input:focus {
+  outline: none;
+  border-color: #f97316;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
 }
 
 /* Responsive adjustments */
@@ -1475,13 +1427,118 @@ body {
     padding: 0.5rem 0.25rem;
   }
   
-  .lab-suggested-slots-grid {
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  .lab-datetime-selection-row {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .lab-appointment-status {
+    margin-top: 0.75rem;
+  }
+  
+  .lab-appointment-confirmed,
+  .lab-appointment-not-confirmed {
+    font-size: 0.75rem;
+    padding: 0.375rem 0.5rem;
+  }
+  
+  .lab-date-time-pickers {
+    flex-direction: column;
+    gap: 1rem;
+  }
+}
+
+/* Appointment Schedule Styles */
+.lab-appointment-schedule {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background-color: #f0f9ff;
+  border-radius: 0.5rem;
+  border-left: 3px solid #3b82f6;
+  display: inline-block;
+  width: auto;
+}
+
+.lab-appointment-schedule-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  gap: 2rem;
+}
+
+.lab-appointment-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #3b82f6;
+}
+
+.lab-appointment-details {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.lab-appointment-scheduled {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #059669;
+}
+
+.lab-appointment-cancelled {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #dc2626;
+}
+
+.lab-appointment-not-confirmed {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.lab-appointment-icon {
+  height: 1rem;
+  width: 1rem;
+  flex-shrink: 0;
+}
+
+/* Cancel Appointment Button */
+.lab-btn-cancel-appointment {
+  background-color: #dc2626;
+  color: white;
+  border: 1px solid #dc2626;
+}
+
+.lab-btn-cancel-appointment:hover {
+  background-color: #b91c1c;
+  border-color: #b91c1c;
+}
+
+.lab-btn-cancel-appointment:focus {
+  outline: 2px solid #fca5a5;
+  outline-offset: 2px;
+}
+
+/* Responsive adjustments for appointment schedule */
+@media (max-width: 640px) {
+  .lab-appointment-schedule-header {
+    flex-direction: column;
+    align-items: flex-start;
     gap: 0.5rem;
   }
   
-  .lab-suggested-slot {
-    min-height: 3.5rem;
-    padding: 0.75rem 0.5rem;
+  .lab-appointment-details {
+    width: 100%;
+    justify-content: flex-start;
   }
 }

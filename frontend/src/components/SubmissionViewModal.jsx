@@ -1,15 +1,6 @@
-import React from 'react'
-import { X, FileText, Shield, Calendar } from 'lucide-react'
+import { X, FileText, Shield, Calendar, Building, MapPin, Microscope, Clock } from 'lucide-react'
+import { formatDate } from "../utils/Helpers"
 
-const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    });
-};
 
 const SubmissionViewModal = ({
     selectedSymptom,
@@ -33,6 +24,41 @@ const SubmissionViewModal = ({
                 { /* Modal body */}
                 <div className="modal-body">
                     <div className="modal-content">
+
+                        {/* Test Appointment Section */}
+                        <div>
+                            <h4 className="section-title">Test Appointment</h4>
+                            <div className="appointment-info">
+                                {selectedSymptom.appointment_schedule ? (
+                                    <div>
+                                        <div className="appointment-item">
+                                            <Building className="appointment-icon" size={24} />
+                                            <span className="appointment-label">Lab Name:</span>
+                                            <span>{selectedSymptom.lab_name || 'N/A'}</span>
+                                        </div>
+                                        <div className="appointment-item">
+                                            <MapPin className="appointment-icon" size={24} />
+                                            <span className="appointment-label">Location:</span>
+                                            <span>{selectedSymptom.lab_location || 'N/A'}</span>
+                                        </div>
+                                        <div className="appointment-item">
+                                            <Clock className="appointment-icon" size={24} />
+                                            <span className="appointment-label">Scheduled At:</span>
+                                            <span>{formatDate(selectedSymptom.appointment_schedule) || 'N/A'}</span>
+                                        </div>
+                                        <div className="appointment-item">
+                                            <Microscope className="appointment-icon" size={24} />
+                                            <span className="appointment-label">Test Type:</span>
+                                            <span>{selectedSymptom.testType || 'N/A'}</span>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="appointment-item">
+                                        <p>Not Confirmed</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
 
                         {/* Consent Information */}
                         <div>
@@ -143,19 +169,19 @@ const SubmissionViewModal = ({
 
                         { /* Doctor Diagnosis */}
                         <div>
-                            <h4 className="section-title">Doctor Diagnoses</h4> 
-                            {selectedSymptom.diagnoses && selectedSymptom.diagnoses > 0 ?  (
-                            <div className="diagnosis-list">
-                                {selectedSymptom.diagnoses.map((diagnosis) => (
-                                    <div key={diagnosis.id} className="diagnosis-card">
-                                        <div className="diagnosis-header">
-                                            <h5 className="diagnosis-doctor">{diagnosis.doctorName}</h5>
-                                            <span className="diagnosis-date">{formatDate(diagnosis.createdAt)}</span>
+                            <h4 className="section-title">Doctor Diagnoses</h4>
+                            {selectedSymptom.diagnoses && selectedSymptom.diagnoses.length > 0 ? (
+                                <div className="diagnosis-list">
+                                    {selectedSymptom.diagnoses.map((diagnosis) => (
+                                        <div key={diagnosis.id} className="diagnosis-card">
+                                            <div className="diagnosis-header">
+                                                <h5 className="diagnosis-doctor">{diagnosis.doctorName}</h5>
+                                                <span className="diagnosis-date">{formatDate(diagnosis.createdAt)}</span>
+                                            </div>
+                                            <p className="diagnosis-text">{diagnosis.analysis}</p>
                                         </div>
-                                        <p className="diagnosis-text">{diagnosis.analysis}</p>
-                                    </div>
-                                ))}
-                            </div>
+                                    ))}
+                                </div>
                             ) : (
                                 <p className="section-placeholder">No diagnoses updated yet.</p>
                             )}

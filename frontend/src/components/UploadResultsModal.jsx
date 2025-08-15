@@ -9,7 +9,7 @@ const UploadResultsModal = ({ selectedRequest, onClose, onUpload, files,
         <div className="lab-modal-overlay">
             <div className="lab-modal-container">
                 <div className="lab-modal-header lab-modal-header-orange">
-                    <h3 className="lab-modal-title">Upload Test Results - {selectedRequest.patient.name}</h3>
+                    <h3 className="lab-modal-title">Upload Test Results - {selectedRequest.patient_name}</h3>
                     <button onClick={onClose} className="lab-modal-close">
                         <X className="lab-close-icon" />
                     </button>

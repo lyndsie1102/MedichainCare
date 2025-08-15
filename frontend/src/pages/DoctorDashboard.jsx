@@ -1,15 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
     Heart,
     Stethoscope,
-    Clock,
-    FileCheck,
-    CheckCircle,
-    BadgeCheck,
-    FlaskRound,
     Search,
     Filter,
-    ArrowRight,
     ChevronDown,
     LogOut
 } from 'lucide-react';
@@ -20,7 +14,7 @@ import SubmissionList from '../components/SubmissionList';
 import ViewModal from '../components/ViewModal';
 import LogoutModal from '../components/LogoutModal';
 import { getDoctorDashboard, getDoctorDetails, getSymptomDetails, createDiagnosis, createReferral, logout, createTestRequest } from '../api';
-
+import { getSymptomStatusColor, getSymptomStatusIcon, formatDate } from '../utils/Helpers';
 
 const DoctorDashboard = () => {
     const [submissions, setSubmissions] = useState([]);
@@ -99,44 +93,6 @@ const DoctorDashboard = () => {
     };
 
 
-    const getStatusIcon = (status) => {
-        switch (status) {
-            case 'Pending':
-                return <Clock className="status-icon status-icon-pending" />;
-            case 'Tested':
-                return <FileCheck className="status-icon status-icon-tested" />;
-            case 'Assigned to Lab':
-                return <FlaskRound className="status-icon status-icon-assigned" />;
-            case 'Diagnosed':
-                return <CheckCircle className="status-icon status-icon-diagnosed" />;
-            case 'Completed':
-                return <BadgeCheck className="status-icon status-icon-completed" />;
-            case 'Referred':
-                return <ArrowRight className="status-icon status-icon-referred" />;
-            default:
-                return <Clock className="status-icon status-icon-gray" />;
-        }
-    };
-
-    const getStatusColor = (status) => {
-        switch (status) {
-            case 'Pending':
-                return 'status-badge status-badge-pending';
-            case 'Tested':
-                return 'status-badge status-badge-tested';
-            case 'Assigned to Lab':
-                return 'status-badge status-badge-assigned';
-            case 'Diagnosed':
-                return 'status-badge status-badge-diagnosed';
-            case 'Completed':
-                return 'status-badge status-badge-completed';
-            case 'Referred':
-                return 'status-badge status-badge-referred';
-            default:
-                return 'status-badge status-badge-gray';
-        }
-    };
-
     const handleViewClick = async (submission) => {
         try {
             const token = localStorage.getItem('access_token');
@@ -213,7 +169,7 @@ const DoctorDashboard = () => {
                 setSubmissions(prev =>
                     prev.map(sub =>
                         sub.id === selectedSubmission.id
-                            ? { ...sub, status: 'Assigned' }
+                            ? { ...sub, status: 'Assigned to Lab' }
                             : sub
                     )
                 );
@@ -283,7 +239,7 @@ const DoctorDashboard = () => {
                         ? {
                             ...sub,
                             diagnoses: [...sub.diagnoses, newDiagnosis],
-                            status: 'diagnosed'
+                            status: 'Diagnosed'
                         }
                         : sub
                 )
@@ -320,16 +276,6 @@ const DoctorDashboard = () => {
         return matchesSearch && matchesStatus;
     });
 
-
-    const formatDate = (dateString) => {
-        return new Date(dateString).toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-    };
 
     return (
         <div className="dashboard-container">
@@ -415,8 +361,8 @@ const DoctorDashboard = () => {
                 {filteredSubmissions.length > 0 ? (
                     <SubmissionList
                         submissions={filteredSubmissions}
-                        getStatusIcon={getStatusIcon}
-                        getStatusColor={getStatusColor}
+                        getStatusIcon={getSymptomStatusIcon}
+                        getStatusColor={getSymptomStatusColor}
                         formatDate={formatDate}
                         handleViewClick={handleViewClick}
                         handleAssignClick={handleAssignClick}

@@ -1,20 +1,9 @@
-// components/TestRequestList.jsx
-import React from 'react';
-import { Upload, Calendar, Phone, Mail, MapPin, User, CalendarDays } from 'lucide-react';
-import { getStatusColor, getStatusIcon } from '../utils/Helpers'; // Assuming these functions are defined in utils/statusUtils.js
+import { Upload, Calendar, X, Clock, User, CalendarDays } from 'lucide-react';
+import { getRequestStatusColor, getRequestStatusIcon, formatDate } from '../utils/Helpers'; // Assuming these functions are defined in utils/statusUtils.js
 
 
 
 const TestRequestList = ({ filteredRequests, handleUploadClick, handleScheduleClick }) => {
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
 
   return (
     <div className="lab-requests-list">
@@ -29,12 +18,23 @@ const TestRequestList = ({ filteredRequests, handleUploadClick, handleScheduleCl
                     <User className="lab-doctor-icon" />
                   </div>
                   <div className="lab-doctor-details">
-                    <h3 className="lab-doctor-name">{request.doctor.name}</h3>
+                    <div className="lab-doctor-time-status">
+                      <h3 className="lab-doctor-name">{request.doctor.name}</h3>
+                      <div className="lab-status-badge-container">
+                        <span className={getRequestStatusColor(request.status)}>
+                          {getRequestStatusIcon(request.status)}
+                          <span className="lab-status-text">{request.status}</span>
+                        </span>
+                      </div>
+                    </div>
+
                     <p className="lab-doctor-specialty">{request.doctor.specialty}</p>
                     <div className="lab-request-time">
                       <Calendar className="lab-calendar-icon" />
                       <span>{formatDate(request.request_time)}</span>
                     </div>
+
+
                   </div>
                 </div>
               </div>
@@ -50,41 +50,69 @@ const TestRequestList = ({ filteredRequests, handleUploadClick, handleScheduleCl
                   Patient: {request.patient_name}, {request.patient_age} years
                 </h4>
               </div>
+
+
+              {/* Appointment Schedule Section */}
+              <div className="lab-appointment-schedule">
+                <div className="lab-appointment-schedule-header">
+                  <span className="lab-appointment-label">Appointment Schedule</span>
+                  <div className="lab-appointment-details">
+                    {request.appointment_status === 'Scheduled' && request.appointment_schedule ? (
+                      <span className="lab-appointment-scheduled">
+                        <Calendar className="lab-appointment-icon" />
+                        {new Date(request.appointment_schedule).toLocaleDateString('en-US', {
+                          weekday: 'short',
+                          month: 'short',
+                          day: 'numeric'
+                        })} at {request.appointment_schedule.split('T')[1]?.substring(0, 5)}
+                      </span>
+                    ) : request.appointment_status === 'Cancelled' ? (
+                      <span className="lab-appointment-cancelled">
+                        <X className="lab-appointment-icon" />
+                        Cancelled
+                      </span>
+                    ) : (
+                      <span className="lab-appointment-not-confirmed">
+                        <Clock className="lab-appointment-icon" />
+                        Not confirmed
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Status and Action */}
             <div className="lab-status-action">
-              <div className="lab-status-badge-container">
-                <span className={getStatusColor(request.status)}>
-                  {getStatusIcon(request.status)}
-                  <span className="lab-status-text">{request.status}</span>
-                </span>
-              </div>
 
               {/* Schedule Button */}
-              <button
-                onClick={() => handleScheduleClick(request)}
-                disabled={request.status === 'Uploaded'} // Disable when status is 'Uploaded'
-                className={`lab-schedule-btn ${request.status === 'Uploaded' ? 'lab-schedule-btn-disabled' : ''}`}
-              >
-                <CalendarDays className="lab-btn-icon" />
-                Schedule
-              </button>
+              <div className="lab-action-buttons">
+                <button
+                  onClick={() => handleScheduleClick(request)}
+                  disabled={request.status === 'Uploaded'} // Disable when status is 'Uploaded'
+                  className={`lab-schedule-btn ${request.status === 'Uploaded' ? 'lab-schedule-btn-disabled' : ''}`}
+                >
+                  <CalendarDays className="lab-btn-icon" />
+                  {request.appointment_status === 'Scheduled' ? 'Cancel Appointment' : 'Schedule'}
+                </button>
 
-              {/* Upload Button */}
-              <button
-                onClick={() => handleUploadClick(request)}
-                disabled={request.status === 'Uploaded'}
-                className={`lab-upload-btn ${request.status === 'Uploaded' ? 'lab-upload-btn-disabled' : ''}`}
-              >
-                <Upload className="lab-btn-icon" />
-                Upload Results
-              </button>
+                {/* Upload Button */}
+                <button
+                  onClick={() => handleUploadClick(request)}
+                  disabled={request.status === 'Uploaded' || request.appointment_status == null || request.appointment_status == 'Cancelled'}
+                  className={`lab-upload-btn ${(request.status === 'Uploaded' || request.appointment_status == null || request.appointment_status == 'Cancelled')? 'lab-upload-btn-disabled' : ''}`}
+                >
+                  <Upload className="lab-btn-icon" />
+                  Upload Results
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      ))}
-    </div>
+      ))
+
+      }
+    </div >
   );
 };
 

@@ -272,26 +272,31 @@ export const uploadLabResult = async (upload_token, access_token, files, summary
   }
 };
 
-// Confirm appointment API
-export const confirmAppointment = async (appointmentId, token) => {
-  const res = await axios.post(`${API_URL}/appointments/${appointmentId}/confirm`, {
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-  });
-
-  return res.data;
+//Appointment Schedule API
+export const appointmentSchedule = async (testRequestId, date, time, token) => {
+  const response = await axios.post(
+    `${API_URL}/appointments/${testRequestId}/schedule`,
+    null,
+    {
+      params: { date, time },
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+  return response.data;
 };
 
-// Get available slots API
-export const getAvailableSlots = async (date, token) => {
-  const res = await axios.get(`${API_URL}/slots/available?date=${date}`, {
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-  });
-
+//Cancel appointment schedule API
+export const cancelAppointment = async (appointmentId, token) => {
+  const res = await axios.post(
+    `${API_URL}/appointments/${appointmentId}/cancel`,
+    null,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  )
   return res.data;
-};
+}

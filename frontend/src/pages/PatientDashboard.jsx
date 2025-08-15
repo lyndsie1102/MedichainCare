@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Heart, UserIcon, LogOut, ChevronDown, X } from 'lucide-react';
+import { Heart, UserIcon, LogOut, ChevronDown } from 'lucide-react';
 import SymptomForm from '../components/SymptomForm';
 import SubmissionHistory from '../components/SubmissionHistory';
 import SubmissionViewModal from '../components/SubmissionViewModal';
@@ -18,11 +18,10 @@ const PatientDashboard = () => {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
 
-
+const token = localStorage.getItem('access_token');
   // Fetch user info once on mount
   useEffect(() => {
     const fetchUserInfo = async () => {
-      const token = localStorage.getItem('access_token');
       if (!token) {
         console.error('No access token found');
         return;
@@ -44,7 +43,6 @@ const PatientDashboard = () => {
     setError(null); // Reset error state on new fetch
 
     try {
-      const token = localStorage.getItem('access_token');
       if (!token) {
         setError('No access token found');
         return;
@@ -82,7 +80,6 @@ const PatientDashboard = () => {
   // Handle viewing a submission
   const handleViewClick = async (submission) => {
     try {
-      const token = localStorage.getItem('access_token');
       const data = await getSymptom(submission.id, token);
       setSelectedSubmission(data);
     } catch (err) {
@@ -111,7 +108,6 @@ const PatientDashboard = () => {
 
   const handleLogoutConfirm = async () => {
     setShowLogoutModal(false);
-    const token = localStorage.getItem('access_token');
   
     try {
       const res = await logout(token);
@@ -177,9 +173,9 @@ const PatientDashboard = () => {
         <SubmissionHistory
           submissions={filteredSubmissions}
           handleViewClick={handleViewClick}
-          setStatusFilter={setStatusFilter}  // Pass function to update filter state
-          setStartDate={setStartDate}         // Pass function to update start date
-          setEndDate={setEndDate}             // Pass function to update end date
+          setStatusFilter={setStatusFilter} 
+          setStartDate={setStartDate}      
+          setEndDate={setEndDate}   
         />
       </main>
       {

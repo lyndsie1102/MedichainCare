@@ -1,66 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Camera, Clock, CheckCircle, BadgeCheck, Eye, ArrowRight, FilterIcon, FileCheck, FlaskRound } from 'lucide-react';
-
-// Updated getStatusIcon to include the new status "Referred" and respective class names
-const getStatusIcon = (status) => {
-  switch (status) {
-    case 'Pending':
-      return <Clock className="status-icon status-icon-pending" />;
-    case 'Tested':
-      return <FileCheck className="status-icon status-icon-tested" />;
-    case 'Assigned to Lab':
-      return <FlaskRound className="status-icon status-icon-assigned" />;
-    case 'Diagnosed':
-      return <CheckCircle className="status-icon status-icon-diagnosed" />;
-    case 'Completed':
-      return <BadgeCheck className="status-icon status-icon-completed" />;
-    case 'Referred':
-      return <ArrowRight className="status-icon status-icon-referred" />;
-    default:
-      return <Clock className="status-icon status-icon-gray" />;
-  }
-};
-
-// Updated getStatusColor to apply different color classes based on the status
-const getStatusColor = (status) => {
-  switch (status) {
-    case 'Pending':
-      return 'status-badge status-badge-pending';
-    case 'Tested':
-      return 'status-badge status-badge-tested';
-    case 'Assigned to Lab':
-      return 'status-badge status-badge-assigned';
-    case 'Diagnosed':
-      return 'status-badge status-badge-diagnosed';
-    case 'Completed':
-      return 'status-badge status-badge-completed';
-    case 'Referred':
-      return 'status-badge status-badge-referred';
-    default:
-      return 'status-badge status-badge-gray';
-  }
-};
-
-
-// Format the date and time into a human-readable format
-const formatDate = (dateString) => {
-  if (!dateString.endsWith('Z')) {
-    dateString += 'Z';
-  }
-  const utcDate = new Date(dateString);  // Parse the date string in UTC
-  const options = {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: true,
-    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone  // Use the browser's local time zone, which takes DST into account
-  };
-
-  // Format the date in the user's local time zone (with DST adjustments)
-  return new Intl.DateTimeFormat('en-US', options).format(utcDate);
-};
+import { formatDate, getSymptomStatusIcon, getSymptomStatusColor } from '../utils/Helpers'
 
 
 const SubmissionHistory = ({ submissions, handleViewClick, setStatusFilter, setStartDate, setEndDate }) => {
@@ -108,8 +48,6 @@ const SubmissionHistory = ({ submissions, handleViewClick, setStatusFilter, setS
             </select>
           </div>
 
-
-
           {/*Date range filter*/}
           <div className="filter-group date-group">
             <div className="filter-date">
@@ -145,8 +83,8 @@ const SubmissionHistory = ({ submissions, handleViewClick, setStatusFilter, setS
                   )}
                 </div>
                 <div className="status-action">
-                  <div className={getStatusColor(s.status)}>
-                    {getStatusIcon(s.status)} <span>{s.status}</span>
+                  <div className={getSymptomStatusColor(s.status)}>
+                    {getSymptomStatusIcon(s.status)} <span>{s.status}</span>
                   </div>
                   <button
                     onClick={() => handleViewClick(s)}

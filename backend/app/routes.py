@@ -1,10 +1,10 @@
 import uuid
 from fastapi import APIRouter, Depends, File, UploadFile, HTTPException, FastAPI, Form
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import and_
 from jose import jwt
 from database import SessionLocal, get_db
-from models import User, Symptom, RoleEnum, Consent, Patient, ConsentPurpose, Diagnosis, Doctor, MedicalLab, TestRequest, SymptomStatus, Referral, TestResults, TestType, TokenBlacklist, LabStaff, TestRequestStatus, AppointmentStatus, Appointment, Slot
+from models import User, Symptom, RoleEnum, Consent, Patient, ConsentPurpose, Diagnosis, Doctor, MedicalLab, TestRequest, SymptomStatus, Referral, TestResults, TestType, TokenBlacklist, LabStaff, TestRequestStatus, AppointmentStatus, Appointment
 from schemas import UserCreate, UserOut, SymptomCreate, SymptomOut, ConsentOut, PatientOut, DiagnosisOut, PatientSymptomDetails, DoctorOut, DiagnosisCreate, MedicalLabs, LabAssignmentCreate, LabAssignmentOut, ReferralCreate, SymptomHistory, SymptomDetails, TestResultOut, TestRequestOut
 from fastapi.security import OAuth2PasswordRequestForm
 import os
@@ -275,6 +275,40 @@ def get_symptom_details(
         .all()
     )
 
+    # Initialize variables for lab and appointment info
+    lab_name = None
+    lab_staff_name = None
+    appointment_schedule = None
+    lab_location = None
+
+
+    if test_requests:
+        # Get the most recent test request
+        latest_test_request = max(test_requests, key=lambda x: x.requested_at)
+        
+        # Get lab information
+        lab = db.query(MedicalLab).filter_by(id=latest_test_request.lab_id).first()
+        lab_name = lab.name if lab else None
+        lab_location = lab.location if lab else None
+        
+        # Get appointment information for this test request
+        appointment = db.query(Appointment).filter_by(test_request_id=latest_test_request.id).first()
+        
+         # Check if appointment_schedule exists before returning lab-related info
+
+        if appointment and appointment.scheduled_at:
+            appointment_schedule = appointment.scheduled_at
+            # Get lab staff information
+            lab_staff = db.query(LabStaff).filter_by(id=appointment.lab_staff_id).first()
+            if lab_staff:
+                lab_staff_user = db.query(User).filter_by(id=lab_staff.id).first()
+                lab_staff_name = lab_staff_user.name if lab_staff_user else None
+
+    if appointment_schedule is None:
+        lab_name = None
+        lab_location = None
+        lab_staff_name = None
+
     test_results_responses = []
     test_type_name = None
     for test_request in test_requests:
@@ -312,6 +346,10 @@ def get_symptom_details(
     symptom_detail = SymptomDetails(
         id=str(symptom.id),  # Convert ID to string (UUID or integer as needed)
         symptoms=symptom.symptoms,
+        lab_name=lab_name,
+        lab_staff_name=lab_staff_name,
+        lab_location=lab_location,
+        appointment_schedule=appointment_schedule,
         testType=test_type_name,  # Include test type if found
         testResults=test_results_responses,
         images=symptom.image_paths,  # Return images if available
@@ -714,14 +752,26 @@ def get_lab_dashboard(
 ):
     # Get lab staff information
     lab_staff = db.query(LabStaff).filter_by(id=current_user.id).first()
-    lab_id = lab_staff.lab_id
+    if not lab_staff:
+        raise HTTPException(status_code=404, detail="Lab staff not found")
     
-    # Start the base query
-    query = db.query(TestRequest).filter_by(lab_id=lab_id)
+    # Build query with manual joins since relationships aren't defined
+    query = (
+        db.query(TestRequest)
+        .filter(TestRequest.lab_id == lab_staff.lab_id)
+        .join(Symptom, Symptom.id == TestRequest.symptom_id)
+        .join(Doctor, Doctor.id == TestRequest.doctor_id)
+        .join(TestType, TestType.id == TestRequest.test_type_id)
+        .outerjoin(Appointment, Appointment.test_request_id == TestRequest.id)
+    )
     
-    # Apply filters based on the query parameters
+    # Apply filters
     if status:
-        query = query.filter(TestRequest.status == status.upper())  # Normalize to uppercase
+        # Check if status is for TestRequest or Appointment
+        if status.upper() in [TestRequestStatus.PENDING.value.upper(), TestRequestStatus.UPLOADED.value.upper()]:
+            query = query.filter(TestRequest.status == TestRequestStatus(status.lower()))
+        elif status.upper() in [AppointmentStatus.CANCELLED.value.upper(), AppointmentStatus.SCHEDULED.value.upper()]:
+            query = query.filter(Appointment.status == AppointmentStatus(status.title()))
     
     if start_date:
         # Convert start_date (date) to datetime at the start of the day
@@ -733,44 +783,48 @@ def get_lab_dashboard(
         end_datetime = datetime.combine(end_date, time.max)
         query = query.filter(TestRequest.requested_at <= end_datetime)
 
-    # Sort by `requested_at` in descending order
+    # Sort by requested_at in descending order
     query = query.order_by(TestRequest.requested_at.desc())
-        
-    # Join the necessary tables
-    assignments = (
-        query.join(Symptom, Symptom.id == TestRequest.symptom_id)  # Join TestRequest and Symptom
-        .join(Doctor, Doctor.id == TestRequest.doctor_id)  # Join Doctor
-        .join(Patient, Patient.id == Symptom.patient_id)  # Join Patient via Symptom
-        .join(TestType, TestType.id == TestRequest.test_type_id)  # Join TestType
-        .all()
-    )
-
+    
+    # Execute query
+    test_requests = query.all()
+    
     results = []
-    for assign in assignments:
-        # Get associated data
-        patient = db.query(Patient).filter_by(id=assign.symptom.patient_id).first()
-        user = db.query(User).filter_by(id=patient.id).first()
-        doctor = db.query(Doctor).filter_by(id=assign.doctor_id).first()
-        test_type = db.query(TestType).filter_by(id=assign.test_type_id).first()
-
-        # Prepare response for each test request
+    for test_request in test_requests:
+        # Get related data manually since relationships aren't defined
+        symptom = db.query(Symptom).filter_by(id=test_request.symptom_id).first()
+        doctor = db.query(Doctor).filter_by(id=test_request.doctor_id).first()
+        doctor_user = db.query(User).filter_by(id=doctor.id).first() if doctor else None
+        test_type = db.query(TestType).filter_by(id=test_request.test_type_id).first()
+        
+        # Get patient information
+        patient = db.query(Patient).filter_by(id=symptom.patient_id).first() if symptom else None
+        patient_user = db.query(User).filter_by(id=patient.id).first() if patient else None
+        
+        # Get appointments
+        appointments = db.query(Appointment).filter_by(test_request_id=test_request.id).all()
+        appointment = appointments[0] if appointments else None
+        
         results.append(TestRequestOut(
-                id=str(assign.id),
-                doctor=DoctorOut(
-                    id=doctor.id,
-                    name=doctor.user.name,
-                    specialty=doctor.specialty
-                ),
-                request_time=assign.requested_at.isoformat() if assign.requested_at else None,
-                patient_name=user.name,
-                patient_age=user.age,
-                test_type=test_type.name if test_type else "Unknown Test Type",
-                status="Uploaded" if assign.uploaded_result_path else "Pending",
-                upload_token=assign.upload_token,
-                uploaded_result_path=assign.uploaded_result_path
+            id=str(test_request.id),
+            doctor=DoctorOut(
+                id=doctor.id,
+                name=doctor_user.name if doctor_user else "Unknown",
+                specialty=doctor.specialty if doctor else "Unknown"
+            ) if doctor else None,
+            request_time=test_request.requested_at.isoformat() if test_request.requested_at else None,
+            patient_name=patient_user.name if patient_user else "Unknown",
+            patient_age=patient_user.age if patient_user else None,
+            test_type=test_type.name if test_type else "Unknown Test Type",
+            status=test_request.status.value.title(),
+            upload_token=test_request.upload_token,
+            uploaded_result_path=test_request.uploaded_result_path,
+            appointment_id=appointment.id if appointment and appointment.id else None,
+            appointment_status=appointment.status.value if appointment and appointment.status else None,
+            appointment_schedule=appointment.scheduled_at.isoformat() if appointment and appointment.scheduled_at else None
         ))
+    
     return results
-
 
 @router.post("/lab/upload/{token}")
 def upload_lab_result(
@@ -880,191 +934,87 @@ def get_test_types(db: Session = Depends(get_db), current_user: User = Depends(v
 
 
 @router.post("/appointments/{test_request_id}/schedule")
-async def schedule_appointment(test_request_id: int, slot_id: int, 
+async def schedule_appointment(test_request_id: int, 
+                               date: str,  # Accept the date in string format
+                               time: str,  # Accept the time in string format
                                db: Session = Depends(get_db), 
-                               current_user: User = Depends(verify_role([RoleEnum.PATIENT, RoleEnum.LAB_STAFF]))):
+                               current_user: User = Depends(verify_role(RoleEnum.LAB_STAFF))):
 
-    # Check if test request exists
+    # Step 1: Check if the test request exists
     test_request = db.query(TestRequest).filter(TestRequest.id == test_request_id).first()
     if not test_request:
         raise HTTPException(status_code=404, detail="Test request not found")
+
+    # Step 2: Combine date and time to form a datetime object
+    try:
+        # Combine date and time into a single string and convert to datetime object
+        combined_datetime_str = f"{date} {time}"
+        scheduled_at = datetime.strptime(combined_datetime_str, "%Y-%m-%d %H:%M")
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid date or time format. Use 'YYYY-MM-DD' for date and 'HH:MM' for time.")
     
-    # Check if there's already confirmed
-    existing_appointment = db.query(Appointment).filter(Appointment.test_request_id == test_request_id).first()
-
-    # Access the associated symptom and patient_id
-    symptom = test_request.symptom  # This assumes that TestRequest has a relationship with Symptom
-    if not symptom:
-        raise HTTPException(status_code=404, detail="Symptom not found for the test request")
-    
-    patient_id = symptom.patient_id  # Access patient_id from the symptom
-
-    # Handle Lab Staff scheduling the appointment
-    if current_user.role == RoleEnum.LAB_STAFF:
-        #Verify if the lab staff is allowed to schedule appointments for this test request
-        if existing_appointment and existing_appointment.status in [AppointmentStatus.CONFIRMED, AppointmentStatus.PENDING_PATIENT]:
-            raise HTTPException(status_code=400, detail="Can not schedule an appointment which confirmed or pending from patient side")
-
-        if slot_id:
-            # Find the slot and check availability
-            slot = db.query(Slot).filter(Slot.id == slot_id, Slot.is_available == True).first()
-            if not slot:
-                raise HTTPException(status_code=400, detail="Slot is not available")
-
-            # Create the appointment and set status to Pending
-            appointment = Appointment(
-                test_request_id=test_request_id,
-                lab_staff_id=current_user.id,
-                patient_id=patient_id,
-                slot_id=slot.id,
-                status=AppointmentStatus.PENDING_PATIENT,  # Initially set to Pending
-            )
-            db.add(appointment)
-
-            # Mark the slot as unavailable
-            slot.is_available = False
-            db.commit()
-
-            return {"message": "Appointment scheduled by Lab Staff", "appointment_id": appointment.id}
-        else:
-            raise HTTPException(status_code=400, detail="Slot ID is required for scheduling by Lab Staff")
-
-    # Patient suggesting a new schedule
-    elif current_user.role == RoleEnum.PATIENT:
-        #Verify if the appointment is already confirmed or pending from lab side
-        if existing_appointment and existing_appointment.status in [AppointmentStatus.CONFIRMED, AppointmentStatus.PENDING_LAB]:
-            raise HTTPException(status_code=400, detail="Can not schedule an appointment which confirmed or pending from lab side")
-
-        # If the current user is a patient, ensure they are scheduling their own test request
-        if current_user.role == RoleEnum.PATIENT:
-            if patient_id != current_user.id:
-                raise HTTPException(status_code=403, detail="You are not authorized to schedule or modify this test request")
-
-        # If the patient rejects the current schedule, they suggest a new slot
-        if slot_id:
-            # Find the suggested slot
-            suggested_slot = db.query(Slot).filter(Slot.id == slot_id, Slot.is_available == True).first()
-            if not suggested_slot:
-                raise HTTPException(status_code=400, detail="Suggested slot is not available")
-
-            # Update the appointment with the new slot and set status to Pending Lab Confirmation
-            appointment.slot_id = suggested_slot.id
-            appointment.status = AppointmentStatus.PENDING_LAB  # Reset to pending until lab confirms
-            suggested_slot.is_available = False
-            db.commit()
-
-            return {"message": "New schedule suggested by Patient", "appointment_id": appointment.id}
-
-        else:
-            raise HTTPException(status_code=400, detail="Suggested slot ID is required for rejecting the schedule")
-
-@router.post("/appointments/{appointment_id}/confirm")
-async def confirm_appointment(appointment_id: int, db: Session = Depends(get_db), 
-                               current_user: User = Depends(verify_role([RoleEnum.PATIENT, RoleEnum.LAB_STAFF]))):
-    
-    appointment = db.query(Appointment).filter(Appointment.id == appointment_id).first()
-    if not appointment:
-        raise HTTPException(status_code=404, detail="Appointment not found")
-    
-    # Check if the appointment is already confirmed
-    if appointment.status == AppointmentStatus.CONFIRMED:
-        raise HTTPException(status_code=400, detail="Appointment is already confirmed")
-
-    if current_user.role == RoleEnum.LAB_STAFF:
-        if appointment.lab_staff_id != current_user.id | appointment.status != AppointmentStatus.PENDING_LAB:
-            raise HTTPException(status_code=403, detail="You are not authorized to confirm this appointment")
-        
-    elif current_user.role == RoleEnum.PATIENT:
-        if appointment.patient_id != current_user.id or appointment.status != AppointmentStatus.PENDING_PATIENT:
-            raise HTTPException(status_code=403, detail="You are not authorized to confirm this appointment")
-
-    symptom = db.query(Symptom).join(TestRequest, TestRequest.symptom_id == Symptom.id).filter(
-        TestRequest.id == appointment.test_request_id  # Link to the correct test request
+    # Step 3: Check if the lab staff is already assigned to an appointment at the same time
+    existing_lab_staff_appointment = db.query(Appointment).filter(
+        Appointment.lab_staff_id == current_user.id,  # Check for the current lab staff
+        Appointment.scheduled_at == scheduled_at,
+        Appointment.status != AppointmentStatus.CANCELLED
     ).first()
-    # Update status
-    appointment.status = AppointmentStatus.CONFIRMED
-    symptom.status = SymptomStatus.WAITING  # Update symptom status to WAITING
+    
+    if existing_lab_staff_appointment:
+        raise HTTPException(status_code=409, detail="Lab staff is already scheduled for another appointment at this time")
 
-    appointment.confirmed_at = datetime.utcnow()  # Set the confirmed_at timestamp
+    # Step 4: Create the appointment
+    new_appointment = Appointment(
+        scheduled_at=scheduled_at,
+        test_request_id=test_request_id,
+        patient_id=test_request.symptom.patient_id,
+        lab_staff_id=current_user.id,
+        status=AppointmentStatus.SCHEDULED
+    )
+    
+    db.add(new_appointment)
+    db.commit()
+    db.refresh(new_appointment)
+    
+    scheduled_time_str = new_appointment.scheduled_at.strftime("%Y-%m-%d %H:%M")
+
+    # Step 5: Update the status of the associated symptom to 'WAITING FOR TEST'
+    test_request.symptom.status = SymptomStatus.WAITING
     db.commit()
 
-    return {"message": "Appointment confirmed", "appointment_id": appointment.id}
+    return {"message": f"Appointment scheduled successfully for {scheduled_time_str}"}
 
-
-@router.post("/appointments/{appointment_id}/reject")
-async def reject_appointment(appointment_id: int, db: Session = Depends(get_db), 
-                              current_user: User = Depends(verify_role([RoleEnum.PATIENT, RoleEnum.LAB_STAFF]))):
-
+#Cancel appointment API
+@router.post("/appointments/{appointment_id}/cancel")
+async def cancel_appointment(
+    appointment_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(verify_role(RoleEnum.LAB_STAFF))
+):
+    # Step 1: Fetch the appointment by its ID
     appointment = db.query(Appointment).filter(Appointment.id == appointment_id).first()
+    
     if not appointment:
         raise HTTPException(status_code=404, detail="Appointment not found")
     
-    # Check if the appointment is already confirmed
-    if appointment.status == AppointmentStatus.CONFIRMED:
-        raise HTTPException(status_code=400, detail="Can not reject a confirmed appointment")
-
-    if current_user.role == RoleEnum.LAB_STAFF:
-        if appointment.lab_staff_id != current_user.id | appointment.status != AppointmentStatus.PENDING_LAB:
-            raise HTTPException(status_code=403, detail="You are not authorized to reject this appointment")
-        
-        # Set status to Rejected and mark the slot as available again
-        appointment.status = AppointmentStatus.PENDING_PATIENT
-        rejected_slot = db.query(Slot).filter(Slot.id == appointment.slot_id).first()
-        if rejected_slot:
-            rejected_slot.is_available = True
-        db.commit()
-        
-    elif current_user.role == RoleEnum.PATIENT:
-        if appointment.patient_id != current_user.id or appointment.status != AppointmentStatus.PENDING_PATIENT:
-            raise HTTPException(status_code=403, detail="You are not authorized to reject this appointment")
-        
-        # Set status to Rejected and mark the slot as available again
-        appointment.status = None
-        appointment.confirmed_at = datetime.utcnow()  # Set the confirmed_at timestamp
-        rejected_slot = db.query(Slot).filter(Slot.id == appointment.slot_id).first()
-        rejected_slot.is_available = True
-        db.commit()
-
-    return {"message": "Appointment rejected", "appointment_id": appointment.id}
-
-
-@router.get("/slots/available")
-async def get_available_slots_for_lab_staff(
-    date: str,
-    db: Session = Depends(get_db),
-    user: User = Depends(verify_role(RoleEnum.LAB_STAFF))
-):
-    # Construct the base query: Get slots for a specific lab staff and where the slot is available
-    query = db.query(Slot).filter(Slot.lab_staff_id == user.id, Slot.is_available == True)
+    # Step 2: Check if the appointment is already cancelled
+    if appointment.status == AppointmentStatus.CANCELLED:
+        raise HTTPException(status_code=400, detail="Appointment is already cancelled")
     
-    # Filter by date if provided
-    if date:
-        try:
-            # Convert the date string to a datetime object
-            date_obj = datetime.strptime(date, "%Y-%m-%d").date()
-            start_of_day = datetime.combine(date_obj, datetime.min.time())
-            end_of_day = start_of_day + timedelta(hours=23, minutes=59, seconds=59)
-            
-            # Add the date filter to the query
-            query = query.filter(and_(Slot.start_time >= start_of_day, Slot.end_time <= end_of_day))
-        except ValueError:
-            raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD.")
+    # Step 3: Update the status to CANCELLED and set the cancellation time
+    appointment.status = AppointmentStatus.CANCELLED
+    appointment.cancelled_at = datetime.utcnow()
 
-    # Fetch available slots for the given lab staff
-    available_slots = query.all()
-
-    # If no available slots are found, raise an error
-    if not available_slots:
-        raise HTTPException(status_code=404, detail="No available slots found for the specified lab staff")
-
-    # Return available slots data
-    return {
-        "available_slots": [
-            {
-                "id": slot.id,
-                "start_time": slot.start_time,
-                "end_time": slot.end_time
-            }
-            for slot in available_slots
-        ]
-    }
+    # Step 4: Update the status of the associated symptom to 'PENDING'
+    test_request = appointment.test_request  # Access the related TestRequest
+    if test_request and test_request.symptom:
+        test_request.symptom.status = SymptomStatus.PENDING
+        db.commit()  # Commit the changes to the symptom status
+    
+    # Commit changes to the database
+    db.commit()
+    db.refresh(appointment)
+    
+    # Step 4: Return a success message
+    return {"message": f"Appointment with ID {appointment_id} has been cancelled successfully."}
+    

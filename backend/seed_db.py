@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from models import (
     User, Doctor, Patient, LabStaff, Symptom, Diagnosis, Consent,
     SymptomStatus, RoleEnum, GenderEnum, ConsentPurpose, MedicalLab, TestRequestStatus,
-    TestType, TestRequest, TestResults, Appointment, AppointmentStatus, Slot
+    TestType, TestRequest, TestResults, Appointment, AppointmentStatus
 )
 from database import SessionLocal
 from passlib.hash import bcrypt
@@ -317,75 +317,6 @@ def create_test_results(db: Session, test_request: TestRequest) -> TestResults:
 
     return test_result
 
-def get_end_of_next_month(current_date: datetime) -> datetime:
-    """
-    Calculate the last day of the next month from the current date.
-    """
-    # Get the first day of the current month
-    first_of_current_month = current_date.replace(day=1)
-    
-    # Add one month to it, and then subtract one day to get the last day of next month
-    next_month = first_of_current_month.replace(month=current_date.month % 12 + 1)
-    end_of_next_month = next_month - timedelta(days=1)
-    
-    return end_of_next_month
-
-def create_slots_for_lab_staff(db: Session, lab_staff: LabStaff, start_date: datetime, end_date: datetime):
-    current_date = start_date
-    while current_date <= end_date:
-        slots = Slot.generate_slots(lab_staff.id, current_date)
-        db.bulk_save_objects(slots)
-        db.commit()
-        print(f"✅ {len(slots)} slots created for lab staff {lab_staff.id} on {current_date.date()}")
-        current_date += timedelta(days=1)
-
-def create_appointments_for_patients(db: Session, patients: list[Patient], labs: list[MedicalLab], doctors: list[Doctor]):
-    for patient in patients:
-        # Pick a random lab staff
-        lab_staff = random.choice(db.query(LabStaff).all())
-    
-        # Pick a random date (e.g., today)
-        date = datetime.now().date()
-
-        # Get available slots for the lab staff using LabStaff model
-        available_slots = LabStaff.get_slots_for_date(db, lab_staff.id, date)  # Pass db session here
-
-        if available_slots:
-            # Pick a random available slot
-            slot = random.choice(available_slots)
-
-            # Check if a TestRequest exists for the patient, or create one
-            test_request = db.query(TestRequest).join(Symptom).filter(Symptom.patient_id == patient.id).first()
-
-            if not test_request:
-                # Create a TestRequest if it doesn't exist
-                test_request = TestRequest(
-                    patient_id=patient.id,
-                    lab_id=random.choice(labs).id,  # You can pick a random lab here
-                    doctor_id=random.choice(doctors).id,  # And a random doctor
-                    status="PENDING"  # Default status
-                )
-                db.add(test_request)
-                db.commit()
-                db.refresh(test_request)  # Ensure test_request has an ID after commit
-
-            # Create an appointment for the patient
-            appointment = Appointment(
-                patient_id=patient.id,
-                test_request_id=test_request.id,
-                lab_staff_id=lab_staff.id,
-                slot_id=slot.id
-            )
-            db.add(appointment)
-
-            # Mark the slot as unavailable
-            slot.is_available = False
-            db.commit()
-
-            print(f"✅ Appointment created for Patient {patient.id} with Lab Staff {lab_staff.id} at Slot {slot.id}")
-        else:
-            print(f"⚠️ No available slots for Lab Staff {lab_staff.id} on {date}")
-
 
 def seed_db():
     print("Seeding database...")
@@ -447,18 +378,6 @@ def seed_db():
                 lab = random.choice(labs)
                 test_type = random.choice(test_types)
                 test_request = create_test_request(db, symptom, lab, doctor, test_type)
-
-        # Step 6: Create slots for lab staff from now until the end of next month
-        for lab_staff in lab_staffs:
-            # Get today's date and the last date of next month
-            today = datetime.now()
-            end_of_next_month = get_end_of_next_month(today)
-
-            # Create slots for the period from today to the end of next month
-            create_slots_for_lab_staff(db, lab_staff, today, end_of_next_month)
-
-        # Step 7: Create appointments for patients
-        create_appointments_for_patients(db, patients, labs, doctors)
 
         print("✅ Database seeded successfully.")
     finally:

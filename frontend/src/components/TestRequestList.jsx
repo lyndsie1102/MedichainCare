@@ -47,22 +47,8 @@ const TestRequestList = ({ filteredRequests, handleUploadClick, handleScheduleCl
               {/* Patient Information */}
               <div className="lab-patient-info">
                 <h4 className="lab-patient-header">
-                  Patient: {request.patient.name}, {request.patient.age} years
+                  Patient: {request.patient_name}, {request.patient_age} years
                 </h4>
-                <div className="lab-patient-contact">
-                  <span className="lab-contact-item">
-                    <Phone className="lab-contact-icon" />
-                    {request.patient.phone}
-                  </span>
-                  <span className="lab-contact-item">
-                    <Mail className="lab-contact-icon" />
-                    {request.patient.email}
-                  </span>
-                  <span className="lab-contact-item">
-                    <MapPin className="lab-contact-icon" />
-                    {request.patient.location}
-                  </span>
-                </div>
               </div>
             </div>
 
@@ -74,13 +60,18 @@ const TestRequestList = ({ filteredRequests, handleUploadClick, handleScheduleCl
                   <span className="lab-status-text">{request.status}</span>
                 </span>
               </div>
+
+              {/* Schedule Button */}
               <button
                 onClick={() => handleScheduleClick(request)}
-                className="lab-schedule-btn"
+                disabled={request.status === 'Uploaded'} // Disable when status is 'Uploaded'
+                className={`lab-schedule-btn ${request.status === 'Uploaded' ? 'lab-schedule-btn-disabled' : ''}`}
               >
                 <CalendarDays className="lab-btn-icon" />
                 Schedule
               </button>
+
+              {/* Upload Button */}
               <button
                 onClick={() => handleUploadClick(request)}
                 disabled={request.status === 'Uploaded'}

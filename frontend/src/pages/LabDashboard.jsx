@@ -15,11 +15,11 @@ import {
     X
 } from 'lucide-react';
 import LogoutModal from '../components/LogoutModal';  // Import your LogoutModal component
-import { getTestRequests, uploadLabResult, logout, getLabStaffInfo } from '../api.js';  // Import your API functions
+import { getTestRequests, uploadLabResult, logout, getLabStaffInfo, getAvailableSlots } from '../api.js';  // Import your API functions
 import UploadResultsModal from '../components/UploadResultsModal.jsx';  // Import the UploadResultsModal component
 import TestRequestList from '../components/TestRequestList.jsx';
 import { getStatusColor, getStatusIcon } from '../utils/Helpers';  // Import utility functions for status color and icon
-
+import { getDaysInMonth, getFirstDayOfMonth, isDateInPast, getLastDayOfMonth, calendarDateFormat } from '../utils/dateTimeFormat';  // Import date helper functions
 
 // Mock appointment data
 const mockAppointments = {
@@ -60,7 +60,6 @@ const generateTimeSlots = () => {
     return slots;
 };
 
-const timeSlots = generateTimeSlots();
 
 
 const LabStaffDashboard = ({ accessToken }) => {
@@ -79,9 +78,11 @@ const LabStaffDashboard = ({ accessToken }) => {
     // Appointment scheduling states
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [selectedTimeSlot, setSelectedTimeSlot] = useState('');
-    const [currentMonth, setCurrentMonth] = useState(new Date());
+    const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
     const [availableSlots, setAvailableSlots] = useState([]);
     const [selectedSuggestedSlot, setSelectedSuggestedSlot] = useState(null);
+    const [slotsByDate, setSlotsByDate] = useState({});
+
 
     const getEarliestAvailableDay = () => {
         const today = new Date();
@@ -107,7 +108,6 @@ const LabStaffDashboard = ({ accessToken }) => {
         // Sort available days to find the earliest
         if (availableDays.length > 0) {
             const earliestDate = availableDays.sort((a, b) => new Date(a) - new Date(b))[0];
-            console.log(earliestDate);
             return earliestDate;
         }
 
@@ -143,28 +143,87 @@ const LabStaffDashboard = ({ accessToken }) => {
         fetchTestRequests();
     }, [accessToken]);
 
+
+    useEffect(() => {
+        const fetchAvailableSlots = async () => {
+            console.log('Current Month:', currentMonth);
+            try {
+                const token = localStorage.getItem('access_token'); // Get the token from localStorage
+                const today = new Date();
+                const firstDayOfMonth = getFirstDayOfMonth(currentMonth);
+                const lastDayOfMonth = getLastDayOfMonth(currentMonth);
+
+                // Reset the time for comparison: use UTC date to avoid local time zone offset
+                const todayAtMidnight = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
+
+                let slots = [];
+
+                // Determine the starting date for fetching available slots
+                let currentDate;
+                if (currentMonth === today.getMonth()) {
+                    // If currentMonth is this month, start from today
+                    currentDate = todayAtMidnight; // Using UTC midnight time
+                    console.log('Starting from today:', currentDate.toLocaleDateString('en-CA')); // Log as 'YYYY-MM-DD'
+                } else {
+                    // Otherwise, start from the first day of the month
+                    currentDate = new Date(firstDayOfMonth); // This will already be in the correct format
+                    console.log('Starting from first day of month:', currentDate.toLocaleDateString('en-CA'));
+                }
+
+                const endDate = new Date(lastDayOfMonth); // Ensure end date is a Date object
+                console.log('Fetching slots from:', currentDate.toLocaleDateString('en-CA'), 'to:', endDate.toLocaleDateString('en-CA'));
+
+                // Loop through all the days of the month and fetch available slots
+                while (currentDate <= endDate) {
+                    const dateString = currentDate.toISOString().split('T')[0]; // Convert to 'YYYY-MM-DD' format
+                    console.log('Fetching available slots for:', dateString); // Debug log
+
+                    const response = await getAvailableSlots(dateString, token);
+
+                    if (response && response.available_slots) {
+                        slots = [...slots, ...response.available_slots];
+                    }
+
+                    // Increment the date by 1 (still a valid Date object)
+                    currentDate.setUTCDate(currentDate.getUTCDate() + 1); // Use UTC setDate to avoid timezone issues
+                }
+
+                // Update the available slots state
+                setAvailableSlots(slots);
+                console.log('Available slots for the month:', slots);
+            } catch (error) {
+                console.error("Error fetching available slots:", error);
+                setAvailableSlots([]);
+            }
+        };
+
+        fetchAvailableSlots();
+    }, [currentMonth]); // Trigger when `currentMonth` changes
+
+
     const handleDateSelect = (dateString) => {
-        console.log('handleDateSelect called with:', dateString);
         if (!dateString || isDateInPast(dateString) || isDateFullyBooked(dateString)) {
             return;
         }
 
         setSelectedDate(dateString);
         setSelectedTimeSlot('');
-        setSelectedSuggestedSlot(null);
 
-        // Get booked slots for the selected date
-        const bookedSlots = mockAppointments[dateString] || [];
+        // Get available slots from the state that was populated by the useEffect
+        const availableSlotsForDate = availableSlots.filter(slot => {
+            const slotDate = new Date(slot.start_time).toISOString().split('T')[0]; // Extract date part of the start_time
+            return slotDate === dateString; // Only include slots for the selected date
+        });
 
-        // Filter available slots
-        const available = timeSlots.map(slot => ({
-            ...slot,
-            isBooked: bookedSlots.includes(slot.value),
-            isAvailable: !bookedSlots.includes(slot.value)
-        }));
-
-        setAvailableSlots(available);
+        // Update available slots for the selected date
+        setAvailableSlots((prevSlots) => {
+            return prevSlots.map(slot =>
+                slot.date === dateString
+                    ? { ...slot, available_slots: availableSlotsForDate }
+                    : slot);
+        });
     };
+
 
     //handle upload button click
     const handleUploadClick = (request) => {
@@ -175,7 +234,6 @@ const LabStaffDashboard = ({ accessToken }) => {
     // Handle file selection
     const handleFileChange = (e) => {
         const fileList = e.target.files;  // This should be a FileList object
-        console.log(fileList);  // Check if this is a FileList
         setFiles(fileList);  // Save it in state
     };
 
@@ -195,8 +253,7 @@ const LabStaffDashboard = ({ accessToken }) => {
         setSelectedRequest(request);
         setModalType('schedule');
         setSelectedTimeSlot('');
-        setSelectedSuggestedSlot(null);
-        
+
         // Auto-select the earliest available date when opening the modal
         const earliestDate = getEarliestAvailableDay();
         if (earliestDate) {
@@ -269,12 +326,32 @@ const LabStaffDashboard = ({ accessToken }) => {
     };
 
     const filteredRequests = testRequests.filter(request => {
-        const matchesSearch = request.patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        const matchesSearch = request.patient_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             request.doctor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             request.testType.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesStatus = statusFilter === 'all' || request.status === statusFilter;
         return matchesSearch && matchesStatus;
     });
+
+    const navigateMonth = (direction) => {
+        setCurrentMonth(prev => {
+            // Calculate the new month integer value (0-based)
+            const newMonth = prev + direction;
+
+            // Ensure the new month is within the range [0, 11]
+            if (newMonth < 0) {
+                return 11; // December
+            } else if (newMonth > 11) {
+                return 0; // January
+            }
+
+            console.log('Month changed to:', newMonth); // Logs the month as integer (0-11)
+
+            return newMonth;
+        });
+    };
+
+
 
     const formatDate = (dateString) => {
         return new Date(dateString).toLocaleDateString('en-US', {
@@ -287,50 +364,27 @@ const LabStaffDashboard = ({ accessToken }) => {
     };
 
 
-    // Calendar helper functions
-    const getDaysInMonth = (date) => {
-        return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-    };
-
-    const getFirstDayOfMonth = (date) => {
-        return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
-    };
-
     const isDateFullyBooked = (dateString) => {
-        const bookedSlots = mockAppointments[dateString] || [];
-        return bookedSlots.length >= 13;
+        // Filter the availableSlots based on the start_time matching the provided dateString
+        const filteredSlots = availableSlots.filter(slot => {
+            const slotDate = new Date(slot.start_time).toISOString().split('T')[0]; // Extract the date part of the start_time
+            return slotDate === dateString; // Compare it with the dateString
+        });
+
+        if (availableSlots.length > 0 && !isDateInPast(dateString)) {
+            return filteredSlots.length == 0;
+        }
+        return false;
     };
 
-    const isDateInPast = (dateString) => {
-        const today = new Date();
-        const checkDate = new Date(dateString);
-        today.setHours(0, 0, 0, 0);
-        checkDate.setHours(0, 0, 0, 0);
-        return checkDate < today;
-    };
 
+    console.log(isDateFullyBooked("2025-08-16"));
 
-    console.log('Selected Date in render:', selectedDate);
 
     const handleTimeSlotSelect = (timeSlot) => {
         if (timeSlot.isAvailable) {
             setSelectedTimeSlot(timeSlot.value);
         }
-    };
-
-    const handleSuggestedSlotSelect = (suggestedSlot) => {
-        setSelectedSuggestedSlot(suggestedSlot);
-        setSelectedDate(suggestedSlot.date);
-        setSelectedTimeSlot(suggestedSlot.time);
-
-        // Also update available slots for the selected date
-        const bookedSlots = mockAppointments[suggestedSlot.date] || [];
-        const available = timeSlots.map(slot => ({
-            ...slot,
-            isBooked: bookedSlots.includes(slot.value),
-            isAvailable: !bookedSlots.includes(slot.value)
-        }));
-        setAvailableSlots(available);
     };
 
     const handleConfirmAppointment = () => {
@@ -355,19 +409,16 @@ const LabStaffDashboard = ({ accessToken }) => {
         }
     };
 
-    const navigateMonth = (direction) => {
-        setCurrentMonth(prev => {
-            const newMonth = new Date(prev);
-            newMonth.setMonth(prev.getMonth() + direction);
-            return newMonth;
-        });
-    };
-
     const renderCalendar = () => {
         const daysInMonth = getDaysInMonth(currentMonth);
-        const firstDay = getFirstDayOfMonth(currentMonth);
-        const monthYear = currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
+        // Create a Date object using currentMonth and currentYear
+        const currentDate = new Date(new Date().getFullYear(), currentMonth, 1);
+
+        // Get the month name and year in 'Month Year' format
+        const monthYear = currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+        const firstDay = getFirstDayOfMonth(currentMonth); // Assuming this is still working based on your updated code
         const days = [];
         const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -387,11 +438,11 @@ const LabStaffDashboard = ({ accessToken }) => {
 
         // Add days of the month
         for (let day = 1; day <= daysInMonth; day++) {
-            const dateString = `${currentMonth.getFullYear()}-${(currentMonth.getMonth() + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+            const dateString = `${currentDate.getFullYear()}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
             const isFullyBooked = isDateFullyBooked(dateString);
             const isPast = isDateInPast(dateString);
             const isSelected = selectedDate === dateString;
-            const isDisabled = isPast || isFullyBooked;
+            const isDisabled = isPast || availableSlots.length == 0;
 
             days.push(
                 <div
@@ -430,6 +481,7 @@ const LabStaffDashboard = ({ accessToken }) => {
             </div>
         );
     };
+
 
 
     return (
@@ -545,7 +597,7 @@ const LabStaffDashboard = ({ accessToken }) => {
                 <div className="lab-modal-overlay">
                     <div className="lab-modal-container lab-modal-large">
                         <div className="lab-modal-header lab-modal-header-orange">
-                            <h3 className="lab-modal-title">Schedule Appointment for {selectedRequest.patient.name}</h3>
+                            <h3 className="lab-modal-title">Schedule Appointment for {selectedRequest.patient_name}</h3>
                             <button
                                 onClick={handleCloseModal}
                                 className="lab-modal-close"
@@ -562,7 +614,7 @@ const LabStaffDashboard = ({ accessToken }) => {
                                     <div className="lab-appointment-info-grid">
                                         <div className="lab-appointment-info-item">
                                             <User className="lab-info-icon" />
-                                            <span><strong>Patient:</strong> {selectedRequest.patient.name}</span>
+                                            <span><strong>Patient:</strong> {selectedRequest.patient_name}</span>
                                         </div>
                                         <div className="lab-appointment-info-item">
                                             <TestTube className="lab-info-icon" />
@@ -574,31 +626,6 @@ const LabStaffDashboard = ({ accessToken }) => {
                                         </div>
                                     </div>
                                 </div>
-
-                                {/* Patient Suggested Slots - Only show for rejected requests */}
-                                {selectedRequest.status === 'rejected' && selectedRequest.patientSuggestedSlots && (
-                                    <div className="lab-suggested-slots-section">
-                                        <h4 className="lab-section-title">Patient Suggested Slots</h4>
-                                        <div className="lab-suggested-slots-grid">
-                                            {selectedRequest.patientSuggestedSlots.map((slot, index) => (
-                                                <button
-                                                    key={index}
-                                                    onClick={() => handleSuggestedSlotSelect(slot)}
-                                                    className={`lab-suggested-slot ${selectedSuggestedSlot &&
-                                                        selectedSuggestedSlot.date === slot.date &&
-                                                        selectedSuggestedSlot.time === slot.time
-                                                        ? 'lab-suggested-slot-selected'
-                                                        : ''
-                                                        }`}
-                                                >
-                                                    <span className="lab-suggested-slot-date">{slot.date}</span>
-                                                    <span className="lab-suggested-slot-time">{slot.display}</span>
-                                                    <span className="lab-suggested-slot-label">Suggested</span>
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
 
                                 {/* Date and Time Slot Picker Section */}
                                 <div className="lab-date-time-picker-container">
@@ -618,7 +645,7 @@ const LabStaffDashboard = ({ accessToken }) => {
                                             <div className="lab-time-slots-grid">
                                                 {availableSlots.map((slot) => (
                                                     <button
-                                                        key={slot.value}
+                                                        key={slot.id}
                                                         onClick={() => handleTimeSlotSelect(slot)}
                                                         disabled={!slot.isAvailable}
                                                         className={`lab-time-slot ${selectedTimeSlot === slot.value && !selectedSuggestedSlot
@@ -631,7 +658,7 @@ const LabStaffDashboard = ({ accessToken }) => {
                                                                     : 'lab-time-slot-disabled'
                                                             }`}
                                                     >
-                                                        <span className="lab-time-slot-time">{slot.display}</span>
+                                                        <span className="lab-time-slot-time">{calendarDateFormat(slot.start_time)}</span>
                                                         {slot.isBooked && (
                                                             <span className="lab-time-slot-label">Booked</span>
                                                         )}
@@ -663,7 +690,7 @@ const LabStaffDashboard = ({ accessToken }) => {
                                             </div>
                                             <div className="lab-appointment-summary-item">
                                                 <User className="lab-appointment-summary-icon" />
-                                                <span><strong>Patient:</strong> {selectedRequest.patient.name}</span>
+                                                <span><strong>Patient:</strong> {selectedRequest.patient_name}</span>
                                             </div>
                                         </div>
                                     </div>

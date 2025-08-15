@@ -271,3 +271,27 @@ export const uploadLabResult = async (upload_token, access_token, files, summary
     throw new Error(error.response ? error.response.data.message : "Failed to upload lab results");
   }
 };
+
+// Confirm appointment API
+export const confirmAppointment = async (appointmentId, token) => {
+  const res = await axios.post(`${API_URL}/appointments/${appointmentId}/confirm`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  return res.data;
+};
+
+// Get available slots API
+export const getAvailableSlots = async (date, token) => {
+  const res = await axios.get(`${API_URL}/slots/available?date=${date}`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  return res.data;
+};

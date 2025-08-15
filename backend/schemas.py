@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional, Dict, List
 from datetime import datetime
-from models import SymptomStatus, GenderEnum, RoleEnum, ConsentPurpose
+from models import SymptomStatus, GenderEnum, RoleEnum, ConsentPurpose, AppointmentStatus
 
 class UserCreate(BaseModel):
     username: str
@@ -109,6 +109,10 @@ class PatientSymptomDetails(BaseModel):
 class SymptomDetails(BaseModel):
     id: str
     symptoms: str
+    lab_name: Optional[str]
+    lab_staff_name: Optional[str]
+    lab_location: Optional[str]
+    appointment_schedule: Optional[datetime]
     testType: Optional[str] = None
     testResults: Optional[List[TestResultOut]] = []
     images: List[str] 
@@ -123,6 +127,9 @@ class TestRequestOut(BaseModel):
     patient_name: str
     patient_age: int
     test_type: str
+    appointment_id: Optional[int] = None
+    appointment_schedule: Optional[str] = None
+    appointment_status: Optional[str] = None
     status: str
     upload_token: str
     uploaded_result_path: Optional[str] = None

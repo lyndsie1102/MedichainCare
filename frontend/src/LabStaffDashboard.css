@@ -482,20 +482,6 @@ body {
   margin: 0 0 0.5rem 0;
 }
 
-.lab-patient-contact {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-.lab-contact-item {
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
-  font-size: 0.75rem;
-  color: #6b7280;
-}
-
 .lab-contact-icon {
   height: 0.875rem;
   width: 0.875rem;

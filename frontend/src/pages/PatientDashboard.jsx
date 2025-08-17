@@ -5,6 +5,7 @@ import SubmissionHistory from '../components/SubmissionHistory';
 import SubmissionViewModal from '../components/SubmissionViewModal';
 import LogoutModal from '../components/LogoutModal';
 import { getSymptomHistory, getPatientInfo, getSymptom, logout } from '../api';
+import { getEthAddress } from '../utils/Helpers';
 
 const PatientDashboard = () => {
   const [submissions, setSubmissions] = useState([]);
@@ -29,6 +30,7 @@ const token = localStorage.getItem('access_token');
       try {
         const data = await getPatientInfo(token);
         setUser(data);
+        getEthAddress(token);
       } catch (err) {
         console.error('Failed to load user info', err);
       }

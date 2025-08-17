@@ -1,8 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send } from 'lucide-react';
 import { uploadImage, submitSymptom } from '../api';
-import { initializeWeb3, loadAccount, loadContract, setAccount, signAndSendTransaction } from '../blockchainInteract/interact';
 import Web3 from 'web3';
+import { getEthAddress } from '../utils/Helpers';
+import contractAddressData from '../abis/contractAddress.json';
+import contractABI from '../abis/contractABI.json'
 
 const SymptomForm = ({ onSubmitSuccess, patientId }) => {
   const [symptoms, setSymptoms] = useState('');
@@ -13,6 +15,8 @@ const SymptomForm = ({ onSubmitSuccess, patientId }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef(); // ⬅️ file input reference
   const [account, setAccount] = useState(); // State to hold current account
+  const [contract, setContract] = useState();
+  const [isOwner, setIsOwner] = useState(null);
 
   const token = localStorage.getItem('access_token'); // Get token from local storage
   const handleImageChange = (e) => {
@@ -34,42 +38,23 @@ const SymptomForm = ({ onSubmitSuccess, patientId }) => {
     });
   };
 
-  /*
-  useEffect(() => {
-    const setupBlockchain = async () => {
-      try {
-        // Initialize Web3 and get the web3 instance
-        const web3Instance = await initializeWeb3();
 
-        // Use web3 instance to interact with the blockchain
-        const accounts = await web3Instance.eth.getAccounts();
-        if (accounts.length > 0) {
-          setAccount(accounts[0]);
-        } else {
-          alert("No accounts found");
-        }
 
-        // Load other contract details if needed
-        await loadContract();
-      } catch (error) {
-        console.error("Blockchain setup failed:", error);
-        alert("Error initializing Web3 or loading blockchain data.");
-      }
-    };
-
-    setupBlockchain();
-  }, []); // Empty dependency array ensures it runs only once
-
-  */
-
-  
   const web3 = new Web3(window.ethereum || "http://localhost:7545");
   useEffect(() => {
     const setupBlockchain = async () => {
       try {
         await window.ethereum.request({ method: 'eth_requestAccounts' });
         const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-        setAccount(accounts[0]);
+        const eth_adress = getEthAddress(token);
+        const activeAccount = accounts[0];
+        setAccount(eth_adress);
+        setIsOwner(activeAccount.toLowerCase() === eth_adress.toLowerCase());
+
+        const web3 = new Web3(window.ethereum);
+        const contractAddress = contractAddressData.address;  // Replace with your contract's address
+        const contractInstance = new web3.eth.Contract(contractABI, contractAddress);
+        setContract(contractInstance);
       } catch (error) {
         console.error("Error initializing Web3:", error);
       }
@@ -105,6 +90,7 @@ const SymptomForm = ({ onSubmitSuccess, patientId }) => {
         research: researchConsent,
       };
 
+
       // Submit symptom along with consents
       const response = await submitSymptom({
         symptoms,
@@ -114,6 +100,11 @@ const SymptomForm = ({ onSubmitSuccess, patientId }) => {
       }, token);
 
       if (response.message === 'Symptom submitted') {
+        await submitSymptomToBlockchain({
+          consent_type: consentType,
+          role: 'patient'
+        });
+
         // Reset form fields after submission
         setSymptoms('');
         setSelectedImages([]);  // Reset selected images
@@ -129,6 +120,34 @@ const SymptomForm = ({ onSubmitSuccess, patientId }) => {
       setIsSubmitting(false);
     }
   };
+
+  const submitSymptomToBlockchain = async ({ consent_type, role }) => {
+    if (!contract) {
+      alert("Smart contract not initialized.");
+      return;
+    };
+
+    if (!isOwner) {
+      alert('You are not the contract owner. You cannot submit symptoms.');
+      return;
+    };
+
+    try {
+
+      // Trigger the contract's submitSymptom method
+      const tx = await contract.methods.submitSymptom(
+        consent_type.treatment,
+        consent_type.referral,
+        consent_type.research,
+        role
+      ).send({ from: account });
+
+      console.log('Blockchain transaction successful:', tx);
+    } catch (error) {
+      console.error("Blockchain transaction failed:", error);
+    }
+  };
+
 
   useEffect(() => {
     return () => {

@@ -13,7 +13,7 @@ from passlib.hash import bcrypt
 from brownie import accounts, network
 
 fake = Faker()
-
+network.connect('ganache-local')
 
 def create_user(db: Session, role: str, account_index: int) -> User:
     # Check if you're already connected to Ganache
@@ -328,12 +328,22 @@ def seed_db():
         labs = []  # Track created medical labs
         lab_staffs = []  # Track created lab staff
 
+        account_index = 0  # Start with the first account
+         # Debugging: Print out Ganache accounts count and actual accounts
+        print(f"Ganache accounts available: {len(accounts)}")
+        print(f"Ganache accounts: {accounts}")
+
+
         # Step 1: Create users with different roles
         for role in ['DOCTOR', 'PATIENT', 'LAB_STAFF']:
-            for i in range(3):  # Create 3 users for each role
+            for _ in range(3):  # Create 3 users for each role
+                if account_index >= len(accounts):
+                    raise ValueError("Not enough accounts in Ganache to create users.")
+
                 # Map Ganache account to user (using account_index)
-                user = create_user(db, role, account_index=i)
+                user = create_user(db, role, account_index=account_index)
                 users.append(user)
+                account_index += 1  # Increment index to use the next Ganache account
 
                 if role == 'DOCTOR':
                     doctor = create_doctor(db, user)

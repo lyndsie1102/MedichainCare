@@ -1,4 +1,6 @@
-import { Clock, CheckCircle, FileCheck, FlaskRound, Hourglass, ArrowRight } from 'lucide-react';
+import { Clock, CheckCircle, FileCheck, FlaskRound, Hourglass, ArrowRight } from 'lucide-react'
+import { jwtDecode } from 'jwt-decode';  // Correct import for latest version
+
 const getRequestStatusIcon = (status) => {
     switch (status) {
         case 'Pending':
@@ -79,4 +81,19 @@ const formatDate = (dateString) => {
     return new Intl.DateTimeFormat('en-US', options).format(utcDate);
 };
 
-export { getRequestStatusIcon, getRequestStatusColor, getSymptomStatusColor, getSymptomStatusIcon, formatDate };
+const getEthAddress = (token) => {
+    try {
+        // Decode the token
+        const decodedToken = jwtDecode(token);
+        // Extract the eth_address
+        const ethAddress = decodedToken.eth_address;
+        return ethAddress;
+        // Use the eth_address as needed
+    } catch (error) {
+        console.error("Error decoding token:", error);
+    }
+}
+
+
+export { getRequestStatusIcon, getRequestStatusColor, getSymptomStatusColor, getSymptomStatusIcon, 
+    formatDate, getEthAddress };

@@ -2,84 +2,93 @@
 pragma solidity ^0.8.0;
 
 contract LogAudits {
-
-    // Struct for Symptom
-    struct Symptom {
-        string symptomDescription;
-        uint256 submittedAt;
-        address patient; // The patient who submitted the symptom
-        bool treatmentConsent;
-        bool referralConsent;
-        bool researchConsent;
+    // Define the struct for consent information
+    struct Consent {
+        bool treatment;
+        bool referral;
+        bool research;
     }
 
-    // Mapping to store symptoms by patient address
-    mapping(address => Symptom[]) public patientSymptoms;
+    // Mapping to store consent data for each user (address)
+    mapping(address => Consent) private userConsent;
+    // Mapping to store authorized addresses (providers can be doctors, lab staff, etc.)
+    mapping(address => bool) private authorizedProviders;
 
-    // Event to log symptom submission
-    event SymptomSubmitted(
-        address indexed patient,
-        string symptomDescription,
-        uint256 timestamp,
-        bool treatmentConsent,
-        bool referralConsent,
-        bool researchConsent
+    // Define the structure of the event
+    event PatientLogged(
+        address indexed user,            // The user performing the action
+        string role,                     // Role of the user (e.g., patient, doctor, lab staff)
+        string action_type,              // The type of action (e.g., submit_symptom, add_diagnosis)
+        uint256 created_at,              // Timestamp of the action
+        Consent granted_consent          // Consent for the action (only used in submit_symptom)
     );
 
-    // Modifier to check if the sender is the patient (can only submit their own symptoms)
-    modifier onlyPatient(address patient) {
-        require(msg.sender == patient, "Only the patient can submit their symptoms.");
-        _;
-    }
+    event ActionLogged(
+        address indexed user,            // The user performing the action
+        string role,                     // Role of the user (e.g., patient, doctor, lab staff)
+        string action_type,              // The type of action (e.g., submit_symptom, add_diagnosis)
+        uint256 created_at
+    );
 
-    // Function for Patient to submit Symptom
+
+    // Function to submit a symptom with consent (only for patients)
     function submitSymptom(
-        string memory _symptomDescription,
         bool _treatmentConsent,
         bool _referralConsent,
-        bool _researchConsent
-    ) public onlyPatient(msg.sender) {
-        // Generate a new symptom
-        Symptom memory newSymptom = Symptom({
-            symptomDescription: _symptomDescription,
-            submittedAt: block.timestamp,
-            patient: msg.sender,
-            treatmentConsent: _treatmentConsent,
-            referralConsent: _referralConsent,
-            researchConsent: _researchConsent
+        bool _researchConsent,
+        string memory _role
+    ) public {
+        // Store the consent information in the mapping
+        userConsent[msg.sender] = Consent({
+            treatment: _treatmentConsent,
+            referral: _referralConsent,
+            research: _researchConsent
         });
 
-        // Store the symptom in the mapping
-        patientSymptoms[msg.sender].push(newSymptom);
-
-        // Emit an event for the symptom submission
-        emit SymptomSubmitted(
+        // Emit the event logging the action and consent
+        emit PatientLogged(
             msg.sender,
-            _symptomDescription,
-            block.timestamp,
-            _treatmentConsent,
-            _referralConsent,
-            _researchConsent
+            _role,                          // Role passed as a parameter
+            "submit_symptom",               // Action type: submit_symptom
+            block.timestamp,                // Timestamp of the action
+            userConsent[msg.sender]         // The consent granted
         );
     }
 
-    // Function to view symptoms (Only authorized doctors or admins can view)
-    function viewSymptom(address _patient, uint256 _symptomIndex) public view returns (
-        string memory symptomDescription,
-        uint256 submittedAt,
-        bool treatmentConsent,
-        bool referralConsent,
-        bool researchConsent
-    ) {
-        // Fetch the symptom from the mapping
-        Symptom memory symptom = patientSymptoms[_patient][_symptomIndex];
-        
-        return (
-            symptom.symptomDescription,
-            symptom.submittedAt,
-            symptom.treatmentConsent,
-            symptom.referralConsent,
-            symptom.researchConsent
-        );
+    // Function for a doctor to add a diagnosis (requires a valid doctor role)
+    function addDiagnosis(address user, string memory _role) public {
+        emit ActionLogged(
+            user, 
+            _role, 
+            "add_diagnosis", 
+            block.timestamp
+            );
+    }
+
+    // Function for referring a patient to another doctor (requires a valid doctor role)
+    function referToDoctor(address user, string memory _role) public {
+        emit ActionLogged(
+            user, 
+            _role, 
+            "refer_to_doctor", 
+            block.timestamp);
+    }
+
+    // Function for assigning a test to the lab (requires a valid doctor role)
+    function assignTest(address user, string memory _role) public {
+        emit ActionLogged(
+            user, 
+            _role, 
+            "assign_test", 
+            block.timestamp);
+    }
+
+    // Function for lab staff to update test results (requires a valid lab staff role)
+    function updateTestResults(address user, string memory _role) public {
+        emit ActionLogged(
+            user, 
+            _role, 
+            "update_test_results", 
+            block.timestamp);
     }
 }

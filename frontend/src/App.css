@@ -1,7 +1,7 @@
 body {
   margin: 0;
-  font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", 
-  "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji",
+    "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   background: linear-gradient(to bottom right, #fff7ed, #f9fafb);
 }
 
@@ -57,6 +57,41 @@ body {
   align-items: center;
   gap: 0.5rem;
   cursor: pointer;
+}
+
+.user-eth-address {
+  margin-top: 0.25rem;
+}
+
+.eth-address-display {
+  font-size: 0.625rem;
+  color: #9ca3af;
+  cursor: pointer;
+  transition: color 0.2s;
+  font-family: 'Courier New', monospace;
+  background-color: rgba(255, 255, 255, 0.1);
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  display: inline-block;
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.eth-address-display:hover {
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* Responsive adjustments for Ethereum address */
+@media (max-width: 768px) {
+  .eth-address-display {
+    max-width: 80px;
+    font-size: 0.5rem;
+  }
 }
 
 .main-content-patient {
@@ -878,7 +913,7 @@ button:disabled {
   width: 1rem;
 }
 
-.user-icon-patient{
+.user-icon-patient {
   width: 1.5rem;
   height: 1.5rem;
   background-color: #f97316;
@@ -913,12 +948,12 @@ button:disabled {
 .remove-icon {
   position: absolute;
   top: -8px;
-  right: -8px; 
-  font-size: 20px; 
-  color: #fff; 
+  right: -8px;
+  font-size: 20px;
+  color: #fff;
   background-color: rgba(0, 0, 0, 0.6);
   border-radius: 50%;
-  width: 20px; 
+  width: 20px;
   height: 20px;
   display: flex;
   justify-content: center;
@@ -963,13 +998,16 @@ button:disabled {
   color: #64748b;
 }
 
-textarea::placeholder {         
-  font-size: 1rem;  
+textarea::placeholder {
+  font-size: 1rem;
   color: #6b7280;
   font-size: 13px;
 }
 
-button, input, select, textarea {
+button,
+input,
+select,
+textarea {
   font-family: inherit;
 }
 
@@ -1053,7 +1091,7 @@ button, input, select, textarea {
   border: 1px solid #e2e8f0;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   height: 150px;
-  flex:0;
+  flex: 0;
 }
 
 .filters-header {
@@ -1126,7 +1164,7 @@ button, input, select, textarea {
 }
 
 .history-section {
-   display: flex;
+  display: flex;
   flex-direction: column;
   overflow: auto;
   border: 1px solid #f3f4f6;

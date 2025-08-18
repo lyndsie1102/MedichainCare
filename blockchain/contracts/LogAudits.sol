@@ -56,9 +56,9 @@ contract LogAudits {
     }
 
     // Function for a doctor to add a diagnosis (requires a valid doctor role)
-    function addDiagnosis(address user, string memory _role) public {
+    function addDiagnosis(string memory _role) public {
         emit ActionLogged(
-            user, 
+            msg.sender, 
             _role, 
             "add_diagnosis", 
             block.timestamp
@@ -66,27 +66,27 @@ contract LogAudits {
     }
 
     // Function for referring a patient to another doctor (requires a valid doctor role)
-    function referToDoctor(address user, string memory _role) public {
+    function referToDoctor(string memory _role) public {
         emit ActionLogged(
-            user, 
+            msg.sender,
             _role, 
             "refer_to_doctor", 
             block.timestamp);
     }
 
     // Function for assigning a test to the lab (requires a valid doctor role)
-    function assignTest(address user, string memory _role) public {
+    function assignTest(string memory _role) public {
         emit ActionLogged(
-            user, 
+            msg.sender, 
             _role, 
             "assign_test", 
             block.timestamp);
     }
 
     // Function for lab staff to update test results (requires a valid lab staff role)
-    function updateTestResults(address user, string memory _role) public {
+    function updateTestResults(string memory _role) public {
         emit ActionLogged(
-            user, 
+            msg.sender, 
             _role, 
             "update_test_results", 
             block.timestamp);

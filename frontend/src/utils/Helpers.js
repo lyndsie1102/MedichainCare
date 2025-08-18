@@ -81,19 +81,6 @@ const formatDate = (dateString) => {
     return new Intl.DateTimeFormat('en-US', options).format(utcDate);
 };
 
-const getEthAddress = (token) => {
-    try {
-        // Decode the token
-        const decodedToken = jwtDecode(token);
-        // Extract the eth_address
-        const ethAddress = decodedToken.eth_address;
-        return ethAddress;
-        // Use the eth_address as needed
-    } catch (error) {
-        console.error("Error decoding token:", error);
-    }
-}
-
 
 export { getRequestStatusIcon, getRequestStatusColor, getSymptomStatusColor, getSymptomStatusIcon, 
-    formatDate, getEthAddress };
+    formatDate};

@@ -15,6 +15,7 @@ import ViewModal from '../components/ViewModal';
 import LogoutModal from '../components/LogoutModal';
 import { getDoctorDashboard, getDoctorDetails, getSymptomDetails, createDiagnosis, createReferral, logout, createTestRequest } from '../api';
 import { getSymptomStatusColor, getSymptomStatusIcon, formatDate } from '../utils/Helpers';
+import SetupBlockchain from '../utils/SetupBlockchain';
 
 const DoctorDashboard = () => {
     const [submissions, setSubmissions] = useState([]);
@@ -33,10 +34,13 @@ const DoctorDashboard = () => {
     const [showUserDropdown, setShowUserDropdown] = useState(false);
     const [showLogoutModal, setShowLogoutModal] = useState(false);
 
+    const token = localStorage.getItem('access_token');
+    // Use the custom blockchain hook
+    const { account, contract, isOwner } = SetupBlockchain(token);
+
     useEffect(() => {
         const fetchDashboard = async () => {
             try {
-                const token = localStorage.getItem('access_token');
                 const data = await getDoctorDashboard(token, statusFilter, searchTerm);
                 setSubmissions(data);
             } catch (err) {
@@ -50,7 +54,6 @@ const DoctorDashboard = () => {
     useEffect(() => {
         const fetchDoctor = async () => {
             try {
-                const token = localStorage.getItem('access_token'); // or however you store it
                 const doctor = await getDoctorDetails(token);
                 setDoctorInfo(doctor);
             } catch (error) {
@@ -72,7 +75,6 @@ const DoctorDashboard = () => {
 
     const handleLogoutConfirm = async () => {
         setShowLogoutModal(false);
-        const token = localStorage.getItem('access_token');
 
         try {
             const res = await logout(token);
@@ -95,7 +97,6 @@ const DoctorDashboard = () => {
 
     const handleViewClick = async (submission) => {
         try {
-            const token = localStorage.getItem('access_token');
             const data = await getSymptomDetails(submission.id, token);
             setSelectedSubmission(data);
             setModalType('view');
@@ -146,7 +147,6 @@ const DoctorDashboard = () => {
 
 
         if (selectedTestType && selectedLab && selectedSubmission) {
-            const token = localStorage.getItem('access_token');
             console.log("Token:", token); // Token should be logged here
 
             if (!token) {
@@ -188,8 +188,6 @@ const DoctorDashboard = () => {
     const handleReferToDoctor = async () => {
         if (!selectedDoctor || !selectedSubmission) return;
 
-        const token = localStorage.getItem('access_token');
-
         try {
             await createReferral(
                 token,
@@ -219,8 +217,6 @@ const DoctorDashboard = () => {
         if (!analysis.trim() || !selectedSubmission) return;
 
         try {
-            const token = localStorage.getItem('access_token');
-
             // Prepare data to send to backend
             const payload = {
                 symptom_id: selectedSubmission.id,
@@ -264,7 +260,7 @@ const DoctorDashboard = () => {
     };
 
 
-    
+
     const filteredSubmissions = submissions.filter(submission => {
         const patientName = submission?.patient?.name?.toLowerCase() || '';
         const symptoms = submission?.symptoms?.toLowerCase() || '';
@@ -346,11 +342,11 @@ const DoctorDashboard = () => {
                             >
                                 <option value="all">All Status</option>
                                 <option value="Pending">Pending</option>
-                                <option value="Assigned">Assigned to Lab</option>
+                                <option value="Assigned to Lab">Assigned to Lab</option>
                                 <option value="Tested">Tested</option>
                                 <option value="Diagnosed">Diagnosed</option>
                                 <option value="Referred">Referred</option>
-                                <option value="Completed">Completed</option>
+                                <option value="Waiting for Test">Waiting for Test</option>
                             </select>
                             <Filter className="filter-icon" />
                         </div>

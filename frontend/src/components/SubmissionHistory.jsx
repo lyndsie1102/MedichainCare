@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { Calendar, Camera, Clock, CheckCircle, BadgeCheck, Eye, ArrowRight, FilterIcon, FileCheck, FlaskRound } from 'lucide-react';
+import { Calendar, Camera, Eye, FilterIcon } from 'lucide-react';
 import { formatDate, getSymptomStatusIcon, getSymptomStatusColor } from '../utils/Helpers'
 
 

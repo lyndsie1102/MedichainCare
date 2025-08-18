@@ -10,6 +10,7 @@ const ViewModal = ({
     handleCloseModal,
     currentDoctor
 }) => {
+    const isSymptomTested = selectedSubmission?.symptomStatus === 'Tested';
     return (
         <div className="modal-overlay">
             <div className="modal-container modal-large">
@@ -25,27 +26,27 @@ const ViewModal = ({
                     <div className="modal-content">
                         {/* Patient Information */}
                         {selectedSubmission?.patient && (
-                        <div className="patient-details-card">
-                            <h4 className="section-title">Patient Information</h4>
-                            <div className="patient-info-list">
-                                <div className="info-item">
-                                    <User className="info-icon" />
-                                    <span className="info-text">Age: {selectedSubmission.patient.age} • {selectedSubmission.patient.gender}</span>
-                                </div>
-                                <div className="info-item">
-                                    <Phone className="info-icon" />
-                                    <span className="info-text">{selectedSubmission.patient.phone}</span>
-                                </div>
-                                <div className="info-item">
-                                    <Mail className="info-icon" />
-                                    <span className="info-text">{selectedSubmission.patient.email}</span>
-                                </div>
-                                <div className="info-item">
-                                    <MapPin className="info-icon" />
-                                    <span className="info-text">{selectedSubmission.patient.address}</span>
+                            <div className="patient-details-card">
+                                <h4 className="section-title">Patient Information</h4>
+                                <div className="patient-info-list">
+                                    <div className="info-item">
+                                        <User className="info-icon" />
+                                        <span className="info-text">Age: {selectedSubmission.patient.age} • {selectedSubmission.patient.gender}</span>
+                                    </div>
+                                    <div className="info-item">
+                                        <Phone className="info-icon" />
+                                        <span className="info-text">{selectedSubmission.patient.phone}</span>
+                                    </div>
+                                    <div className="info-item">
+                                        <Mail className="info-icon" />
+                                        <span className="info-text">{selectedSubmission.patient.email}</span>
+                                    </div>
+                                    <div className="info-item">
+                                        <MapPin className="info-icon" />
+                                        <span className="info-text">{selectedSubmission.patient.address}</span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
                         )}
 
                         {/* Consent Information */}
@@ -177,10 +178,11 @@ const ViewModal = ({
                                         onChange={(e) => setAnalysis(e.target.value)}
                                         placeholder="Enter your diagnosis and recommendations..."
                                         className="diagnosis-textarea"
+                                        disabled={!isSymptomTested} // Disable the textarea if symptom is not tested
                                     />
                                     <button
                                         onClick={handleAddDiagnosis}
-                                        disabled={!analysis.trim()}
+                                        disabled={!analysis.trim() || !isSymptomTested} // Disable the button if analysis is empty or symptom is not tested
                                         className="btn btn-add-diagnosis"
                                     >
                                         Add Diagnosis

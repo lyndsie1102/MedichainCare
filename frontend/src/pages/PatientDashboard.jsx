@@ -5,7 +5,7 @@ import SubmissionHistory from '../components/SubmissionHistory';
 import SubmissionViewModal from '../components/SubmissionViewModal';
 import LogoutModal from '../components/LogoutModal';
 import { getSymptomHistory, getPatientInfo, getSymptom, logout } from '../api';
-import { getEthAddress } from '../utils/Helpers';
+import { getEthAddress } from '../utils/BlockchainInteract';
 
 const PatientDashboard = () => {
   const [submissions, setSubmissions] = useState([]);
@@ -18,8 +18,20 @@ const PatientDashboard = () => {
   const [error, setError] = useState(null);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const [showFullAddress, setShowFullAddress] = useState(false);
 
-const token = localStorage.getItem('access_token');
+  // Mock Ethereum address for the doctor
+  const doctorEthAddress = '0xabc1234567890def1234567890abcdef12345678';
+
+  const getMaskedAddress = (address) => {
+    if (!address || address.length < 7) return address;
+    return `0x...${address.slice(-5)}`;
+  };
+  const handleAddressClick = () => {
+    setShowFullAddress(!showFullAddress);
+  };
+
+  const token = localStorage.getItem('access_token');
   // Fetch user info once on mount
   useEffect(() => {
     const fetchUserInfo = async () => {
@@ -110,25 +122,25 @@ const token = localStorage.getItem('access_token');
 
   const handleLogoutConfirm = async () => {
     setShowLogoutModal(false);
-  
+
     try {
       const res = await logout(token);
-  
+
       if (res.status !== 200) {
         throw new Error('Logout failed on server');
       }
-  
+
       // Clear client-side session
       localStorage.removeItem('access_token');
       localStorage.removeItem('user');
-  
+
       window.location.href = '/login';
     } catch (error) {
       console.error('Logout error:', error);
       alert('Logout failed. Please try again.');
     }
   };
-  
+
 
   return (
     <div className="container">
@@ -149,6 +161,24 @@ const token = localStorage.getItem('access_token');
             <p className="user-name">
               {user ? user.name : 'Loading...'}
             </p>
+            <div className="user-eth-address">
+              <span
+                className="eth-address-display"
+                onClick={handleAddressClick}
+                title={showFullAddress ? "Click to hide full address" : "Click to reveal full address"}
+              >
+                {showFullAddress ? doctorEthAddress : getMaskedAddress(doctorEthAddress)}
+              </span>
+            </div>
+            <div className="user-eth-address">
+              <span
+                className="eth-address-display"
+                onClick={handleAddressClick}
+                title={showFullAddress ? "Click to hide full address" : "Click to reveal full address"}
+              >
+                {showFullAddress ? doctorEthAddress : getMaskedAddress(doctorEthAddress)}
+              </span>
+            </div>
             <ChevronDown className={`user-dropdown-icon ${showUserDropdown ? 'user-dropdown-icon-rotated' : ''}`} />
           </div>
 
@@ -175,9 +205,9 @@ const token = localStorage.getItem('access_token');
         <SubmissionHistory
           submissions={filteredSubmissions}
           handleViewClick={handleViewClick}
-          setStatusFilter={setStatusFilter} 
-          setStartDate={setStartDate}      
-          setEndDate={setEndDate}   
+          setStatusFilter={setStatusFilter}
+          setStartDate={setStartDate}
+          setEndDate={setEndDate}
         />
       </main>
       {

@@ -15,7 +15,7 @@ import ViewModal from '../components/ViewModal';
 import LogoutModal from '../components/LogoutModal';
 import { getDoctorDashboard, getDoctorDetails, getSymptomDetails, createDiagnosis, createReferral, logout, createTestRequest } from '../api';
 import { getSymptomStatusColor, getSymptomStatusIcon, formatDate } from '../utils/Helpers';
-import SetupBlockchain from '../utils/SetupBlockchain';
+import { setupBlockchain, addDiagnosisToBlockchain, referToDoctorOnBlockchain, assignTestToLab } from '../utils/BlockchainInteract'; 
 
 const DoctorDashboard = () => {
     const [submissions, setSubmissions] = useState([]);
@@ -35,8 +35,7 @@ const DoctorDashboard = () => {
     const [showLogoutModal, setShowLogoutModal] = useState(false);
 
     const token = localStorage.getItem('access_token');
-    // Use the custom blockchain hook
-    const { account, contract, isOwner } = SetupBlockchain(token);
+    const { account, contract, isOwner } = setupBlockchain(token);
 
     useEffect(() => {
         const fetchDashboard = async () => {
@@ -105,7 +104,6 @@ const DoctorDashboard = () => {
         }
     };
 
-
     const handleAssignClick = (submission) => {
         setSelectedSubmission(submission);
         setModalType('assign');
@@ -136,36 +134,22 @@ const DoctorDashboard = () => {
     };
 
 
-
-
+    // Handle assigning test to lab and integrating with blockchain
     const handleAssignToLab = async () => {
-
-        console.log("handleAssignToLab triggered");
-        console.log("selectedTestType", selectedTestType);
-        console.log("selectedLab", selectedLab);
-        console.log("selectedSubmission", selectedSubmission);
-
-
         if (selectedTestType && selectedLab && selectedSubmission) {
-            console.log("Token:", token); // Token should be logged here
-
-            if (!token) {
-                console.error("No access token found");
-                alert("You are not authorized. Please log in again.");
-                window.location.href = "/login";
-                return;
-            }
-
             try {
-                // Call the API to assign the symptom to the lab
-                console.log('Assigning test request...');
-                const response = await createTestRequest(token, {
+                await createTestRequest(token, {
                     symptom_id: selectedSubmission.id,
                     lab_id: selectedLab.id,
                     test_type_id: selectedTestType.id
                 });
 
-                // Update the submission list and the status of the submission
+                // Integrating Blockchain: Assign Test to Lab
+                await assignTestToLab({
+                    role: 'doctor',  // Adjust role if needed
+                });
+
+                // Update submission status
                 setSubmissions(prev =>
                     prev.map(sub =>
                         sub.id === selectedSubmission.id
@@ -174,7 +158,6 @@ const DoctorDashboard = () => {
                     )
                 );
 
-                // Close the modal after successful assignment
                 alert(`Successfully assigned to ${selectedLab.name}`);
                 handleCloseModal();
             } catch (error) {
@@ -185,17 +168,23 @@ const DoctorDashboard = () => {
     };
 
 
+    // Handle referring to another doctor and integrating with blockchain
     const handleReferToDoctor = async () => {
         if (!selectedDoctor || !selectedSubmission) return;
 
         try {
             await createReferral(
                 token,
-                selectedSubmission.id, // this is the symptom_id
-                selectedDoctor.id      // this is referral_doctor_id
+                selectedSubmission.id,
+                selectedDoctor.id
             );
 
-            // Update the submission status in the UI
+            // Integrating Blockchain: Refer to Another Doctor
+            await referToDoctorOnBlockchain({
+                role: 'doctor',  // Adjust role if needed
+            });
+
+            // Update submission status in the UI
             setSubmissions(prev =>
                 prev.map(sub =>
                     sub.id === selectedSubmission.id
@@ -213,22 +202,21 @@ const DoctorDashboard = () => {
     };
 
 
+    // Handle adding diagnosis and integrating with blockchain
     const handleAddDiagnosis = async () => {
         if (!analysis.trim() || !selectedSubmission) return;
 
         try {
-            // Prepare data to send to backend
             const payload = {
                 symptom_id: selectedSubmission.id,
                 patient_id: selectedSubmission.patient.id,
                 diagnosis_content: analysis.trim()
             };
 
-            // Send to API
             const response = await createDiagnosis(payload, token);
             const newDiagnosis = response.diagnosis;
 
-            // Update submission list
+            // Update submission list with new diagnosis
             setSubmissions(prev =>
                 prev.map(sub =>
                     sub.id === selectedSubmission.id
@@ -241,13 +229,17 @@ const DoctorDashboard = () => {
                 )
             );
 
-            // Update selected submission
+            // Integrating Blockchain: Add Diagnosis
+            await addDiagnosisToBlockchain({
+                role: 'doctor',  // Adjust role if needed
+            });
+
             setSelectedSubmission(prev =>
                 prev
                     ? {
                         ...prev,
                         diagnoses: [...prev.diagnoses, newDiagnosis],
-                        status: 'diagnosed'
+                        status: 'Diagnosed'
                     }
                     : null
             );
@@ -255,10 +247,9 @@ const DoctorDashboard = () => {
             setAnalysis('');
         } catch (error) {
             console.error('Failed to create diagnosis:', error);
-            // Optional: show error message to user
+            alert('Diagnosis creation failed. Please try again.');
         }
     };
-
 
 
     const filteredSubmissions = submissions.filter(submission => {

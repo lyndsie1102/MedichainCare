@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send } from 'lucide-react';
 import { uploadImage, submitSymptom } from '../api';
-import { setupBlockchain, submitSymptomToBlockchain, getEthAddress } from '../utils/BlockchainInteract'; // Import blockchain functions
+import { setupBlockchain, submitSymptomToBlockchain } from '../utils/BlockchainInteract'; // Import blockchain functions
 
 const SymptomForm = ({ onSubmitSuccess, patientId }) => {
   const [symptoms, setSymptoms] = useState('');

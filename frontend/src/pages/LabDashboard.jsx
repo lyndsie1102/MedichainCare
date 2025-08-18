@@ -1,17 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
     TestTube,
     Heart,
     Search,
     Filter,
-    Calendar,
     ChevronDown,
-    ChevronLeft,
-    ChevronRight,
-    User,
-    Clock,
     LogOut,
-    CalendarDays,
     X
 } from 'lucide-react';
 import LogoutModal from '../components/LogoutModal';  // Import your LogoutModal component
@@ -20,6 +14,7 @@ import UploadResultsModal from '../components/UploadResultsModal.jsx';  // Impor
 import TestRequestList from '../components/TestRequestList.jsx';
 import ScheduleModal from '../components/ScheduleModal.jsx';
 import { getRequestStatusColor, getRequestStatusIcon } from '../utils/Helpers';  // Import utility functions for status color and icon
+import { setupBlockchain, updateTestResultsOnBlockchain } from '../utils/BlockchainInteract.js';
 
 
 
@@ -115,6 +110,12 @@ const LabStaffDashboard = ({ accessToken }) => {
             try {
                 const response = await uploadLabResult(selectedRequest.upload_token, token, fileArray, resultSummary);
                 alert(response.message);
+
+                await setupBlockchain(token);
+
+                await updateTestResultsOnBlockchain ({
+                    role: 'lab_staff'
+                });
 
                 setTestRequests(prev =>
                     prev.map(req => req.id === selectedRequest.id ? { ...req, status: 'Uploaded' } : req)
@@ -254,19 +255,6 @@ const LabStaffDashboard = ({ accessToken }) => {
         const matchesStatus = statusFilter === 'all' || request.status === statusFilter;
         return matchesSearch && matchesStatus;
     });
-
-
-
-    const formatDate = (dateString) => {
-        return new Date(dateString).toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-    };
-
 
 
     return (

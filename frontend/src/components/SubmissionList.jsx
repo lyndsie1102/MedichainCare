@@ -79,7 +79,7 @@ const SubmissionList = ({
                             <button
                                 onClick={() => handleReferClick(submission)}
                                 className="btn btn-refer"
-                                disabled={submission.status !== 'diagnosed'}
+                                disabled={submission.status !== 'Diagnosed'}
                             >
                                 <UserCheck className="btn-icon" />
                                 <span>Refer</span>

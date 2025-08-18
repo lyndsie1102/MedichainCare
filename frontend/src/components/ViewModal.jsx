@@ -10,7 +10,7 @@ const ViewModal = ({
     handleCloseModal,
     currentDoctor
 }) => {
-    const isSymptomTested = selectedSubmission?.symptomStatus === 'Tested';
+    const isSymptomTested = selectedSubmission?.status === 'Tested';
     return (
         <div className="modal-overlay">
             <div className="modal-container modal-large">

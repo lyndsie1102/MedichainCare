@@ -82,5 +82,6 @@ const formatDate = (dateString) => {
 };
 
 
+
 export { getRequestStatusIcon, getRequestStatusColor, getSymptomStatusColor, getSymptomStatusIcon, 
-    formatDate};
+    formatDate };

@@ -20,9 +20,8 @@ const PatientDashboard = () => {
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [showFullAddress, setShowFullAddress] = useState(false);
 
-  // Mock Ethereum address for the doctor
-  const doctorEthAddress = '0xabc1234567890def1234567890abcdef12345678';
-
+  const token = localStorage.getItem('access_token');
+  let eth_address;
   const getMaskedAddress = (address) => {
     if (!address || address.length < 7) return address;
     return `0x...${address.slice(-5)}`;
@@ -31,7 +30,6 @@ const PatientDashboard = () => {
     setShowFullAddress(!showFullAddress);
   };
 
-  const token = localStorage.getItem('access_token');
   // Fetch user info once on mount
   useEffect(() => {
     const fetchUserInfo = async () => {
@@ -42,7 +40,7 @@ const PatientDashboard = () => {
       try {
         const data = await getPatientInfo(token);
         setUser(data);
-        getEthAddress(token);
+        eth_address=getEthAddress(token);
       } catch (err) {
         console.error('Failed to load user info', err);
       }
@@ -167,7 +165,7 @@ const PatientDashboard = () => {
                 onClick={handleAddressClick}
                 title={showFullAddress ? "Click to hide full address" : "Click to reveal full address"}
               >
-                {showFullAddress ? doctorEthAddress : getMaskedAddress(doctorEthAddress)}
+                {showFullAddress ? eth_address : getMaskedAddress(eth_address)}
               </span>
             </div>
             <div className="user-eth-address">
@@ -176,7 +174,7 @@ const PatientDashboard = () => {
                 onClick={handleAddressClick}
                 title={showFullAddress ? "Click to hide full address" : "Click to reveal full address"}
               >
-                {showFullAddress ? doctorEthAddress : getMaskedAddress(doctorEthAddress)}
+                {showFullAddress ? eth_address : getMaskedAddress(eth_address)}
               </span>
             </div>
             <ChevronDown className={`user-dropdown-icon ${showUserDropdown ? 'user-dropdown-icon-rotated' : ''}`} />

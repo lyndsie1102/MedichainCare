@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Heart, UserIcon, LogOut, ChevronDown } from 'lucide-react';
+import { Heart, UserIcon, LogOut, ChevronDown, Wallet, CopyIcon } from 'lucide-react';
 import SymptomForm from '../components/SymptomForm';
 import SubmissionHistory from '../components/SubmissionHistory';
 import SubmissionViewModal from '../components/SubmissionViewModal';
 import LogoutModal from '../components/LogoutModal';
 import { getSymptomHistory, getPatientInfo, getSymptom, logout } from '../api';
 import { getEthAddress } from '../utils/BlockchainInteract';
+import { formatAddress, copyAddressToClipboard } from '../utils/Helpers';
 
 const PatientDashboard = () => {
   const [submissions, setSubmissions] = useState([]);
@@ -19,16 +20,11 @@ const PatientDashboard = () => {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [showFullAddress, setShowFullAddress] = useState(false);
+  const [showAddressTooltip, setShowAddressTooltip] = useState(false);
 
   const token = localStorage.getItem('access_token');
-  let eth_address;
-  const getMaskedAddress = (address) => {
-    if (!address || address.length < 7) return address;
-    return `0x...${address.slice(-5)}`;
-  };
-  const handleAddressClick = () => {
-    setShowFullAddress(!showFullAddress);
-  };
+  const eth_address = getEthAddress(token);
+  const shortEthAddress = formatAddress(eth_address);
 
   // Fetch user info once on mount
   useEffect(() => {
@@ -40,7 +36,7 @@ const PatientDashboard = () => {
       try {
         const data = await getPatientInfo(token);
         setUser(data);
-        eth_address=getEthAddress(token);
+        eth_address = getEthAddress(token);
       } catch (err) {
         console.error('Failed to load user info', err);
       }
@@ -152,30 +148,35 @@ const PatientDashboard = () => {
         </div>
         {/* User Info */}
         <div className="user-info" onClick={() => setShowUserDropdown(!showUserDropdown)}>
-          <div className="user-icon-patient">
+          <div className="patient-user-card patient-user-card-clickable">
             <UserIcon className="patient-user-icon" />
-          </div>
-          <div className="user-details">
-            <p className="user-name">
-              {user ? user.name : 'Loading...'}
-            </p>
-            <div className="user-eth-address">
-              <span
-                className="eth-address-display"
-                onClick={handleAddressClick}
-                title={showFullAddress ? "Click to hide full address" : "Click to reveal full address"}
-              >
-                {showFullAddress ? eth_address : getMaskedAddress(eth_address)}
-              </span>
-            </div>
-            <div className="user-eth-address">
-              <span
-                className="eth-address-display"
-                onClick={handleAddressClick}
-                title={showFullAddress ? "Click to hide full address" : "Click to reveal full address"}
-              >
-                {showFullAddress ? eth_address : getMaskedAddress(eth_address)}
-              </span>
+            <div className="user-details">
+              <div className="name-address">
+                <p className="user-name">
+                  {user ? user.name : 'Loading...'}
+                </p>
+                <div
+                  className="eth-address-container"
+                  onMouseEnter={() => setShowAddressTooltip(true)}
+                  onMouseLeave={() => setShowAddressTooltip(false)}
+                >
+                  <Wallet className="eth-address-icon" />
+                  <span className="eth-address-short">{shortEthAddress}</span>
+                  {showAddressTooltip && (
+                    <div className="eth-address-tooltip">
+                      <div className="tooltip-content">
+                        <span className="full-address">{eth_address}</span>
+                        <button
+                          className="copy-button"
+                          onClick={copyAddressToClipboard(eth_address)}
+                        >
+                          <CopyIcon className="copy-icon" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
             <ChevronDown className={`user-dropdown-icon ${showUserDropdown ? 'user-dropdown-icon-rotated' : ''}`} />
           </div>

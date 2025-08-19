@@ -5,7 +5,9 @@ import {
     Search,
     Filter,
     ChevronDown,
-    LogOut
+    LogOut,
+    Wallet,
+    CopyIcon
 } from 'lucide-react';
 import '../DoctorDashboard.css';
 import AssignModal from '../components/AssignModal';
@@ -15,7 +17,8 @@ import ViewModal from '../components/ViewModal';
 import LogoutModal from '../components/LogoutModal';
 import { getDoctorDashboard, getDoctorDetails, getSymptomDetails, createDiagnosis, createReferral, logout, createTestRequest } from '../api';
 import { getSymptomStatusColor, getSymptomStatusIcon, formatDate } from '../utils/Helpers';
-import { setupBlockchain, addDiagnosisToBlockchain, referToDoctorOnBlockchain, assignTestToLab } from '../utils/BlockchainInteract'; 
+import { setupBlockchain, addDiagnosisToBlockchain, referToDoctorOnBlockchain, assignTestToLab, getEthAddress } from '../utils/BlockchainInteract';
+import { formatAddress, copyAddressToClipboard } from '../utils/Helpers';
 
 const DoctorDashboard = () => {
     const [submissions, setSubmissions] = useState([]);
@@ -33,8 +36,11 @@ const DoctorDashboard = () => {
     const [statusFilter, setStatusFilter] = useState('all');
     const [showUserDropdown, setShowUserDropdown] = useState(false);
     const [showLogoutModal, setShowLogoutModal] = useState(false);
+    const [showAddressTooltip, setShowAddressTooltip] = useState(false);
 
     const token = localStorage.getItem('access_token');
+    const eth_address = getEthAddress(token);
+    const shortEthAddress = formatAddress(eth_address);
     const { account, contract, isOwner } = setupBlockchain(token);
 
     useEffect(() => {
@@ -266,7 +272,6 @@ const DoctorDashboard = () => {
 
     return (
         <div className="dashboard-container">
-            {/* Header */}
             <header className="header">
                 <div className="logo">
                     <Heart size={40} className="icon-heart" />
@@ -275,20 +280,42 @@ const DoctorDashboard = () => {
                         <p>Doctor Dashboard</p>
                     </div>
                 </div>
+
                 {/* User Info */}
                 <div className="user-info" onClick={() => setShowUserDropdown(!showUserDropdown)}>
-                    <div className="user-icon-doctor">
-                        <Stethoscope className="stethoscope-icon" />
+                    <div className="doctor-user-card doctor-user-card-clickable">
+                        <Stethoscope className="doctor-user-icon" />
+                        <div className="user-details-doctor">
+                            <p className="user-name">
+                                {doctorInfo ? `Dr. ${doctorInfo.name}` : 'Loading...'}
+                            </p>
+                            <p className="user-specialty">
+                                {doctorInfo ? doctorInfo.specialty : ''}
+                            </p>
+                            <div
+                                className="eth-address-container"
+                                onMouseEnter={() => setShowAddressTooltip(true)}
+                                onMouseLeave={() => setShowAddressTooltip(false)}
+                            >
+                                <Wallet className="eth-address-icon" />
+                                <span className="eth-address-short">{shortEthAddress}</span>
+                                {showAddressTooltip && (
+                                    <div className="eth-address-tooltip">
+                                        <div className="tooltip-content">
+                                            <span className="full-address">{eth_address}</span>
+                                            <button
+                                                className="copy-button"
+                                                onClick={copyAddressToClipboard(eth_address)}
+                                            >
+                                                <CopyIcon className="copy-icon" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                        <ChevronDown className={`user-dropdown-icon ${showUserDropdown ? 'user-dropdown-icon-rotated' : ''}`} />
                     </div>
-                    <div className="user-details-doctor">
-                        <p className="user-name">
-                            {doctorInfo ? `Dr. ${doctorInfo.name}` : 'Loading...'}
-                        </p>
-                        <p className="user-specialty">
-                            {doctorInfo ? doctorInfo.specialty : ''}
-                        </p>
-                    </div>
-                    <ChevronDown className={`user-dropdown-icon ${showUserDropdown ? 'user-dropdown-icon-rotated' : ''}`} />
 
                     {/* User Dropdown */}
                     {showUserDropdown && (
@@ -306,7 +333,7 @@ const DoctorDashboard = () => {
             </header >
 
             {/* Main Content */}
-            < main className="main-content-doctor" >
+            < main className="main-content doctor" >
                 {/* Page Title and Filters */}
                 < div className="page-header" >
                     <h2 className="page-title">Patient Symptom Submissions</h2>

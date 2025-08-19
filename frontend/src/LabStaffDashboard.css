@@ -15,6 +15,7 @@ body {
 .lab-dashboard-container {
   min-height: 100vh;
   background-color: #f9fafb;
+  padding: 0 1rem;
 }
 
 /* Lab Header styles */
@@ -22,6 +23,7 @@ body {
   background-color: white;
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   border-bottom: 1px solid #e5e7eb;
+  padding: 1rem 0;
 }
 
 .lab-header-content {
@@ -115,16 +117,14 @@ body {
   background: linear-gradient(to right, #16a34a, #15803d);
   padding: 0.5rem;
   border-radius: 0.5rem;
-}
-
-.lab-testtube-icon {
-  height: 1.25rem;
-  width: 1.25rem;
+  height: 30px;
+  width: 30px;
   color: white;
 }
 
+
 .lab-user-details {
-  text-align: right;
+  text-align: left;
 }
 
 .lab-user-name {

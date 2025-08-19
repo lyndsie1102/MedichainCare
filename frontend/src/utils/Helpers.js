@@ -81,7 +81,16 @@ const formatDate = (dateString) => {
     return new Intl.DateTimeFormat('en-US', options).format(utcDate);
 };
 
+const formatAddress = (address) => {
+    const shortEthAddress = `0x...${address.slice(-5)}`;
+    return shortEthAddress;
+}
 
+const copyAddressToClipboard = (address) => {
+    navigator.clipboard.writeText(address);
+  };
 
-export { getRequestStatusIcon, getRequestStatusColor, getSymptomStatusColor, getSymptomStatusIcon, 
-    formatDate };
+export {
+    getRequestStatusIcon, getRequestStatusColor, getSymptomStatusColor, getSymptomStatusIcon,
+    formatDate, formatAddress, copyAddressToClipboard
+};

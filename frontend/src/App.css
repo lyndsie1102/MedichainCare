@@ -20,7 +20,6 @@ body {
   align-items: center;
   background: white;
   border-bottom: 1px solid #e5e7eb;
-  padding: 1rem 0;
 }
 
 .logo {
@@ -50,7 +49,6 @@ body {
 
 .user-info {
   position: relative;
-  background-color: #f3f4f6;
   padding: 0.5rem 1rem;
   border-radius: 0.5rem;
   display: flex;
@@ -843,9 +841,18 @@ button:disabled {
 }
 
 .user-details {
-  align-items: center;
   display: flex;
-  gap: 0.25rem;
+  align-items: center;
+  gap: 1rem;
+  position: relative;
+  cursor: pointer;
+}
+
+.name-address {
+  display: flex;
+  flex-direction: column; /* Stack elements vertically */
+  gap: 0.5rem; /* Add some space between name and address */
+  align-items: flex-start; /* Align all items to the left */
 }
 
 .user-name {
@@ -854,6 +861,109 @@ button:disabled {
   color: #111827;
   margin: 0;
   white-space: nowrap;
+}
+
+/* eth adress style */
+.eth-address-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  cursor: pointer;
+  align-items: flex-start;
+}
+
+.eth-address-icon {
+  width: 16px;
+  height: 16px;
+  color: #6b7280;
+  font-weight: 500;
+  margin-top: 5px;
+}
+
+.eth-address-short {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.6rem;
+  color: #f97316;
+  background-color: #fff7ed;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+  border: 0.5px solid #fed7aa;
+  transition: all 0.2s;
+  margin-left: 0.5rem;
+  margin-top: 5px;
+}
+
+.eth-address-short:hover {
+  background-color: #ffedd5;
+  border-color: #fdba74;
+}
+
+.eth-address-tooltip {
+  position: absolute;
+  top: 100%;
+  margin-top: 0.5rem;
+  right: 0;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  z-index: 50;
+  padding: 0.75rem;
+  animation: fadeIn 0.2s ease-out;
+  width: fit-content;
+  overflow: hidden;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-0.25rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.tooltip-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  max-width: 100%;
+}
+
+.full-address {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.75rem;
+  color: #374151;
+  font-weight: 500;
+  flex: 1;
+}
+
+.copy-button {
+  height: 1.5rem;
+  width: 1.5rem;
+  padding: 0;
+  flex-shrink: 0;
+  border: 1px solid #d1d5db;
+  background-color: white;
+}
+
+.copy-button:hover {
+  background-color: #f9fafb;
+  border-color: #f97316;
+}
+
+.copy-icon {
+  width: 0.75rem;
+  height: 0.75rem;
+  color: #6b7280;
+}
+
+.copy-button:hover .copy-icon {
+  color: #f97316;
 }
 
 /* User Dropdown Menu */
@@ -913,23 +1023,32 @@ button:disabled {
   width: 1rem;
 }
 
-.user-icon-patient {
-  width: 1.5rem;
-  height: 1.5rem;
-  background-color: #f97316;
-  border-radius: 50%;
+.patient-user-card-clickable {
   display: flex;
   align-items: center;
-  justify-content: center;
-  margin-right: 0.5rem;
+  gap: 0.75rem;
+  background-color: #fff7ed; /* Light orange background */
+  padding: 0.5rem 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid #fed7aa; /* Light orange border */
+  transition: all 0.2s;
 }
 
+.patient-user-card-clickable:hover {
+  background-color: #ffedd5; /* Lighter orange on hover */
+  border-color: #fdba74; /* Medium orange for hover border */
+}
 
 .patient-user-icon {
-  width: 0.875rem;
-  height: 0.875rem;
+  flex-shrink: 0;
+  background: linear-gradient(to right, #f97316, #fd7e14); /* Gradient from deep to lighter orange */
+  padding: 0.5rem;
+  border-radius: 0.5rem;
   color: white;
+  width: 30px;
+  height: 40px;
 }
+
 
 .preview-item {
   position: relative;

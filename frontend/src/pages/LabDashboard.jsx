@@ -6,7 +6,9 @@ import {
     Filter,
     ChevronDown,
     LogOut,
-    X
+    X,
+    Wallet,
+    CopyIcon
 } from 'lucide-react';
 import LogoutModal from '../components/LogoutModal';  // Import your LogoutModal component
 import { getTestRequests, uploadLabResult, logout, getLabStaffInfo, appointmentSchedule, cancelAppointment } from '../api.js';  // Import your API functions
@@ -14,8 +16,8 @@ import UploadResultsModal from '../components/UploadResultsModal.jsx';  // Impor
 import TestRequestList from '../components/TestRequestList.jsx';
 import ScheduleModal from '../components/ScheduleModal.jsx';
 import { getRequestStatusColor, getRequestStatusIcon } from '../utils/Helpers';  // Import utility functions for status color and icon
-import { setupBlockchain, updateTestResultsOnBlockchain } from '../utils/BlockchainInteract.js';
-
+import { setupBlockchain, updateTestResultsOnBlockchain, getEthAddress } from '../utils/BlockchainInteract.js';
+import { formatAddress, copyAddressToClipboard } from '../utils/Helpers';
 
 
 const LabStaffDashboard = ({ accessToken }) => {
@@ -30,6 +32,7 @@ const LabStaffDashboard = ({ accessToken }) => {
     const [files, setFiles] = useState([]);
     const [resultSummary, setResultSummary] = useState('');
     const [summaryError, setSummaryError] = useState('');
+    const [showAddressTooltip, setShowAddressTooltip] = useState(false);
 
     // Appointment scheduling states
     const [selectedDateTime, setSelectedDateTime] = useState('');
@@ -37,6 +40,9 @@ const LabStaffDashboard = ({ accessToken }) => {
     const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
 
     const token = localStorage.getItem('access_token');
+    const eth_address = getEthAddress(token);
+    const shortEthAddress = formatAddress(eth_address);
+
 
     // Fetch lab staff info
     useEffect(() => {
@@ -113,7 +119,7 @@ const LabStaffDashboard = ({ accessToken }) => {
 
                 await setupBlockchain(token);
 
-                await updateTestResultsOnBlockchain ({
+                await updateTestResultsOnBlockchain({
                     role: 'lab_staff'
                 });
 
@@ -198,7 +204,7 @@ const LabStaffDashboard = ({ accessToken }) => {
 
                 // Display success alert
                 alert(`Appointment cancelled successfully for ${selectedRequest.patient.name}`);
-                handleCloseModal(); 
+                handleCloseModal();
 
             } catch (error) {
                 console.error('Error cancelling appointment:', error);
@@ -259,57 +265,67 @@ const LabStaffDashboard = ({ accessToken }) => {
 
     return (
         <div className="lab-dashboard-container">
-            {/* Header */}
-            <header className="lab-header">
-                <div className="lab-header-content">
-                    <div className="lab-header-inner">
-                        <div className="lab-header-left">
-                            <div className="lab-logo-section">
-                                <div className="lab-logo-icon">
-                                    <Heart className="lab-logo-heart" />
-                                </div>
-                                <div>
-                                    <h1 className="lab-logo-title">HealthConnect</h1>
-                                    <p className="lab-logo-subtitle">Lab Staff Dashboard</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* User Info with TestTube Icon */}
-                        <div className="lab-user-info" onClick={() => setShowUserDropdown(!showUserDropdown)}>
-                            <div className="lab-user-card lab-user-card-clickable">
-                                <div className="lab-user-icon">
-                                    <TestTube className="lab-testtube-icon" />
-                                </div>
-                                <div className="lab-user-details">
-                                    <p className="lab-user-name">
-                                        {labStaff ? `${labStaff.name}` : 'Loading...'}
-                                    </p>
-                                    <p className="lab-user-role">Lab Technician</p>
-                                </div>
-                                <ChevronDown className={`lab-user-dropdown-icon ${showUserDropdown ? 'lab-user-dropdown-icon-rotated' : ''}`} />
-                            </div>
-                            {/* User Dropdown */}
-                            {showUserDropdown && (
-                                <div className="lab-user-dropdown-menu">
-                                    <button
-                                        onClick={handleLogoutClick}
-                                        className="lab-user-dropdown-item lab-logout-item"
-                                    >
-                                        <LogOut className="lab-dropdown-item-icon" />
-                                        <span>Log Out</span>
-                                    </button>
-                                </div>
-                            )}
-                        </div>
+            <header className="header">
+                <div className="logo">
+                    <Heart size={40} className="icon-heart" />
+                    <div>
+                        <h1>HealthCare Portal</h1>
+                        <p>Lab Dashboard</p>
                     </div>
                 </div>
-            </header>
+
+                {/* User Info */}
+                <div className="user-info" onClick={() => setShowUserDropdown(!showUserDropdown)}>
+                    <div className="lab-user-card lab-user-card-clickable">
+                        <TestTube className="lab-user-icon" />
+                        <div className="lab-user-details">
+                            <p className="lab-user-name">
+                                {labStaff ? `${labStaff.name}` : 'Loading...'}
+                            </p>
+                            <p className="lab-user-role">Lab Technician</p>
+                            <div
+                                className="eth-address-container"
+                                onMouseEnter={() => setShowAddressTooltip(true)}
+                                onMouseLeave={() => setShowAddressTooltip(false)}
+                            >
+                                <Wallet className="eth-address-icon" />
+                                <span className="eth-address-short">{shortEthAddress}</span>
+                                {showAddressTooltip && (
+                                    <div className="eth-address-tooltip">
+                                        <div className="tooltip-content">
+                                            <span className="full-address">{eth_address}</span>
+                                            <button
+                                                className="copy-button"
+                                                onClick={copyAddressToClipboard(eth_address)}
+                                            >
+                                                <CopyIcon className="copy-icon" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                        <ChevronDown className={`lab-user-dropdown-icon ${showUserDropdown ? 'lab-user-dropdown-icon-rotated' : ''}`} />
+                    </div>
+                    {/* User Dropdown */}
+                    {showUserDropdown && (
+                        <div className="lab-user-dropdown-menu">
+                            <button
+                                onClick={handleLogoutClick}
+                                className="lab-user-dropdown-item lab-logout-item"
+                            >
+                                <LogOut className="lab-dropdown-item-icon" />
+                                <span>Log Out</span>
+                            </button>
+                        </div>
+                    )}
+                </div>
+            </header >
 
             {/* Main Content */}
-            <main className="lab-main-content">
+            < main className="lab-main-content" >
                 {/* Page Title and Filters */}
-                <div className="lab-page-header">
+                < div className="lab-page-header" >
                     <h2 className="lab-page-title">Test Requests</h2>
 
                     <div className="lab-filters-container">
@@ -339,10 +355,10 @@ const LabStaffDashboard = ({ accessToken }) => {
                             <Filter className="lab-filter-icon" />
                         </div>
                     </div>
-                </div>
+                </div >
 
                 {/* Test Requests List */}
-                <TestRequestList
+                < TestRequestList
                     filteredRequests={filteredRequests}
                     handleUploadClick={handleUploadClick}
                     handleScheduleClick={handleScheduleClick}
@@ -352,31 +368,35 @@ const LabStaffDashboard = ({ accessToken }) => {
             </main >
 
             {/* Modal for Uploading Test Results */}
-            {modalType === 'upload' && selectedRequest && (
-                <UploadResultsModal
-                    selectedRequest={selectedRequest}
-                    onClose={handleCloseModal}
-                    onFileChange={handleFileChange}
-                    onUpload={handleUploadResults}
-                    resultSummary={resultSummary}
-                    handleSummaryChange={handleSummaryChange}
-                    summaryError={summaryError}
-                    files={files}
-                />
-            )}
+            {
+                modalType === 'upload' && selectedRequest && (
+                    <UploadResultsModal
+                        selectedRequest={selectedRequest}
+                        onClose={handleCloseModal}
+                        onFileChange={handleFileChange}
+                        onUpload={handleUploadResults}
+                        resultSummary={resultSummary}
+                        handleSummaryChange={handleSummaryChange}
+                        summaryError={summaryError}
+                        files={files}
+                    />
+                )
+            }
 
             {/* Schedule Appointment Modal */}
-            {modalType == 'schedule' && selectedRequest && (
-                <ScheduleModal
-                    selectedRequest={selectedRequest}
-                    selectedDateTime={selectedDateTime}
-                    setSelectedDateTime={setSelectedDateTime}
-                    isModifyingAppointment={isModifyingAppointment}
-                    handleConfirmAppointment={handleConfirmAppointment}
-                    handleCancelAppointment={handleCancelAppointment}
-                    handleCloseModal={handleCloseModal}
-                />
-            )}
+            {
+                modalType == 'schedule' && selectedRequest && (
+                    <ScheduleModal
+                        selectedRequest={selectedRequest}
+                        selectedDateTime={selectedDateTime}
+                        setSelectedDateTime={setSelectedDateTime}
+                        isModifyingAppointment={isModifyingAppointment}
+                        handleConfirmAppointment={handleConfirmAppointment}
+                        handleCancelAppointment={handleCancelAppointment}
+                        handleCloseModal={handleCloseModal}
+                    />
+                )
+            }
 
             {/* Logout Confirmation Modal */}
             <LogoutModal
@@ -386,50 +406,52 @@ const LabStaffDashboard = ({ accessToken }) => {
             />
 
             {/* Cancel Appointment Confirmation Modal */}
-            {showCancelConfirmation && (
-                <div className="lab-modal-overlay">
-                    <div className="lab-modal-container lab-modal-small">
-                        <div className="lab-modal-header lab-modal-header-red">
-                            <h3 className="lab-modal-title">Cancel Appointment</h3>
-                            <button
-                                onClick={() => setShowCancelConfirmation(false)}
-                                className="lab-modal-close"
-                            >
-                                <X className="lab-close-icon" />
-                            </button>
-                        </div>
+            {
+                showCancelConfirmation && (
+                    <div className="lab-modal-overlay">
+                        <div className="lab-modal-container lab-modal-small">
+                            <div className="lab-modal-header lab-modal-header-red">
+                                <h3 className="lab-modal-title">Cancel Appointment</h3>
+                                <button
+                                    onClick={() => setShowCancelConfirmation(false)}
+                                    className="lab-modal-close"
+                                >
+                                    <X className="lab-close-icon" />
+                                </button>
+                            </div>
 
-                        <div className="lab-modal-body">
-                            <div className="lab-modal-content">
-                                <div className="lab-logout-confirmation">
-                                    <div className="lab-logout-icon-container">
-                                        <X className="lab-logout-icon" />
-                                    </div>
-                                    <p className="lab-logout-text">
-                                        Are you sure you want to cancel this appointment for {selectedRequest?.patient_name}? This action cannot be undone.
-                                    </p>
+                            <div className="lab-modal-body">
+                                <div className="lab-modal-content">
+                                    <div className="lab-logout-confirmation">
+                                        <div className="lab-logout-icon-container">
+                                            <X className="lab-logout-icon" />
+                                        </div>
+                                        <p className="lab-logout-text">
+                                            Are you sure you want to cancel this appointment for {selectedRequest?.patient_name}? This action cannot be undone.
+                                        </p>
 
-                                    <div className="lab-logout-actions">
-                                        <button
-                                            onClick={() => setShowCancelConfirmation(false)}
-                                            className="lab-btn lab-btn-cancel"
-                                        >
-                                            Keep Appointment
-                                        </button>
-                                        <button
-                                            onClick={handleConfirmCancelAppointment}
-                                            className="lab-btn lab-btn-logout-confirm"
-                                        >
-                                            <X className="lab-btn-icon" />
-                                            <span>Cancel Appointment</span>
-                                        </button>
+                                        <div className="lab-logout-actions">
+                                            <button
+                                                onClick={() => setShowCancelConfirmation(false)}
+                                                className="lab-btn lab-btn-cancel"
+                                            >
+                                                Keep Appointment
+                                            </button>
+                                            <button
+                                                onClick={handleConfirmCancelAppointment}
+                                                className="lab-btn lab-btn-logout-confirm"
+                                            >
+                                                <X className="lab-btn-icon" />
+                                                <span>Cancel Appointment</span>
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
         </div >
     );
 };

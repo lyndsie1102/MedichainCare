@@ -55,24 +55,7 @@ const ViewModal = ({
                             <div className="consent-container">
                                 <div className="consent-item">
                                     <Shield className="consent-icon" />
-                                    <span className="consent-label">Treatment:</span>
-                                    <span className={`consent-status ${selectedSubmission.consent.treatment ? 'consent-granted' : 'consent-denied'}`}>
-                                        {selectedSubmission.consent.treatment ? 'Granted' : 'Not Granted'}
-                                    </span>
-                                </div>
-                                <div className="consent-item">
-                                    <Shield className="consent-icon" />
-                                    <span className="consent-label">Referral:</span>
-                                    <span className={`consent-status ${selectedSubmission.consent.referral ? 'consent-granted' : 'consent-denied'}`}>
-                                        {selectedSubmission.consent.referral ? 'Granted' : 'Not Granted'}
-                                    </span>
-                                </div>
-                                <div className="consent-item">
-                                    <Shield className="consent-icon" />
-                                    <span className="consent-label">Research:</span>
-                                    <span className={`consent-status ${selectedSubmission.consent.research ? 'consent-granted' : 'consent-denied'}`}>
-                                        {selectedSubmission.consent.research ? 'Granted' : 'Not Granted'}
-                                    </span>
+                                    <span className="consent-label">Consent: {selectedSubmission.consent}</span>
                                 </div>
                             </div>
                         </div>
@@ -86,14 +69,14 @@ const ViewModal = ({
                         </div>
 
                         {/* Images */}
-                        {selectedSubmission.image_path && selectedSubmission.image_path.length > 0 && (
+                        {selectedSubmission.images && selectedSubmission.images.length > 0 && (
                             <div>
                                 <h4 className="section-title">Uploaded Images</h4>
                                 <div className="modal-images-grid">
-                                    {selectedSubmission.image_path.map((image, index) => (
+                                    {selectedSubmission.images.map((image, index) => (
                                         <img
                                             key={index}
-                                            src={image}
+                                            src={`http://localhost:8000/${image}`}
                                             alt={`Symptom ${index + 1}`}
                                             className="modal-image"
                                         />
@@ -107,36 +90,31 @@ const ViewModal = ({
                             <div>
                                 <h4 className="section-title">Test Results</h4>
                                 <div className="test-results-card">
+                                    <h5 className="test-results-type">{selectedSubmission.testType}</h5>
+                                    <p className="test-results-date">
+                                        <Calendar className="test-results-icon" />
+                                        Results uploaded: {formatDate(selectedSubmission.testResults[0].uploadedAt)}
+                                    </p>
+                                    <div className="test-results-summary">
+                                        <h6 className="test-results-summary-title">Summary:</h6>
+                                        <p className="test-results-summary-text">{selectedSubmission.testResults[0].summary ? 
+                                        selectedSubmission.testResults[0].summary : 'N/A'}</p>
+                                    </div>
                                     {selectedSubmission.testResults.map((testResult, index) => (
                                         <div key={index} className="test-results">
                                             <div className="test-results-header">
-                                                <div className="test-results-info">
-                                                    <h5 className="test-results-type">{selectedSubmission.testType?.name}</h5>
-                                                    <p className="test-results-date">
-                                                        <Calendar className="test-results-icon" />
-                                                        Results uploaded: {formatDate(testResult.uploadedAt)}
-                                                    </p>
-                                                </div>
+                                                <div className="test-results-info"></div>
                                             </div>
-
-                                            <div className="test-results-summary">
-                                                <h6 className="test-results-summary-title">Summary:</h6>
-                                                <p className="test-results-summary-text">{testResult.summary}</p>
-                                            </div>
-
                                             <div className="test-results-files">
-                                                <h6 className="test-results-files-title">Attached Files:</h6>
                                                 <div className="test-results-files-list">
                                                     {testResult.files.map((file, fileIndex) => (
                                                         <div key={fileIndex} className="test-results-file">
                                                             <FileText className="test-results-file-icon" />
                                                             <div className="test-results-file-info">
                                                                 <span className="test-results-file-name">{file.name}</span>
-                                                                <span className="test-results-file-type">{file.type}</span>
-
                                                                 {/* Open the file in a new tab */}
                                                                 <a
-                                                                    href={file.url}
+                                                                    href={`http://localhost:8000/${file.path}`}
                                                                     target="_blank"
                                                                     rel="noopener noreferrer"
                                                                     className="file-preview-button"

@@ -97,7 +97,7 @@ export const referToDoctorOnBlockchain = async ({ role }) => {
 };
 
 // Assign Test to Lab Staff on Blockchain
-export const assignTestToLab = async ({ role }) => {
+export const assignTestToLabBlockchain = async ({ role }) => {
   if (!contract || !account) {
     console.log(contract);
     console.log(account);

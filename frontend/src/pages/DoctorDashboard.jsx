@@ -17,7 +17,7 @@ import ViewModal from '../components/ViewModal';
 import LogoutModal from '../components/LogoutModal';
 import { getDoctorDashboard, getDoctorDetails, getSymptomDetails, createDiagnosis, createReferral, logout, createTestRequest } from '../api';
 import { getSymptomStatusColor, getSymptomStatusIcon, formatDate } from '../utils/Helpers';
-import { setupBlockchain, addDiagnosisToBlockchain, referToDoctorOnBlockchain, assignTestToLab, getEthAddress } from '../utils/BlockchainInteract';
+import { setupBlockchain, addDiagnosisToBlockchain, referToDoctorOnBlockchain, assignTestToLabBlockchain, getEthAddress } from '../utils/BlockchainInteract';
 import { formatAddress, copyAddressToClipboard } from '../utils/Helpers';
 
 const DoctorDashboard = () => {
@@ -37,6 +37,7 @@ const DoctorDashboard = () => {
     const [showUserDropdown, setShowUserDropdown] = useState(false);
     const [showLogoutModal, setShowLogoutModal] = useState(false);
     const [showAddressTooltip, setShowAddressTooltip] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
 
     const token = localStorage.getItem('access_token');
     const eth_address = getEthAddress(token);
@@ -142,55 +143,51 @@ const DoctorDashboard = () => {
 
     // Handle assigning test to lab and integrating with blockchain
     const handleAssignToLab = async () => {
-        if (selectedTestType && selectedLab && selectedSubmission) {
-            try {
-                await createTestRequest(token, {
-                    symptom_id: selectedSubmission.id,
-                    lab_id: selectedLab.id,
-                    test_type_id: selectedTestType.id
-                });
+        if (isLoading || !selectedTestType || !selectedLab || !selectedSubmission) return;
 
-                // Integrating Blockchain: Assign Test to Lab
-                await assignTestToLab({
-                    role: 'doctor',  // Adjust role if needed
-                });
+        setIsLoading(true); // Disable further clicks
 
-                // Update submission status
-                setSubmissions(prev =>
-                    prev.map(sub =>
-                        sub.id === selectedSubmission.id
-                            ? { ...sub, status: 'Assigned to Lab' }
-                            : sub
-                    )
-                );
+        try {
+            await createTestRequest(token, {
+                symptom_id: selectedSubmission.id,
+                lab_id: selectedLab.id,
+                test_type_id: selectedTestType.id
+            });
 
-                alert(`Successfully assigned to ${selectedLab.name}`);
-                handleCloseModal();
-            } catch (error) {
-                console.error('Failed to assign to lab:', error);
-                alert('Lab assignment failed. Please try again.');
-            }
+            // Blockchain: Assign Test to Lab
+            await assignTestToLabBlockchain({ role: 'doctor' });
+
+            setSubmissions(prev =>
+                prev.map(sub =>
+                    sub.id === selectedSubmission.id
+                        ? { ...sub, status: 'Assigned to Lab' }
+                        : sub
+                )
+            );
+
+            alert(`Successfully assigned to ${selectedLab.name}`);
+            handleCloseModal();
+        } catch (error) {
+            console.error('Failed to assign to lab:', error);
+            alert('Lab assignment failed. Please try again.');
+        } finally {
+            setIsLoading(false); // Enable button again
         }
     };
 
 
     // Handle referring to another doctor and integrating with blockchain
     const handleReferToDoctor = async () => {
-        if (!selectedDoctor || !selectedSubmission) return;
+        if (isLoading || !selectedDoctor || !selectedSubmission) return;
+
+        setIsLoading(true); // Disable further clicks
 
         try {
-            await createReferral(
-                token,
-                selectedSubmission.id,
-                selectedDoctor.id
-            );
+            await createReferral(token, selectedSubmission.id, selectedDoctor.id);
 
-            // Integrating Blockchain: Refer to Another Doctor
-            await referToDoctorOnBlockchain({
-                role: 'doctor',  // Adjust role if needed
-            });
+            // Blockchain: Refer to Another Doctor
+            await referToDoctorOnBlockchain({ role: 'doctor' });
 
-            // Update submission status in the UI
             setSubmissions(prev =>
                 prev.map(sub =>
                     sub.id === selectedSubmission.id
@@ -204,13 +201,16 @@ const DoctorDashboard = () => {
         } catch (error) {
             console.error('Failed to refer:', error);
             alert('Referral failed. Please try again.');
+        } finally {
+            setIsLoading(false); // Enable button again
         }
     };
 
-
     // Handle adding diagnosis and integrating with blockchain
     const handleAddDiagnosis = async () => {
-        if (!analysis.trim() || !selectedSubmission) return;
+        if (isLoading || !analysis.trim() || !selectedSubmission) return;
+
+        setIsLoading(true); // Disable further clicks
 
         try {
             const payload = {
@@ -222,38 +222,27 @@ const DoctorDashboard = () => {
             const response = await createDiagnosis(payload, token);
             const newDiagnosis = response.diagnosis;
 
-            // Update submission list with new diagnosis
             setSubmissions(prev =>
                 prev.map(sub =>
                     sub.id === selectedSubmission.id
-                        ? {
-                            ...sub,
-                            diagnoses: [...sub.diagnoses, newDiagnosis],
-                            status: 'Diagnosed'
-                        }
+                        ? { ...sub, diagnoses: [...sub.diagnoses, newDiagnosis], status: 'Diagnosed' }
                         : sub
                 )
             );
 
-            // Integrating Blockchain: Add Diagnosis
-            await addDiagnosisToBlockchain({
-                role: 'doctor',  // Adjust role if needed
-            });
+            // Blockchain: Add Diagnosis
+            await addDiagnosisToBlockchain({ role: 'doctor' });
 
             setSelectedSubmission(prev =>
-                prev
-                    ? {
-                        ...prev,
-                        diagnoses: [...prev.diagnoses, newDiagnosis],
-                        status: 'Diagnosed'
-                    }
-                    : null
+                prev ? { ...prev, diagnoses: [...prev.diagnoses, newDiagnosis], status: 'Diagnosed' } : null
             );
 
             setAnalysis('');
         } catch (error) {
             console.error('Failed to create diagnosis:', error);
             alert('Diagnosis creation failed. Please try again.');
+        } finally {
+            setIsLoading(false); // Enable button again
         }
     };
 

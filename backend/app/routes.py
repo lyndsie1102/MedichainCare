@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, File, UploadFile, HTTPException, FastAPI
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import and_
 from jose import jwt
-from database import SessionLocal, get_db
+from database import get_db
 from models import User, Symptom, RoleEnum, Consent, Patient, ConsentPurpose, Diagnosis, Doctor, MedicalLab, TestRequest, SymptomStatus, Referral, TestResults, TestType, TokenBlacklist, LabStaff, TestRequestStatus, AppointmentStatus, Appointment
 from schemas import UserCreate, UserOut, SymptomCreate, SymptomOut, ConsentOut, PatientOut, DiagnosisOut, PatientSymptomDetails, DoctorOut, DiagnosisCreate, MedicalLabs, LabAssignmentCreate, LabAssignmentOut, ReferralCreate, SymptomHistory, SymptomDetails, TestResultOut, TestRequestOut
 from fastapi.security import OAuth2PasswordRequestForm
@@ -14,6 +14,7 @@ from .auth import authenticate_user, create_access_token, get_password_hash, ver
 from datetime import datetime, date, time, timedelta
 from uuid import uuid4
 from web3 import Web3
+import json
 
 router = APIRouter()
 
@@ -27,7 +28,6 @@ os.makedirs(PATIENT_IMAGE_DIR, exist_ok=True)
 
 
 web3 = Web3(Web3.HTTPProvider('http://127.0.0.1:7545'))
-
 
 
 @router.post("/register", response_model=UserOut)
@@ -166,8 +166,9 @@ def logout(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
 
 
 @router.post("/upload-image/")
-def upload_image(files: list[UploadFile] = File(...)):
+async def upload_image(files: List[UploadFile] = File(...)):
     saved_paths = []
+
     for file in files:
         file_extension = file.filename.split(".")[-1]
         unique_filename = f"{uuid.uuid4()}.{file_extension}"
@@ -176,8 +177,9 @@ def upload_image(files: list[UploadFile] = File(...)):
         with open(file_location, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
 
-        saved_paths.append(str(file_location))
+        saved_paths.append(file_location)  # Store the file path in the list
 
+    # Return image paths as a comma-separated string
     return {"image_paths": saved_paths}
 
 
@@ -187,22 +189,30 @@ def submit_symptoms(
     current_user: User = Depends(verify_role(RoleEnum.PATIENT)),
     db: Session = Depends(get_db),
 ):
-    print(f"current user: {current_user.id}")
+
     # Enforce required consents
     if not symptom.consent_type.treatment:
         raise HTTPException(status_code=400, detail="Treatment consent is required.")
     if not symptom.consent_type.referral:
         raise HTTPException(status_code=400, detail="Referral consent is required.")
 
+    # Check if image_paths is a string and split it, if necessary
+    if isinstance(symptom.image_paths, str):
+        image_paths = symptom.image_paths.split(",")  # Convert to list of paths
+    else:
+        image_paths = symptom.image_paths or []  # Ensure it's an empty list if None
+
+    # Serialize the list of image paths into a JSON string
+    image_paths_str = json.dumps(image_paths)  # Convert list to JSON string
 
     # Create Symptom record
     new_symptom = Symptom(
         patient_id=current_user.id,
         symptoms=symptom.symptoms,
-        image_paths=symptom.image_paths,
+        image_paths=image_paths_str,  # Store the JSON string in the database
         consent_treatment=True,
         consent_referral=True,
-        consent_research = symptom.consent_type.research or False, 
+        consent_research=symptom.consent_type.research or False, 
     )
     db.add(new_symptom)
     db.commit()
@@ -342,6 +352,15 @@ def get_symptom_details(
         research=symptom.consent_research
     )
 
+    image_paths = symptom.image_paths
+
+    # If it's a string, convert it to a list using json.loads
+    if isinstance(image_paths, str):
+        try:
+            image_paths = json.loads(image_paths)
+        except json.JSONDecodeError:
+            image_paths = []  # Handle invalid JSON case, if needed
+
     # Prepare the response data
     symptom_detail = SymptomDetails(
         id=str(symptom.id),  # Convert ID to string (UUID or integer as needed)
@@ -352,7 +371,7 @@ def get_symptom_details(
         appointment_schedule=appointment_schedule,
         testType=test_type_name,  # Include test type if found
         testResults=test_results_responses,
-        images=symptom.image_paths,  # Return images if available
+        images=image_paths,  # Return images if available
         submittedAt=symptom.timestamp,
         diagnoses=diagnosis_responses,
         consent=consent_data
@@ -404,11 +423,24 @@ def get_symptom_history(
         # Collect consent types for the symptom (only those that are granted)
         consent_types = [consent.consent_type for consent in consents if consent.is_granted]
         
+        if s.image_paths:
+            try:
+                # Check if it's a valid JSON, otherwise treat it as a comma-separated string
+                if s.image_paths.startswith("[") and s.image_paths.endswith("]"):
+                # It's a JSON array
+                    image_paths = json.loads(s.image_paths)
+                else:
+                # It's a comma-separated string, split it into a list
+                    image_paths = s.image_paths.split(",")
+            except json.JSONDecodeError:
+                # Handle the error, maybe log or raise an exception if needed
+                print(f"Error decoding JSON for image_paths: {s.image_paths}")
+        
         # Add symptom data along with consent types
         result.append(SymptomHistory(
             id=s.id,
             symptoms=s.symptoms,
-            image_paths=s.image_paths,
+            image_paths=image_paths,
             status=s.status,
             submitted_at=s.timestamp,
             consents=consent_types  # Pass the consent types
@@ -466,12 +498,23 @@ def get_doctor_dashboard(
             # Filter symptoms by symptom description or patient name
             if search_text not in symptom.symptoms.lower() and (user.name is None or search_text not in user.name.lower()):
                 continue
+
+        if isinstance(symptom.image_paths, str):
+            try:
+                # Attempt to convert the string into a list of strings (if it's a JSON array string)
+                image_paths = json.loads(symptom.image_paths)
+                if not isinstance(image_paths, list):
+                    image_paths = []
+            except json.JSONDecodeError:
+                image_paths = []  # If parsing fails, fall back to an empty list
+        else:
+            image_paths = symptom.image_paths or []
         
         # Prepare the symptom data
         symptoms_out.append(SymptomOut(
             id=symptom.id,
             symptoms=symptom.symptoms,
-            image_paths=symptom.image_paths if symptom.image_paths else [],
+            image_paths=image_paths,
             status=symptom.status,
             submitted_at=symptom.timestamp,
             patient=PatientOut(
@@ -496,13 +539,32 @@ def get_symptom_details(
     symptom = db.query(Symptom).filter(Symptom.id == symptom_id).first()
     if not symptom:
         raise HTTPException(status_code=404, detail="Symptom not found")
+    
+    # Initialize images with an empty list if symptom.image_paths is None or empty
+    # Ensure image_paths is a list, even if it's a stringified list
+    images = symptom.image_paths
+    if isinstance(images, str):
+        # Check if it's a stringified empty list ('[]')
+        if images.strip() == '[]':
+            images = []
+        else:
+            try:
+                # Attempt to convert stringified list to a proper list
+                images = json.loads(images)  # Parses the string to a list
+                if not isinstance(images, list):  # Ensure it's a list
+                    images = []
+            except json.JSONDecodeError:
+                raise HTTPException(status_code=400, detail="Invalid format for image paths")
+
+    # Ensure images is a list (even if empty)
+    if not isinstance(images, list):
+        images = []
+    print(f"image path {symptom.image_paths}")
 
     patient = db.query(Patient).filter(Patient.id == symptom.patient_id).first()
     user = db.query(User).filter(User.id == symptom.patient_id).first()
     doctor = db.query(Doctor).filter(Doctor.id == current_user.id).first()
 
-    if not all([patient, user, doctor]):
-        raise HTTPException(status_code=404, detail="Related data not found")
 
     # Check if GP
     is_gp = patient.gp_id == current_user.id
@@ -514,11 +576,7 @@ def get_symptom_details(
     ).first()
     is_referred_doctor = referral is not None
 
-    # Permissions logic
-    if not any([symptom.consent_treatment, symptom.consent_referral, symptom.consent_research]):
-        raise HTTPException(status_code=403, detail="Access denied: no consents available.")
-
-    if is_gp or is_referred_doctor:
+    if is_gp:
         # ✅ Full access
         return PatientSymptomDetails(
             id=str(symptom.id),
@@ -534,15 +592,23 @@ def get_symptom_details(
             symptoms=symptom.symptoms,
             testType=_get_test_type(db, symptom.id),
             testResults=_get_test_results(db, symptom.id),
-            images=symptom.image_paths or [],
+            images=images,
             submittedAt=symptom.timestamp,
             status=symptom.status,
             diagnoses=_get_diagnoses(db, symptom.id),
-            consent=ConsentOut(
-                treatment=symptom.consent_treatment,
-                referral=symptom.consent_referral,
-                research=symptom.consent_research
-            )
+            consent='treatment'
+        )
+    
+    elif is_referred_doctor:
+        return SymptomDetails(
+            id=str(symptom.id),
+            symptoms=symptom.symptoms,
+            testType=_get_test_type(db, symptom.id),
+            testResults=_get_test_results(db, symptom.id),
+            images=images,
+            submittedAt=symptom.timestamp,
+            diagnoses=_get_diagnoses(db, symptom.id),
+            consent='referral'
         )
 
     elif symptom.consent_research:
@@ -552,18 +618,13 @@ def get_symptom_details(
             symptoms=symptom.symptoms,
             testType=_get_test_type(db, symptom.id),
             testResults=_get_test_results(db, symptom.id),
-            images=symptom.image_paths or [],
+            images=images,
             submittedAt=symptom.timestamp,
             diagnoses=_get_diagnoses(db, symptom.id),
-            consent=ConsentOut(
-                treatment=symptom.consent_treatment,
-                referral=symptom.consent_referral,
-                research=symptom.consent_research
-            )
+            consent='research'
         )
-
-    raise HTTPException(status_code=403, detail="Access denied: not authorized.")
-
+    else:
+        raise HTTPException(status_code=403, detail="You are not authorized to view this symptom.")
 
 # === Helper Functions ===
 
@@ -598,6 +659,7 @@ def _get_diagnoses(db: Session, symptom_id: int) -> List[DiagnosisOut]:
             createdAt=diag.timestamp
         ))
     return output
+
 
 
 router.get("/doctor/submissions", response_model=List[SymptomOut])
@@ -846,7 +908,9 @@ def upload_lab_result(
     
     # Save each file and generate file path
     for file in files:
-        file_path = os.path.join(LAB_RESULT_DIR, f"{assignment.id}_{file.filename}")
+        file_extension = file.filename.split(".")[-1]
+        unique_filename = f"{uuid.uuid4()}.{file_extension}"
+        file_path = os.path.join(LAB_RESULT_DIR, unique_filename)
         
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)

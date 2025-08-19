@@ -41,7 +41,8 @@ const SymptomForm = ({ onSubmitSuccess, patientId }) => {
       alert('Please agree to the required consents (Treatment and Referral)');
       return;
     }
-
+    
+    if (isSubmitting) return;
     setIsSubmitting(true);
 
     try {

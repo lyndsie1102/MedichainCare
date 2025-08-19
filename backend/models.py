@@ -116,7 +116,7 @@ class Symptom(Base):
     id = Column(Integer, primary_key=True)
     patient_id = Column(Integer, ForeignKey("users.id"))
     symptoms = Column(Text, nullable=False)  # e.g., "fever, cough, headache"
-    image_paths = Column(MutableList.as_mutable(PickleType), default=[])
+    image_paths = Column(Text, default="") 
     status = Column(SQLEnum(SymptomStatus, native_enum=False), default=SymptomStatus.PENDING)
     timestamp = Column(DateTime, default=datetime.utcnow)
     consent_treatment = Column(Boolean, default=False)
@@ -145,7 +145,6 @@ class Consent(Base):
     consent_type = Column(SQLEnum(ConsentPurpose, native_enum=False), nullable=False)  # "treatment", "referral", "research"
     is_granted = Column(Boolean, default=True, nullable=False)  # True = granted, False = revoked
     granted_at = Column(DateTime, default=datetime.utcnow)
-    revoked_at = Column(DateTime, nullable=True)
 
 class TestRequest(Base):
     __tablename__ = "test_requests"

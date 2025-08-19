@@ -36,7 +36,6 @@ const PatientDashboard = () => {
       try {
         const data = await getPatientInfo(token);
         setUser(data);
-        eth_address = getEthAddress(token);
       } catch (err) {
         console.error('Failed to load user info', err);
       }

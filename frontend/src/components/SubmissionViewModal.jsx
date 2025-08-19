@@ -24,7 +24,6 @@ const SubmissionViewModal = ({
                 { /* Modal body */}
                 <div className="modal-body">
                     <div className="modal-content">
-
                         {/* Test Appointment Section */}
                         <div>
                             <h4 className="section-title">Test Appointment</h4>
@@ -99,12 +98,12 @@ const SubmissionViewModal = ({
                         { /* Images */}
                         <div>
                             <h4 className="section-title">Uploaded Images</h4>
-                            {selectedSymptom.image_path && selectedSymptom.image_path.length > 0 ? (
+                            {selectedSymptom.images && selectedSymptom.images.length > 0 ? (
                                 <div className="modal-images-grid">
-                                    {selectedSymptom.image_path.map((image, index) => (
+                                    {selectedSymptom.images.map((image, index) => (
                                         <img
                                             key={index}
-                                            src={image}
+                                            src={`http://localhost:8000/${image}`}
                                             alt={`Symptom ${index + 1}`}
                                             className="modal-image"
                                         />

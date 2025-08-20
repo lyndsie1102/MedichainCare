@@ -10,19 +10,19 @@ const ScheduleAppointmentModal = ({
   handleConfirmAppointment
 }) => {
   return (
-    <div className="lab-modal-overlay">
-      <div className="lab-modal-container lab-modal-large">
-        <div className="lab-modal-header lab-modal-header-orange">
-          <h3 className="lab-modal-title">
+    <div className="modal-overlay">
+      <div className="modal-container modal-large">
+        <div className="modal-header modal-header-orange">
+          <h3 className="modal-title">
             {isModifyingAppointment ? 'Cancel' : 'Schedule'} Appointment for {selectedRequest.patient_name}
           </h3>
-          <button onClick={handleCloseModal} className="lab-modal-close">
+          <button onClick={handleCloseModal} className="modal-close">
             <X className="lab-close-icon" />
           </button>
         </div>
 
-        <div className="lab-modal-body">
-          <div className="lab-modal-content">
+        <div className="modal-body">
+          <div className="modal-content">
             {/* Patient and Test Info */}
             <div className="lab-appointment-info-card">
               <h4 className="lab-section-title">Appointment Details</h4>

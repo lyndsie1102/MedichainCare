@@ -10,6 +10,7 @@ import {
     Wallet,
     CopyIcon
 } from 'lucide-react';
+import '../LabStaffDashboard.css';
 import LogoutModal from '../components/LogoutModal';  // Import your LogoutModal component
 import { getTestRequests, uploadLabResult, getLabStaffInfo, appointmentSchedule, cancelAppointment } from '../api/lab-apis.js';  // Import your API functions
 import { logout } from '../api/user-apis.js'
@@ -259,7 +260,7 @@ const LabStaffDashboard = ({ accessToken }) => {
 
 
     return (
-        <div className="lab-dashboard-container">
+        <div className="dashboard-container">
             <header className="header">
                 <div className="logo">
                     <Heart size={40} className="icon-heart" />
@@ -274,7 +275,7 @@ const LabStaffDashboard = ({ accessToken }) => {
                     <div className="lab-user-card lab-user-card-clickable">
                         <TestTube className="lab-user-icon" />
                         <div className="lab-user-details">
-                            <p className="lab-user-name">
+                            <p className="user-name">
                                 {labStaff ? `${labStaff.name}` : 'Loading...'}
                             </p>
                             <p className="lab-user-role">Lab Technician</p>
@@ -300,16 +301,16 @@ const LabStaffDashboard = ({ accessToken }) => {
                                 )}
                             </div>
                         </div>
-                        <ChevronDown className={`lab-user-dropdown-icon ${showUserDropdown ? 'lab-user-dropdown-icon-rotated' : ''}`} />
+                        <ChevronDown className={`user-dropdown-icon ${showUserDropdown ? 'lab-user-dropdown-icon-rotated' : ''}`} />
                     </div>
                     {/* User Dropdown */}
                     {showUserDropdown && (
-                        <div className="lab-user-dropdown-menu">
+                        <div className="user-dropdown-menu">
                             <button
                                 onClick={handleLogoutClick}
-                                className="lab-user-dropdown-item lab-logout-item"
+                                className="user-dropdown-item logout-item"
                             >
-                                <LogOut className="lab-dropdown-item-icon" />
+                                <LogOut className="dropdown-item-icon" />
                                 <span>Log Out</span>
                             </button>
                         </div>
@@ -320,34 +321,34 @@ const LabStaffDashboard = ({ accessToken }) => {
             {/* Main Content */}
             < main className="lab-main-content" >
                 {/* Page Title and Filters */}
-                < div className="lab-page-header" >
-                    <h2 className="lab-page-title">Test Requests</h2>
+                < div className="page-header" >
+                    <h2 className="page-title">Test Requests</h2>
 
-                    <div className="lab-filters-container">
+                    <div className="filters-container">
                         {/* Search */}
-                        <div className="lab-search-container">
-                            <Search className="lab-search-icon" />
+                        <div className="search-container">
+                            <Search className="search-icon" />
                             <input
                                 type="text"
                                 placeholder="Search patients, doctors, or tests..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="lab-search-input"
+                                className="search-input"
                             />
                         </div>
 
                         {/* Status Filter */}
-                        <div className="lab-filter-container">
+                        <div className="filter-container">
                             <select
                                 value={statusFilter}
                                 onChange={(e) => setStatusFilter(e.target.value)}
-                                className="lab-status-filter"
+                                className="status-filter"
                             >
                                 <option value="all">All Status</option>
                                 <option value="pending">Pending</option>
                                 <option value="uploaded">Uploaded</option>
                             </select>
-                            <Filter className="lab-filter-icon" />
+                            <Filter className="filter-icon" />
                         </div>
                     </div>
                 </div >
@@ -403,22 +404,22 @@ const LabStaffDashboard = ({ accessToken }) => {
             {/* Cancel Appointment Confirmation Modal */}
             {
                 showCancelConfirmation && (
-                    <div className="lab-modal-overlay">
-                        <div className="lab-modal-container lab-modal-small">
-                            <div className="lab-modal-header lab-modal-header-red">
-                                <h3 className="lab-modal-title">Cancel Appointment</h3>
+                    <div className="modal-overlay">
+                        <div className="modal-container modal-small">
+                            <div className="modal-header modal-header-red">
+                                <h3 className="modal-title">Cancel Appointment</h3>
                                 <button
                                     onClick={() => setShowCancelConfirmation(false)}
-                                    className="lab-modal-close"
+                                    className="modal-close"
                                 >
-                                    <X className="lab-close-icon" />
+                                    <X className="close-icon" />
                                 </button>
                             </div>
 
-                            <div className="lab-modal-body">
-                                <div className="lab-modal-content">
+                            <div className="modal-body">
+                                <div className="modal-content">
                                     <div className="lab-logout-confirmation">
-                                        <div className="lab-logout-icon-container">
+                                        <div className="logout-icon-container">
                                             <X className="lab-logout-icon" />
                                         </div>
                                         <p className="lab-logout-text">

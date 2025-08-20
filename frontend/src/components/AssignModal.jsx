@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { X, ChevronDown } from 'lucide-react';
-import { getMedicalLabs } from '../api';
-import { getTestTypes } from '../api';
+import { getMedicalLabs } from '../api/doctor-apis';
+import { getTestTypes } from '../api/doctor-apis';
 
 const AssignModal = ({
     selectedSubmission,

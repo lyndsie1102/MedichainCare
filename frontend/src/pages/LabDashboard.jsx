@@ -11,11 +11,12 @@ import {
     CopyIcon
 } from 'lucide-react';
 import LogoutModal from '../components/LogoutModal';  // Import your LogoutModal component
-import { getTestRequests, uploadLabResult, logout, getLabStaffInfo, appointmentSchedule, cancelAppointment } from '../api.js';  // Import your API functions
+import { getTestRequests, uploadLabResult, getLabStaffInfo, appointmentSchedule, cancelAppointment } from '../api/lab-apis.js';  // Import your API functions
+import { logout } from '../api/user-apis.js'
 import UploadResultsModal from '../components/UploadResultsModal.jsx';  // Import the UploadResultsModal component
 import TestRequestList from '../components/TestRequestList.jsx';
 import ScheduleModal from '../components/ScheduleModal.jsx';
-import { getRequestStatusColor, getRequestStatusIcon } from '../utils/Helpers';  // Import utility functions for status color and icon
+import { formatDate, getRequestStatusColor, getRequestStatusIcon } from '../utils/Helpers';  // Import utility functions for status color and icon
 import { setupBlockchain, updateTestResultsOnBlockchain, getEthAddress } from '../utils/BlockchainInteract.js';
 import { formatAddress, copyAddressToClipboard } from '../utils/Helpers';
 
@@ -203,12 +204,12 @@ const LabStaffDashboard = ({ accessToken }) => {
                 );
 
                 // Display success alert
-                alert(`Appointment cancelled successfully for ${selectedRequest.patient.name}`);
+                alert(`Appointment cancelled successfully for ${selectedRequest.patient_name}`);
                 handleCloseModal();
-
             } catch (error) {
                 console.error('Error cancelling appointment:', error);
                 alert('There was an error canceling the appointment. Please try again later.');
+                setShowCancelConfirmation(false);
             }
         }
     };
@@ -217,12 +218,6 @@ const LabStaffDashboard = ({ accessToken }) => {
         if (selectedDateTime && selectedRequest) {
             const finalDate = selectedDateTime.split('T')[0];
             const finalTimeRaw = selectedDateTime.split('T')[1].substring(0, 5); // "HH:MM"
-            const displayTime = new Date(selectedDateTime).toLocaleTimeString('en-US', {
-                hour: 'numeric',
-                minute: '2-digit',
-                hour12: true
-            });
-
             try {
                 // Call the backend API
                 const response = await appointmentSchedule(selectedRequest.id, finalDate, finalTimeRaw, token);

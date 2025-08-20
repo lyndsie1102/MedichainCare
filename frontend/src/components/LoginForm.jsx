@@ -1,14 +1,16 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
 import { Heart, User, Lock, Eye, EyeOff, Stethoscope, Shield } from 'lucide-react';
 import '../App.css';
+import { login } from '../api/user-apis';
 
 const LoginForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({ username: '', password: '' });
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { role } = useParams(); 
 
   const roleMap = {
     1: "patient",
@@ -25,27 +27,24 @@ const LoginForm = () => {
     e.preventDefault();
     setIsLoading(true);
 
-    const data = new URLSearchParams();
-    data.append("username", formData.username);
-    data.append("password", formData.password);
-
     try {
-      const response = await fetch("http://localhost:8000/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: data.toString(),
+      // Send login request with role information (which is now in the URL params)
+      const result = await login({
+        username: formData.username,
+        password: formData.password,
+        role: role,  // Send the role from URL (e.g., "doctor", "patient", etc.)
       });
 
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.detail || "Login failed");
+      if (!result.access_token) {
+        throw new Error("Login failed");
+      }
 
       const tokenData = jwtDecode(result.access_token);
       localStorage.setItem("access_token", result.access_token);
+
+      // Decode the role from the token (automatically assigned based on backend)
       const userRole = roleMap[tokenData.role];
       localStorage.setItem("user", JSON.stringify({ role: userRole }));
-      console.log(tokenData);
 
       alert("Login successful!");
       navigate("/dashboard");
@@ -56,8 +55,6 @@ const LoginForm = () => {
       setIsLoading(false);
     }
   };
-
-
 
   const togglePasswordVisibility = () => setShowPassword(!showPassword);
 

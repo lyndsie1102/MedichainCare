@@ -1,4 +1,3 @@
-import React from 'react';
 import { User, TestTube, Clock, Calendar, CalendarDays, X } from 'lucide-react';
 
 const ScheduleAppointmentModal = ({

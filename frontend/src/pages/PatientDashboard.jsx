@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Heart, UserIcon, LogOut, ChevronDown, Wallet, CopyIcon } from 'lucide-react';
 import SymptomForm from '../components/SymptomForm';
 import SubmissionHistory from '../components/SubmissionHistory';
 import SubmissionViewModal from '../components/SubmissionViewModal';
 import LogoutModal from '../components/LogoutModal';
-import { getSymptomHistory, getPatientInfo, getSymptom, logout } from '../api';
+import { getSymptomHistory, getPatientInfo, getSymptom } from '../api/patient-apis';
+import { logout } from '../api/user-apis';
 import { getEthAddress } from '../utils/BlockchainInteract';
 import { formatAddress, copyAddressToClipboard } from '../utils/Helpers';
 

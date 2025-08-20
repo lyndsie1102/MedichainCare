@@ -1,4 +1,3 @@
-import React, { useState } from 'react';
 import { X, LogOut } from 'lucide-react';
 
 const LogoutModal = ({ showModal, onConfirmLogout, onCancelLogout }) => {

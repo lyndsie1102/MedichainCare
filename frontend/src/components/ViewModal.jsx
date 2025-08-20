@@ -10,7 +10,9 @@ const ViewModal = ({
     handleCloseModal,
     currentDoctor
 }) => {
-    const isSymptomTested = selectedSubmission?.status === 'Tested';
+    const isSymptomWaitingTest = selectedSubmission?.status === 'Waiting for Test';
+    const consentIsReferralOrResearch = selectedSubmission.consent === 'referral' || selectedSubmission.consent === 'research';
+    
     return (
         <div className="modal-overlay">
             <div className="modal-container modal-large">
@@ -24,8 +26,9 @@ const ViewModal = ({
 
                 <div className="modal-body">
                     <div className="modal-content">
+
                         {/* Patient Information */}
-                        {selectedSubmission?.patient && (
+                        {!consentIsReferralOrResearch && (
                             <div className="patient-details-card">
                                 <h4 className="section-title">Patient Information</h4>
                                 <div className="patient-info-list">
@@ -156,11 +159,11 @@ const ViewModal = ({
                                         onChange={(e) => setAnalysis(e.target.value)}
                                         placeholder="Enter your diagnosis and recommendations..."
                                         className="diagnosis-textarea"
-                                        disabled={!isSymptomTested} // Disable the textarea if symptom is not tested
+                                        disabled={isSymptomWaitingTest} // Disable the textarea if symptom is not tested
                                     />
                                     <button
                                         onClick={handleAddDiagnosis}
-                                        disabled={!analysis.trim() || !isSymptomTested} // Disable the button if analysis is empty or symptom is not tested
+                                        disabled={!analysis.trim() || isSymptomWaitingTest} // Disable the button if analysis is empty or symptom is not tested
                                         className="btn btn-add-diagnosis"
                                     >
                                         Add Diagnosis

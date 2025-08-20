@@ -1,6 +1,3 @@
-// src/components/UploadResultsModal.js
-
-import React, { useState } from 'react';
 import { Upload, X } from 'lucide-react';
 
 const UploadResultsModal = ({ selectedRequest, onClose, onUpload, files,

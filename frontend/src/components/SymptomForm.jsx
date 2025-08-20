@@ -1,7 +1,7 @@
 // src/components/SymptomForm.jsx
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Send } from 'lucide-react';
-import { uploadImage, submitSymptom } from '../api';
+import { uploadImage, submitSymptom } from '../api/patient-apis';
 import { setupBlockchain, submitSymptomToBlockchain } from '../utils/BlockchainInteract'; // Import blockchain functions
 
 const SymptomForm = ({ onSubmitSuccess, patientId }) => {

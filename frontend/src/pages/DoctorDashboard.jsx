@@ -15,7 +15,8 @@ import ReferModal from '../components/ReferModal';
 import SubmissionList from '../components/SubmissionList';
 import ViewModal from '../components/ViewModal';
 import LogoutModal from '../components/LogoutModal';
-import { getDoctorDashboard, getDoctorDetails, getSymptomDetails, createDiagnosis, createReferral, logout, createTestRequest } from '../api';
+import { getDoctorDashboard, getDoctorDetails, getSymptomDetails, createDiagnosis, createReferral, createTestRequest } from '../api/doctor-apis';
+import { logout } from '../api/user-apis.js'
 import { getSymptomStatusColor, getSymptomStatusIcon, formatDate } from '../utils/Helpers';
 import { setupBlockchain, addDiagnosisToBlockchain, referToDoctorOnBlockchain, assignTestToLabBlockchain, getEthAddress } from '../utils/BlockchainInteract';
 import { formatAddress, copyAddressToClipboard } from '../utils/Helpers';
@@ -44,16 +45,16 @@ const DoctorDashboard = () => {
     const shortEthAddress = formatAddress(eth_address);
     const { account, contract, isOwner } = setupBlockchain(token);
 
-    useEffect(() => {
-        const fetchDashboard = async () => {
-            try {
-                const data = await getDoctorDashboard(token, statusFilter, searchTerm);
-                setSubmissions(data);
-            } catch (err) {
-                console.error('Error fetching doctor dashboard:', err);
-            }
-        };
+    const fetchDashboard = async () => {
+        try {
+            const data = await getDoctorDashboard(token, statusFilter, searchTerm);
+            setSubmissions(data);
+        } catch (err) {
+            console.error('Error fetching doctor dashboard:', err);
+        }
+    };
 
+    useEffect(() => {
         fetchDashboard();
     }, [statusFilter, searchTerm]);
 
@@ -236,6 +237,9 @@ const DoctorDashboard = () => {
             setSelectedSubmission(prev =>
                 prev ? { ...prev, diagnoses: [...prev.diagnoses, newDiagnosis], status: 'Diagnosed' } : null
             );
+
+            // Fetch the updated submissions again
+            await fetchDashboard(); // Refresh the list of submissions
 
             setAnalysis('');
         } catch (error) {

@@ -1,15 +1,13 @@
 from pydantic import BaseModel
 from typing import Optional, Dict, List
 from datetime import datetime
-from models import SymptomStatus, GenderEnum, RoleEnum, ConsentPurpose
+from models import SymptomStatus, GenderEnum
 
-class UserCreate(BaseModel):
+
+class LoginRequest(BaseModel):
     username: str
     password: str
-    role: RoleEnum
-    name: str
-    gender: GenderEnum
-    age: int
+    role: str
 
 class UserOut(BaseModel):
     id: int
@@ -68,7 +66,8 @@ class SymptomOut(BaseModel):
     image_paths: Optional[List[str]] = []
     status: str
     submitted_at: datetime
-    patient: PatientOut 
+    patient: PatientOut
+    consent: str
 
 class DiagnosisOut(BaseModel):
     doctorName: str

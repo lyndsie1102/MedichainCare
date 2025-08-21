@@ -5,7 +5,9 @@ import {
     Search,
     Filter,
     ChevronDown,
-    LogOut
+    LogOut,
+    Wallet,
+    CopyIcon
 } from 'lucide-react';
 import '../DoctorDashboard.css';
 import AssignModal from '../components/AssignModal';
@@ -13,8 +15,11 @@ import ReferModal from '../components/ReferModal';
 import SubmissionList from '../components/SubmissionList';
 import ViewModal from '../components/ViewModal';
 import LogoutModal from '../components/LogoutModal';
-import { getDoctorDashboard, getDoctorDetails, getSymptomDetails, createDiagnosis, createReferral, logout, createTestRequest } from '../api';
+import { getDoctorDashboard, getDoctorDetails, getSymptomDetails, createDiagnosis, createReferral, createTestRequest } from '../api/doctor-apis';
+import { logout } from '../api/user-apis.js'
 import { getSymptomStatusColor, getSymptomStatusIcon, formatDate } from '../utils/Helpers';
+import { setupBlockchain, addDiagnosisToBlockchain, referToDoctorOnBlockchain, assignTestToLabBlockchain, getEthAddress } from '../utils/BlockchainInteract';
+import { formatAddress, copyAddressToClipboard } from '../utils/Helpers';
 
 const DoctorDashboard = () => {
     const [submissions, setSubmissions] = useState([]);
@@ -32,25 +37,29 @@ const DoctorDashboard = () => {
     const [statusFilter, setStatusFilter] = useState('all');
     const [showUserDropdown, setShowUserDropdown] = useState(false);
     const [showLogoutModal, setShowLogoutModal] = useState(false);
+    const [showAddressTooltip, setShowAddressTooltip] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+
+    const token = localStorage.getItem('access_token');
+    const eth_address = getEthAddress(token);
+    const shortEthAddress = formatAddress(eth_address);
+
+    const fetchDashboard = async () => {
+        try {
+            const data = await getDoctorDashboard(token, statusFilter, searchTerm);
+            setSubmissions(data);
+        } catch (err) {
+            console.error('Error fetching doctor dashboard:', err);
+        }
+    };
 
     useEffect(() => {
-        const fetchDashboard = async () => {
-            try {
-                const token = localStorage.getItem('access_token');
-                const data = await getDoctorDashboard(token, statusFilter, searchTerm);
-                setSubmissions(data);
-            } catch (err) {
-                console.error('Error fetching doctor dashboard:', err);
-            }
-        };
-
         fetchDashboard();
     }, [statusFilter, searchTerm]);
 
     useEffect(() => {
         const fetchDoctor = async () => {
             try {
-                const token = localStorage.getItem('access_token'); // or however you store it
                 const doctor = await getDoctorDetails(token);
                 setDoctorInfo(doctor);
             } catch (error) {
@@ -72,7 +81,6 @@ const DoctorDashboard = () => {
 
     const handleLogoutConfirm = async () => {
         setShowLogoutModal(false);
-        const token = localStorage.getItem('access_token');
 
         try {
             const res = await logout(token);
@@ -95,7 +103,6 @@ const DoctorDashboard = () => {
 
     const handleViewClick = async (submission) => {
         try {
-            const token = localStorage.getItem('access_token');
             const data = await getSymptomDetails(submission.id, token);
             setSelectedSubmission(data);
             setModalType('view');
@@ -103,7 +110,6 @@ const DoctorDashboard = () => {
             console.error('Failed to fetch symptom details:', err);
         }
     };
-
 
     const handleAssignClick = (submission) => {
         setSelectedSubmission(submission);
@@ -135,69 +141,84 @@ const DoctorDashboard = () => {
     };
 
 
-
-
+    // Handle assigning test to lab and integrating with blockchain
     const handleAssignToLab = async () => {
+        if (isLoading || !selectedTestType || !selectedLab || !selectedSubmission) return;
 
-        console.log("handleAssignToLab triggered");
-        console.log("selectedTestType", selectedTestType);
-        console.log("selectedLab", selectedLab);
-        console.log("selectedSubmission", selectedSubmission);
+        setIsLoading(true); // Disable further clicks
 
-
-        if (selectedTestType && selectedLab && selectedSubmission) {
-            const token = localStorage.getItem('access_token');
-            console.log("Token:", token); // Token should be logged here
-
-            if (!token) {
-                console.error("No access token found");
-                alert("You are not authorized. Please log in again.");
-                window.location.href = "/login";
+        try {
+            // Call blockchain setup before assign to lab
+            try {
+                await setupBlockchain(token);
+            } catch (blockchainError) {
+                console.error("Blockchain setup failed:", blockchainError);
+                alert("Please connect to Metamask or correct account.")
                 return;
             }
 
+            // Call blockchain function after blockchain setup
             try {
-                // Call the API to assign the symptom to the lab
-                console.log('Assigning test request...');
-                const response = await createTestRequest(token, {
-                    symptom_id: selectedSubmission.id,
-                    lab_id: selectedLab.id,
-                    test_type_id: selectedTestType.id
-                });
-
-                // Update the submission list and the status of the submission
-                setSubmissions(prev =>
-                    prev.map(sub =>
-                        sub.id === selectedSubmission.id
-                            ? { ...sub, status: 'Assigned to Lab' }
-                            : sub
-                    )
-                );
-
-                // Close the modal after successful assignment
-                alert(`Successfully assigned to ${selectedLab.name}`);
-                handleCloseModal();
-            } catch (error) {
-                console.error('Failed to assign to lab:', error);
-                alert('Lab assignment failed. Please try again.');
+                await assignTestToLabBlockchain({ role: 'doctor' });
+            } catch (blockchainError) {
+                console.error("Blockchain setup failed:", blockchainError);
+                alert("Please sign transaction to continue assigning test to lab.");
+                return;
             }
+
+            // Assign test to lab
+            await createTestRequest(token, {
+                symptom_id: selectedSubmission.id,
+                lab_id: selectedLab.id,
+                test_type_id: selectedTestType.id
+            });
+
+            setSubmissions(prev =>
+                prev.map(sub =>
+                    sub.id === selectedSubmission.id
+                        ? { ...sub, status: 'Assigned to Lab' }
+                        : sub
+                )
+            );
+
+            alert(`Successfully assigned to ${selectedLab.name}`);
+            handleCloseModal();
+        } catch (error) {
+            console.error('Failed to assign to lab:', error);
+            alert('Lab assignment failed. Please try again.');
+        } finally {
+            setIsLoading(false); // Enable button again
         }
     };
 
 
+    // Handle referring to another doctor and integrating with blockchain
     const handleReferToDoctor = async () => {
-        if (!selectedDoctor || !selectedSubmission) return;
+        if (isLoading || !selectedDoctor || !selectedSubmission) return;
 
-        const token = localStorage.getItem('access_token');
+        setIsLoading(true); // Disable further clicks
 
         try {
-            await createReferral(
-                token,
-                selectedSubmission.id, // this is the symptom_id
-                selectedDoctor.id      // this is referral_doctor_id
-            );
+            // Call blockchain setup before refer to doctor
+            try {
+                await setupBlockchain(token);
+            } catch (blockchainError) {
+                console.error("Blockchain setup failed:", blockchainError);
+                alert("Please connect to Metamask or correct account.")
+                return;
+            }
 
-            // Update the submission status in the UI
+            // Call blockchain function after blockchain setup
+            try {
+                await referToDoctorOnBlockchain({ role: 'doctor' });
+            } catch (blockchainError) {
+                console.error("Blockchain setup failed:", blockchainError);
+                alert("Please sign the contraction to continue referring doctor.");
+                return;
+            }
+
+            await createReferral(token, selectedSubmission.id, selectedDoctor.id);
+
             setSubmissions(prev =>
                 prev.map(sub =>
                     sub.id === selectedSubmission.id
@@ -211,60 +232,70 @@ const DoctorDashboard = () => {
         } catch (error) {
             console.error('Failed to refer:', error);
             alert('Referral failed. Please try again.');
+        } finally {
+            setIsLoading(false); // Enable button again
         }
     };
 
-
+    // Handle adding diagnosis and integrating with blockchain
     const handleAddDiagnosis = async () => {
-        if (!analysis.trim() || !selectedSubmission) return;
+        if (isLoading || !analysis.trim() || !selectedSubmission) return;
+
+        setIsLoading(true); // Disable further clicks
 
         try {
-            const token = localStorage.getItem('access_token');
+            // Call blockchain setup before submitting the symptom
+            try {
+                await setupBlockchain(token);
+            } catch (blockchainError) {
+                console.error("Blockchain setup failed:", blockchainError);
+                alert("Please connect to Metamask or correct account.")
+                return;
+            }
 
-            // Prepare data to send to backend
+            // Call blockchain function after blockchain setup
+            try {
+                await addDiagnosisToBlockchain({ role: 'doctor' });
+            } catch (blockchainError) {
+                console.error("Blockchain setup failed:", blockchainError);
+                alert("Please sign the contraction to continue adding diagnosis.")
+                return;
+            }
+
             const payload = {
                 symptom_id: selectedSubmission.id,
                 patient_id: selectedSubmission.patient.id,
                 diagnosis_content: analysis.trim()
             };
 
-            // Send to API
             const response = await createDiagnosis(payload, token);
             const newDiagnosis = response.diagnosis;
 
-            // Update submission list
             setSubmissions(prev =>
                 prev.map(sub =>
                     sub.id === selectedSubmission.id
-                        ? {
-                            ...sub,
-                            diagnoses: [...sub.diagnoses, newDiagnosis],
-                            status: 'Diagnosed'
-                        }
+                        ? { ...sub, diagnoses: [...sub.diagnoses, newDiagnosis], status: 'Diagnosed' }
                         : sub
                 )
             );
 
-            // Update selected submission
             setSelectedSubmission(prev =>
-                prev
-                    ? {
-                        ...prev,
-                        diagnoses: [...prev.diagnoses, newDiagnosis],
-                        status: 'diagnosed'
-                    }
-                    : null
+                prev ? { ...prev, diagnoses: [...prev.diagnoses, newDiagnosis], status: 'Diagnosed' } : null
             );
+
+            // Fetch the updated submissions again
+            await fetchDashboard(); // Refresh the list of submissions
 
             setAnalysis('');
         } catch (error) {
             console.error('Failed to create diagnosis:', error);
-            // Optional: show error message to user
+            alert('Diagnosis creation failed. Please try again.');
+        } finally {
+            setIsLoading(false); // Enable button again
         }
     };
 
 
-    
     const filteredSubmissions = submissions.filter(submission => {
         const patientName = submission?.patient?.name?.toLowerCase() || '';
         const symptoms = submission?.symptoms?.toLowerCase() || '';
@@ -279,7 +310,6 @@ const DoctorDashboard = () => {
 
     return (
         <div className="dashboard-container">
-            {/* Header */}
             <header className="header">
                 <div className="logo">
                     <Heart size={40} className="icon-heart" />
@@ -288,20 +318,42 @@ const DoctorDashboard = () => {
                         <p>Doctor Dashboard</p>
                     </div>
                 </div>
+
                 {/* User Info */}
                 <div className="user-info" onClick={() => setShowUserDropdown(!showUserDropdown)}>
-                    <div className="user-icon-doctor">
-                        <Stethoscope className="stethoscope-icon" />
+                    <div className="doctor-user-card doctor-user-card-clickable">
+                        <Stethoscope className="doctor-user-icon" />
+                        <div className="user-details-doctor">
+                            <p className="user-name">
+                                {doctorInfo ? `Dr. ${doctorInfo.name}` : 'Loading...'}
+                            </p>
+                            <p className="user-specialty">
+                                {doctorInfo ? doctorInfo.specialty : ''}
+                            </p>
+                            <div
+                                className="eth-address-container"
+                                onMouseEnter={() => setShowAddressTooltip(true)}
+                                onMouseLeave={() => setShowAddressTooltip(false)}
+                            >
+                                <Wallet className="eth-address-icon" />
+                                <span className="eth-address-short">{shortEthAddress}</span>
+                                {showAddressTooltip && (
+                                    <div className="eth-address-tooltip">
+                                        <div className="tooltip-content">
+                                            <span className="full-address">{eth_address}</span>
+                                            <button
+                                                className="copy-button"
+                                                onClick={copyAddressToClipboard(eth_address)}
+                                            >
+                                                <CopyIcon className="copy-icon" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                        <ChevronDown className={`user-dropdown-icon ${showUserDropdown ? 'user-dropdown-icon-rotated' : ''}`} />
                     </div>
-                    <div className="user-details-doctor">
-                        <p className="user-name">
-                            {doctorInfo ? `Dr. ${doctorInfo.name}` : 'Loading...'}
-                        </p>
-                        <p className="user-specialty">
-                            {doctorInfo ? doctorInfo.specialty : ''}
-                        </p>
-                    </div>
-                    <ChevronDown className={`user-dropdown-icon ${showUserDropdown ? 'user-dropdown-icon-rotated' : ''}`} />
 
                     {/* User Dropdown */}
                     {showUserDropdown && (
@@ -319,7 +371,7 @@ const DoctorDashboard = () => {
             </header >
 
             {/* Main Content */}
-            < main className="main-content-doctor" >
+            < main className="main-content doctor" >
                 {/* Page Title and Filters */}
                 < div className="page-header" >
                     <h2 className="page-title">Patient Symptom Submissions</h2>
@@ -346,11 +398,11 @@ const DoctorDashboard = () => {
                             >
                                 <option value="all">All Status</option>
                                 <option value="Pending">Pending</option>
-                                <option value="Assigned">Assigned to Lab</option>
+                                <option value="Assigned to Lab">Assigned to Lab</option>
                                 <option value="Tested">Tested</option>
                                 <option value="Diagnosed">Diagnosed</option>
                                 <option value="Referred">Referred</option>
-                                <option value="Completed">Completed</option>
+                                <option value="Waiting for Test">Waiting for Test</option>
                             </select>
                             <Filter className="filter-icon" />
                         </div>

@@ -1,4 +1,3 @@
-import React from 'react';
 import { User, Calendar, Eye, UserCheck } from 'lucide-react';
 
 const SubmissionList = ({
@@ -73,12 +72,14 @@ const SubmissionList = ({
                             <button
                                 onClick={() => handleAssignClick(submission)}
                                 className="btn btn-assign"
+                                disabled={!['Pending', 'Referred'].includes(submission.status)}
                             >
                                 Assign
                             </button>
                             <button
                                 onClick={() => handleReferClick(submission)}
                                 className="btn btn-refer"
+                                disabled={submission.status !== 'Diagnosed' || ['referral', 'research'].includes(submission.consent)}
                             >
                                 <UserCheck className="btn-icon" />
                                 <span>Refer</span>

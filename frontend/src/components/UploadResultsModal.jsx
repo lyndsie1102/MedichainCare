@@ -4,7 +4,7 @@ const UploadResultsModal = ({ selectedRequest, onClose, onUpload, files,
     resultSummary, handleSummaryChange, summaryError, onFileChange }) => {
     return (
         <div className="modal-overlay">
-            <div className="modal-container">
+            <div className="modal-container modal-large">
                 <div className="modal-header modal-header-orange">
                     <h3 className="modal-title">Upload Test Results - {selectedRequest.patient_name}</h3>
                     <button onClick={onClose} className="modal-close">

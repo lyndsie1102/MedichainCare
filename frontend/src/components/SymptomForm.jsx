@@ -1,4 +1,3 @@
-// src/components/SymptomForm.jsx
 import { useState, useRef, useEffect } from 'react';
 import { Send } from 'lucide-react';
 import { uploadImage, submitSymptom } from '../api/patient-apis';
@@ -41,7 +40,7 @@ const SymptomForm = ({ onSubmitSuccess, patientId }) => {
       alert('Please agree to the required consents (Treatment and Referral)');
       return;
     }
-    
+
     if (isSubmitting) return;
     setIsSubmitting(true);
 
@@ -60,7 +59,24 @@ const SymptomForm = ({ onSubmitSuccess, patientId }) => {
       };
 
       // Call blockchain setup before submitting the symptom
-      await setupBlockchain(token);
+      try {
+        await setupBlockchain(token);
+      } catch (blockchainError) {
+        console.error("Blockchain setup failed:", blockchainError);
+        alert("Please connect to Metamask or correct account.")
+        return;
+      }
+
+      // Call blockchain function after blockchain setup
+      try {
+        await submitSymptomToBlockchain({
+          consent_type: consentType,
+          role: 'patient', // You can pass 'patient' or the role as needed
+        });
+      } catch (blockchainError) {
+        alert("Please sign the contraction to continue submitting symptom.")
+        return;
+      }
 
       // Submit symptom along with consents
       const response = await submitSymptom({
@@ -71,11 +87,6 @@ const SymptomForm = ({ onSubmitSuccess, patientId }) => {
       }, token);
 
       if (response.message === 'Symptom submitted') {
-        // Call blockchain function after successful submission
-        await submitSymptomToBlockchain({
-          consent_type: consentType,
-          role: 'patient', // You can pass 'patient' or the role as needed
-        });
 
         // Reset form fields after submission
         setSymptoms('');

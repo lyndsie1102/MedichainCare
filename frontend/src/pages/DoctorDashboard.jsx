@@ -43,7 +43,6 @@ const DoctorDashboard = () => {
     const token = localStorage.getItem('access_token');
     const eth_address = getEthAddress(token);
     const shortEthAddress = formatAddress(eth_address);
-    const { account, contract, isOwner } = setupBlockchain(token);
 
     const fetchDashboard = async () => {
         try {
@@ -149,14 +148,30 @@ const DoctorDashboard = () => {
         setIsLoading(true); // Disable further clicks
 
         try {
+            // Call blockchain setup before assign to lab
+            try {
+                await setupBlockchain(token);
+            } catch (blockchainError) {
+                console.error("Blockchain setup failed:", blockchainError);
+                alert("Please connect to Metamask or correct account.")
+                return;
+            }
+
+            // Call blockchain function after blockchain setup
+            try {
+                await assignTestToLabBlockchain({ role: 'doctor' });
+            } catch (blockchainError) {
+                console.error("Blockchain setup failed:", blockchainError);
+                alert("Please sign transaction to continue assigning test to lab.");
+                return;
+            }
+
+            // Assign test to lab
             await createTestRequest(token, {
                 symptom_id: selectedSubmission.id,
                 lab_id: selectedLab.id,
                 test_type_id: selectedTestType.id
             });
-
-            // Blockchain: Assign Test to Lab
-            await assignTestToLabBlockchain({ role: 'doctor' });
 
             setSubmissions(prev =>
                 prev.map(sub =>
@@ -184,10 +199,25 @@ const DoctorDashboard = () => {
         setIsLoading(true); // Disable further clicks
 
         try {
-            await createReferral(token, selectedSubmission.id, selectedDoctor.id);
+            // Call blockchain setup before refer to doctor
+            try {
+                await setupBlockchain(token);
+            } catch (blockchainError) {
+                console.error("Blockchain setup failed:", blockchainError);
+                alert("Please connect to Metamask or correct account.")
+                return;
+            }
 
-            // Blockchain: Refer to Another Doctor
-            await referToDoctorOnBlockchain({ role: 'doctor' });
+            // Call blockchain function after blockchain setup
+            try {
+                await referToDoctorOnBlockchain({ role: 'doctor' });
+            } catch (blockchainError) {
+                console.error("Blockchain setup failed:", blockchainError);
+                alert("Please sign the contraction to continue referring doctor.");
+                return;
+            }
+
+            await createReferral(token, selectedSubmission.id, selectedDoctor.id);
 
             setSubmissions(prev =>
                 prev.map(sub =>
@@ -214,6 +244,24 @@ const DoctorDashboard = () => {
         setIsLoading(true); // Disable further clicks
 
         try {
+            // Call blockchain setup before submitting the symptom
+            try {
+                await setupBlockchain(token);
+            } catch (blockchainError) {
+                console.error("Blockchain setup failed:", blockchainError);
+                alert("Please connect to Metamask or correct account.")
+                return;
+            }
+
+            // Call blockchain function after blockchain setup
+            try {
+                await addDiagnosisToBlockchain({ role: 'doctor' });
+            } catch (blockchainError) {
+                console.error("Blockchain setup failed:", blockchainError);
+                alert("Please sign the contraction to continue adding diagnosis.")
+                return;
+            }
+
             const payload = {
                 symptom_id: selectedSubmission.id,
                 patient_id: selectedSubmission.patient.id,
@@ -230,9 +278,6 @@ const DoctorDashboard = () => {
                         : sub
                 )
             );
-
-            // Blockchain: Add Diagnosis
-            await addDiagnosisToBlockchain({ role: 'doctor' });
 
             setSelectedSubmission(prev =>
                 prev ? { ...prev, diagnoses: [...prev.diagnoses, newDiagnosis], status: 'Diagnosed' } : null

@@ -18,7 +18,7 @@ import UploadResultsModal from '../components/UploadResultsModal.jsx';  // Impor
 import TestRequestList from '../components/TestRequestList.jsx';
 import ScheduleModal from '../components/ScheduleModal.jsx';
 import { formatDate, getRequestStatusColor, getRequestStatusIcon } from '../utils/Helpers';  // Import utility functions for status color and icon
-import { setupBlockchain, updateTestResultsOnBlockchain, getEthAddress } from '../utils/BlockchainInteract.js';
+import { setupBlockchain, updateTestResultsOnBlockchain, getEthAddress } from '../utils/BlockchainInteract'
 import { formatAddress, copyAddressToClipboard } from '../utils/Helpers';
 
 
@@ -116,14 +116,28 @@ const LabStaffDashboard = ({ accessToken }) => {
         if (selectedRequest && selectedRequest.upload_token && files.length > 0) {
             const fileArray = Array.from(files);
             try {
+                // Call blockchain setup before upload results
+                try {
+                    await setupBlockchain(token);
+                } catch (blockchainError) {
+                    console.error("Blockchain setup failed:", blockchainError);
+                    alert("Please connect to Metamask or correct account.")
+                    return;
+                }
+
+                // Call blockchain function after blockchain setup
+                try {
+                    await updateTestResultsOnBlockchain({
+                        role: 'lab_staff'
+                    });
+                } catch (blockchainError) {
+                    alert("Please sign the contraction to continue upload results.")
+                    return;
+                }
+
+                //Upload test results
                 const response = await uploadLabResult(selectedRequest.upload_token, token, fileArray, resultSummary);
                 alert(response.message);
-
-                await setupBlockchain(token);
-
-                await updateTestResultsOnBlockchain({
-                    role: 'lab_staff'
-                });
 
                 setTestRequests(prev =>
                     prev.map(req => req.id === selectedRequest.id ? { ...req, status: 'Uploaded' } : req)

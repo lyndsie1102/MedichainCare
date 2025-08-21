@@ -1,9 +1,9 @@
 import Web3 from 'web3';
-import ContractABI from '../abis/contractABI'; // Import your contract ABI (JSON)
-import ContractAddressData from "../abis/contractAddress.json"
+import ContractABIData from '../abis/LogAudits.json'; // Import your contract ABI (JSON)
 import { jwtDecode } from 'jwt-decode';
 
-const CONTRACT_ADDRESS = ContractAddressData.address; // Replace with your actual contract address
+const CONTRACT_ADDRESS = ContractABIData.address;
+const ContractABI = ContractABIData.abi;
 
 let web3;
 let contract;
@@ -19,21 +19,23 @@ export const setupBlockchain = async (token) => {
       const activeAccount = accounts[0];
 
       // Assuming token contains the Ethereum address
-      const ethAddress = getEthAddress(token); // Replace with how you get the ETH address
-      isOwner = activeAccount.toLowerCase() === ethAddress.toLowerCase();
+      account = getEthAddress(token); // Replace with how you get the ETH address
+      isOwner = activeAccount.toLowerCase() === account.toLowerCase();
+      if (!isOwner) {
+        throw new Error("Incorrect MetaMask account"); // Throw an error if accounts don't match
+      }
 
       // Set up Web3
       web3 = new Web3(window.ethereum);
       contract = new web3.eth.Contract(ContractABI, CONTRACT_ADDRESS);
-      
-      account = activeAccount;
+
       console.log('Blockchain setup successful', { account, isOwner });
     } catch (error) {
       console.error('Error initializing Web3:', error);
-      alert('Please connect to MetaMask or another Ethereum wallet.');
+      throw error;
     }
   } else {
-    alert('Please install MetaMask!');
+    throw new Error('MetaMask is not installed.');
   }
 };
 
@@ -132,14 +134,14 @@ export const updateTestResultsOnBlockchain = async ({ role }) => {
 
 
 export const getEthAddress = (token) => {
-    try {
-        // Decode the token
-        const decodedToken = jwtDecode(token);
-        // Extract the eth_address
-        const ethAddress = decodedToken.eth_address;
-        return ethAddress;
-        // Use the eth_address as needed
-    } catch (error) {
-        console.error("Error decoding token:", error);
-    }
+  try {
+    // Decode the token
+    const decodedToken = jwtDecode(token);
+    // Extract the eth_address
+    const ethAddress = decodedToken.eth_address;
+    return ethAddress;
+    // Use the eth_address as needed
+  } catch (error) {
+    console.error("Error decoding token:", error);
+  }
 }

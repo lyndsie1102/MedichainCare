@@ -23,7 +23,7 @@ const TestRequestList = ({ filteredRequests, handleUploadClick, handleScheduleCl
                       <div className="lab-status-badge-container">
                         <span className={getRequestStatusColor(request.status)}>
                           {getRequestStatusIcon(request.status)}
-                          <span className="lab-status-text">{request.status}</span>
+                          <span className="status-text">{request.status}</span>
                         </span>
                       </div>
                     </div>

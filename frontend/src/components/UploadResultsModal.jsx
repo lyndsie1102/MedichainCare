@@ -1,22 +1,19 @@
-// src/components/UploadResultsModal.js
-
-import React, { useState } from 'react';
 import { Upload, X } from 'lucide-react';
 
 const UploadResultsModal = ({ selectedRequest, onClose, onUpload, files,
     resultSummary, handleSummaryChange, summaryError, onFileChange }) => {
     return (
-        <div className="lab-modal-overlay">
-            <div className="lab-modal-container">
-                <div className="lab-modal-header lab-modal-header-orange">
-                    <h3 className="lab-modal-title">Upload Test Results - {selectedRequest.patient_name}</h3>
-                    <button onClick={onClose} className="lab-modal-close">
+        <div className="modal-overlay">
+            <div className="modal-container modal-large">
+                <div className="modal-header modal-header-orange">
+                    <h3 className="modal-title">Upload Test Results - {selectedRequest.patient_name}</h3>
+                    <button onClick={onClose} className="modal-close">
                         <X className="lab-close-icon" />
                     </button>
                 </div>
 
-                <div className="lab-modal-body">
-                    <div className="lab-modal-content">
+                <div className="modal-body">
+                    <div className="modal-content">
                         {/* Upload Area */}
                         <div className="lab-upload-area">
                             <div className="lab-upload-icon-container">

@@ -1,4 +1,6 @@
-import { Clock, CheckCircle, FileCheck, FlaskRound, Hourglass, ArrowRight } from 'lucide-react';
+import { Clock, CheckCircle, FileCheck, FlaskRound, Hourglass, ArrowRight } from 'lucide-react'
+import { jwtDecode } from 'jwt-decode';  // Correct import for latest version
+
 const getRequestStatusIcon = (status) => {
     switch (status) {
         case 'Pending':
@@ -79,4 +81,16 @@ const formatDate = (dateString) => {
     return new Intl.DateTimeFormat('en-US', options).format(utcDate);
 };
 
-export { getRequestStatusIcon, getRequestStatusColor, getSymptomStatusColor, getSymptomStatusIcon, formatDate };
+const formatAddress = (address) => {
+    const shortEthAddress = `0x...${address.slice(-5)}`;
+    return shortEthAddress;
+}
+
+const copyAddressToClipboard = (address) => {
+    navigator.clipboard.writeText(address);
+  };
+
+export {
+    getRequestStatusIcon, getRequestStatusColor, getSymptomStatusColor, getSymptomStatusIcon,
+    formatDate, formatAddress, copyAddressToClipboard
+};

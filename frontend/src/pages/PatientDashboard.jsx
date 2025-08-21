@@ -1,10 +1,13 @@
-import React, { useEffect, useState } from 'react';
-import { Heart, UserIcon, LogOut, ChevronDown } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Heart, UserIcon, LogOut, ChevronDown, Wallet, CopyIcon } from 'lucide-react';
 import SymptomForm from '../components/SymptomForm';
 import SubmissionHistory from '../components/SubmissionHistory';
 import SubmissionViewModal from '../components/SubmissionViewModal';
 import LogoutModal from '../components/LogoutModal';
-import { getSymptomHistory, getPatientInfo, getSymptom, logout } from '../api';
+import { getSymptomHistory, getPatientInfo, getSymptom } from '../api/patient-apis';
+import { logout } from '../api/user-apis';
+import { getEthAddress } from '../utils/BlockchainInteract';
+import { formatAddress, copyAddressToClipboard } from '../utils/Helpers';
 
 const PatientDashboard = () => {
   const [submissions, setSubmissions] = useState([]);
@@ -17,8 +20,13 @@ const PatientDashboard = () => {
   const [error, setError] = useState(null);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const [showFullAddress, setShowFullAddress] = useState(false);
+  const [showAddressTooltip, setShowAddressTooltip] = useState(false);
 
-const token = localStorage.getItem('access_token');
+  const token = localStorage.getItem('access_token');
+  const eth_address = getEthAddress(token);
+  const shortEthAddress = formatAddress(eth_address);
+
   // Fetch user info once on mount
   useEffect(() => {
     const fetchUserInfo = async () => {
@@ -108,25 +116,25 @@ const token = localStorage.getItem('access_token');
 
   const handleLogoutConfirm = async () => {
     setShowLogoutModal(false);
-  
+
     try {
       const res = await logout(token);
-  
+
       if (res.status !== 200) {
         throw new Error('Logout failed on server');
       }
-  
+
       // Clear client-side session
       localStorage.removeItem('access_token');
       localStorage.removeItem('user');
-  
+
       window.location.href = '/login';
     } catch (error) {
       console.error('Logout error:', error);
       alert('Logout failed. Please try again.');
     }
   };
-  
+
 
   return (
     <div className="container">
@@ -140,13 +148,36 @@ const token = localStorage.getItem('access_token');
         </div>
         {/* User Info */}
         <div className="user-info" onClick={() => setShowUserDropdown(!showUserDropdown)}>
-          <div className="user-icon-patient">
+          <div className="patient-user-card patient-user-card-clickable">
             <UserIcon className="patient-user-icon" />
-          </div>
-          <div className="user-details">
-            <p className="user-name">
-              {user ? user.name : 'Loading...'}
-            </p>
+            <div className="user-details">
+              <div className="name-address">
+                <p className="user-name">
+                  {user ? user.name : 'Loading...'}
+                </p>
+                <div
+                  className="eth-address-container"
+                  onMouseEnter={() => setShowAddressTooltip(true)}
+                  onMouseLeave={() => setShowAddressTooltip(false)}
+                >
+                  <Wallet className="eth-address-icon" />
+                  <span className="eth-address-short">{shortEthAddress}</span>
+                  {showAddressTooltip && (
+                    <div className="eth-address-tooltip">
+                      <div className="tooltip-content">
+                        <span className="full-address">{eth_address}</span>
+                        <button
+                          className="copy-button"
+                          onClick={copyAddressToClipboard(eth_address)}
+                        >
+                          <CopyIcon className="copy-icon" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
             <ChevronDown className={`user-dropdown-icon ${showUserDropdown ? 'user-dropdown-icon-rotated' : ''}`} />
           </div>
 
@@ -173,9 +204,9 @@ const token = localStorage.getItem('access_token');
         <SubmissionHistory
           submissions={filteredSubmissions}
           handleViewClick={handleViewClick}
-          setStatusFilter={setStatusFilter} 
-          setStartDate={setStartDate}      
-          setEndDate={setEndDate}   
+          setStatusFilter={setStatusFilter}
+          setStartDate={setStartDate}
+          setEndDate={setEndDate}
         />
       </main>
       {

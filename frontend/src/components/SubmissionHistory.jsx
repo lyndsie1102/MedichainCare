@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { Calendar, Camera, Clock, CheckCircle, BadgeCheck, Eye, ArrowRight, FilterIcon, FileCheck, FlaskRound } from 'lucide-react';
+import { Calendar, Camera, Eye, FilterIcon } from 'lucide-react';
 import { formatDate, getSymptomStatusIcon, getSymptomStatusColor } from '../utils/Helpers'
 
 
@@ -40,10 +39,10 @@ const SubmissionHistory = ({ submissions, handleViewClick, setStatusFilter, setS
             >
               <option value="all">All Status</option>
               <option value="Pending">Pending</option>
-              <option value="Assigned">Assigned to Lab</option>
+              <option value="Assigned to Lab">Assigned to Lab</option>
               <option value="Tested">Tested</option>
               <option value="Diagnosed">Diagnosed</option>
-              <option value="Completed">Completed</option>
+              <option value="Waiting for Test">Waiting for Test</option>
               <option value="Referred">Referred</option>
             </select>
           </div>

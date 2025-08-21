@@ -1,8 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Send } from 'lucide-react';
-import { uploadImage, submitSymptom } from '../api';
-import { initializeWeb3, loadAccount, loadContract, setAccount, signAndSendTransaction } from '../blockchainInteract/interact';
-import Web3 from 'web3';
+import { uploadImage, submitSymptom } from '../api/patient-apis';
+import { setupBlockchain, submitSymptomToBlockchain } from '../utils/BlockchainInteract'; // Import blockchain functions
 
 const SymptomForm = ({ onSubmitSuccess, patientId }) => {
   const [symptoms, setSymptoms] = useState('');
@@ -12,9 +11,8 @@ const SymptomForm = ({ onSubmitSuccess, patientId }) => {
   const [researchConsent, setResearchConsent] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef(); // ⬅️ file input reference
-  const [account, setAccount] = useState(); // State to hold current account
-
   const token = localStorage.getItem('access_token'); // Get token from local storage
+
   const handleImageChange = (e) => {
     const files = e.target.files;
     if (files?.length) {
@@ -34,52 +32,6 @@ const SymptomForm = ({ onSubmitSuccess, patientId }) => {
     });
   };
 
-  /*
-  useEffect(() => {
-    const setupBlockchain = async () => {
-      try {
-        // Initialize Web3 and get the web3 instance
-        const web3Instance = await initializeWeb3();
-
-        // Use web3 instance to interact with the blockchain
-        const accounts = await web3Instance.eth.getAccounts();
-        if (accounts.length > 0) {
-          setAccount(accounts[0]);
-        } else {
-          alert("No accounts found");
-        }
-
-        // Load other contract details if needed
-        await loadContract();
-      } catch (error) {
-        console.error("Blockchain setup failed:", error);
-        alert("Error initializing Web3 or loading blockchain data.");
-      }
-    };
-
-    setupBlockchain();
-  }, []); // Empty dependency array ensures it runs only once
-
-  */
-
-  
-  const web3 = new Web3(window.ethereum || "http://localhost:7545");
-  useEffect(() => {
-    const setupBlockchain = async () => {
-      try {
-        await window.ethereum.request({ method: 'eth_requestAccounts' });
-        const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-        setAccount(accounts[0]);
-      } catch (error) {
-        console.error("Error initializing Web3:", error);
-      }
-    };
-
-    setupBlockchain();
-  }, []);
-
-
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -89,6 +41,7 @@ const SymptomForm = ({ onSubmitSuccess, patientId }) => {
       return;
     }
 
+    if (isSubmitting) return;
     setIsSubmitting(true);
 
     try {
@@ -105,6 +58,26 @@ const SymptomForm = ({ onSubmitSuccess, patientId }) => {
         research: researchConsent,
       };
 
+      // Call blockchain setup before submitting the symptom
+      try {
+        await setupBlockchain(token);
+      } catch (blockchainError) {
+        console.error("Blockchain setup failed:", blockchainError);
+        alert("Please connect to Metamask or correct account.")
+        return;
+      }
+
+      // Call blockchain function after blockchain setup
+      try {
+        await submitSymptomToBlockchain({
+          consent_type: consentType,
+          role: 'patient', // You can pass 'patient' or the role as needed
+        });
+      } catch (blockchainError) {
+        alert("Please sign the contraction to continue submitting symptom.")
+        return;
+      }
+
       // Submit symptom along with consents
       const response = await submitSymptom({
         symptoms,
@@ -114,6 +87,7 @@ const SymptomForm = ({ onSubmitSuccess, patientId }) => {
       }, token);
 
       if (response.message === 'Symptom submitted') {
+
         // Reset form fields after submission
         setSymptoms('');
         setSelectedImages([]);  // Reset selected images
@@ -168,7 +142,6 @@ const SymptomForm = ({ onSubmitSuccess, patientId }) => {
           </div>
         )}
 
-
         <div className="image-previews">
           {selectedImages.map(img => (
             <div key={img.id} className="preview-item">
@@ -179,7 +152,6 @@ const SymptomForm = ({ onSubmitSuccess, patientId }) => {
             </div>
           ))}
         </div>
-
 
         {/* Consent checkboxes */}
         <div className="consent-section">

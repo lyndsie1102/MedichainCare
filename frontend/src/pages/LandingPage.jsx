@@ -2,8 +2,6 @@ import React from 'react';
 import { Heart, Stethoscope, User, TestTube, Shield, Clock, Users, ArrowRight } from 'lucide-react';
 import '../App.css';
 import { useNavigate } from 'react-router-dom';
-import { login } from '../api';
-
 
 
 const LandingPage = () => {

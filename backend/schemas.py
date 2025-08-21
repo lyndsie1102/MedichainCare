@@ -1,15 +1,13 @@
 from pydantic import BaseModel
 from typing import Optional, Dict, List
 from datetime import datetime
-from models import SymptomStatus, GenderEnum, RoleEnum, ConsentPurpose, AppointmentStatus
+from models import SymptomStatus, GenderEnum
 
-class UserCreate(BaseModel):
+
+class LoginRequest(BaseModel):
     username: str
     password: str
-    role: RoleEnum
-    name: str
-    gender: GenderEnum
-    age: int
+    role: str
 
 class UserOut(BaseModel):
     id: int
@@ -56,7 +54,7 @@ class DiagnosisCreate(BaseModel):
 class SymptomHistory(BaseModel):
     id: int
     symptoms: str
-    image_path: Optional[List[str]] = None
+    image_paths: Optional[List[str]]
     status: SymptomStatus
     submitted_at: datetime
     testResults: Optional[List[TestResultOut]] = []
@@ -65,10 +63,11 @@ class SymptomHistory(BaseModel):
 class SymptomOut(BaseModel):
     id: int
     symptoms: str
-    image_paths: Optional[List[str]]
+    image_paths: Optional[List[str]] = []
     status: str
     submitted_at: datetime
-    patient: PatientOut 
+    patient: PatientOut
+    consent: str
 
 class DiagnosisOut(BaseModel):
     doctorName: str
@@ -100,25 +99,25 @@ class PatientSymptomDetails(BaseModel):
     symptoms: str
     testType: Optional[str] = None
     testResults: Optional[List[TestResultOut]] = []
-    images: List[str] 
+    images: Optional[List[str]] = []
     submittedAt: datetime
     status: SymptomStatus
     diagnoses: List[DiagnosisOut]
-    consent: ConsentOut
+    consent: str
 
 class SymptomDetails(BaseModel):
     id: str
     symptoms: str
-    lab_name: Optional[str]
-    lab_staff_name: Optional[str]
-    lab_location: Optional[str]
-    appointment_schedule: Optional[datetime]
-    testType: Optional[str] = None
+    lab_name: Optional[str] = None  # Optional field with default None
+    lab_staff_name: Optional[str] = None  # Optional field with default None
+    lab_location: Optional[str] = None  # Optional field with default None
+    appointment_schedule: Optional[datetime] = None  # Optional field with default None
+    testType: Optional[str] = None 
     testResults: Optional[List[TestResultOut]] = []
-    images: List[str] 
+    images: Optional[List[str]] = []
     submittedAt: datetime
     diagnoses: List[DiagnosisOut]
-    consent: ConsentOut
+    consent: str
 
 class TestRequestOut(BaseModel):
     id: str

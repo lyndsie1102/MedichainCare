@@ -3,10 +3,12 @@ from typing import Optional, List
 from datetime import datetime
 from models import SymptomStatus, GenderEnum
 
+
 class LoginRequest(BaseModel):
     username: str
     password: str
     role: str
+
 
 class UserOut(BaseModel):
     id: int
@@ -16,20 +18,24 @@ class UserOut(BaseModel):
     gender: GenderEnum
     age: int
 
+
 class ConsentOut(BaseModel):
     treatment: bool
     referral: bool
     research: Optional[bool] = False
-    
+
+
 class TestResultOut(BaseModel):
     uploadedAt: datetime
     files: List[dict]  # Each file contains name, url, and type
     summary: Optional[str] = None
 
+
 class SymptomCreate(BaseModel):
     symptoms: str
     image_paths: Optional[List[str]] = None
     consent_type: ConsentOut
+
 
 class PatientOut(BaseModel):
     id: int
@@ -40,15 +46,18 @@ class PatientOut(BaseModel):
     email: Optional[str] = None
     address: Optional[str] = None
 
+
 class DoctorOut(BaseModel):
     id: int
     name: str
     specialty: str
 
+
 class DiagnosisCreate(BaseModel):
     symptom_id: int
     patient_id: int
     diagnosis_content: str
+
 
 class SymptomHistory(BaseModel):
     id: int
@@ -59,6 +68,7 @@ class SymptomHistory(BaseModel):
     testResults: Optional[List[TestResultOut]] = []
     consents: List[str]
 
+
 class SymptomOut(BaseModel):
     id: int
     symptoms: str
@@ -68,10 +78,12 @@ class SymptomOut(BaseModel):
     patient: PatientOut
     consent: str
 
+
 class DiagnosisOut(BaseModel):
     doctorName: str
     analysis: str
     createdAt: datetime
+
 
 class MedicalLabs(BaseModel):
     id: int
@@ -79,10 +91,12 @@ class MedicalLabs(BaseModel):
     location: str
     specialties: List[str]
 
+
 class LabAssignmentCreate(BaseModel):
     symptom_id: int
     lab_id: int
     test_type_id: int
+
 
 class LabAssignmentOut(BaseModel):
     id: int
@@ -104,6 +118,7 @@ class PatientSymptomDetails(BaseModel):
     diagnoses: List[DiagnosisOut]
     consent: str
 
+
 class SymptomDetails(BaseModel):
     id: str
     symptoms: str
@@ -111,12 +126,13 @@ class SymptomDetails(BaseModel):
     lab_staff_name: Optional[str] = None  # Optional field with default None
     lab_location: Optional[str] = None  # Optional field with default None
     appointment_schedule: Optional[datetime] = None  # Optional field with default None
-    testType: Optional[str] = None 
+    testType: Optional[str] = None
     testResults: Optional[List[TestResultOut]] = []
     images: Optional[List[str]] = []
     submittedAt: datetime
     diagnoses: List[DiagnosisOut]
     consent: str
+
 
 class TestRequestOut(BaseModel):
     id: str
@@ -132,6 +148,7 @@ class TestRequestOut(BaseModel):
     upload_token: str
     uploaded_result_path: Optional[str] = None
 
+
 class ReferralCreate(BaseModel):
     symptom_id: int
     referral_doctor_id: int
@@ -140,10 +157,13 @@ class ReferralCreate(BaseModel):
         from_attributes = True
         use_enum_values = True
 
+
 class AppointmentSchedule(BaseModel):
-    date: str = Field(..., pattern=r'^\d{4}-\d{2}-\d{2}$', description="Date in YYYY-MM-DD format")
-    time: str = Field(..., pattern=r'^\d{2}:\d{2}$', description="Time in HH:MM format")
-    
+    date: str = Field(
+        ..., pattern=r"^\d{4}-\d{2}-\d{2}$", description="Date in YYYY-MM-DD format"
+    )
+    time: str = Field(..., pattern=r"^\d{2}:\d{2}$", description="Time in HH:MM format")
+
     class Config:
         from_attributes = True
         use_enum_values = True

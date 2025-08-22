@@ -55,7 +55,7 @@ UNITS = (
 
 
 def _consume_leading_zero_units(
-    units_iter: Iterator[Tuple[int, str]]
+    units_iter: Iterator[Tuple[int, str]],
 ) -> Iterator[Tuple[int, str]]:
     for amount, unit in units_iter:
         if amount == 0:

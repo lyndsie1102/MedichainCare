@@ -3,8 +3,15 @@ import random
 from faker import Faker
 from sqlalchemy.orm import Session
 from models import (
-    User, Doctor, Patient, LabStaff, RoleEnum, GenderEnum, 
-     MedicalLab, TestType )
+    User,
+    Doctor,
+    Patient,
+    LabStaff,
+    RoleEnum,
+    GenderEnum,
+    MedicalLab,
+    TestType,
+)
 from database import SessionLocal
 from passlib.hash import bcrypt
 from web3 import Web3
@@ -12,7 +19,7 @@ from web3 import Web3
 fake = Faker()
 
 # Initialize Web3 and connect to Ganache
-web3 = Web3(Web3.HTTPProvider('http://127.0.0.1:7545'))
+web3 = Web3(Web3.HTTPProvider("http://127.0.0.1:7545"))
 
 # Check connection status
 if web3.isConnected():
@@ -23,9 +30,12 @@ else:
 # Get the list of accounts from Ganache
 ganache_accounts = web3.eth.accounts
 
+
 def create_user(db: Session, role: str, account_index: int) -> User:
     if account_index >= len(ganache_accounts):
-        raise ValueError(f"Account index {account_index} is out of range. Ganache only has {len(ganache_accounts)} accounts.")
+        raise ValueError(
+            f"Account index {account_index} is out of range. Ganache only has {len(ganache_accounts)} accounts."
+        )
 
     # Get the Ganache account based on account_index
     user_account = ganache_accounts[account_index]
@@ -51,7 +61,6 @@ def create_user(db: Session, role: str, account_index: int) -> User:
     return user
 
 
-
 def create_doctor(db: Session, user: User) -> Doctor:
     medical_specialties = [
         "Cardiology",
@@ -68,12 +77,9 @@ def create_doctor(db: Session, user: User) -> Doctor:
         "Gastroenterology",
         "Nephrology",
         "Ophthalmology",
-        "Urology"
+        "Urology",
     ]
-    doctor = Doctor(
-        id=user.id,
-        specialty=random.choice(medical_specialties)
-    )
+    doctor = Doctor(id=user.id, specialty=random.choice(medical_specialties))
     db.add(doctor)
     db.commit()
     db.refresh(doctor)
@@ -87,7 +93,7 @@ def create_patient(db: Session, user: User, doctors: list[User]) -> Patient:
         gp_id=gp.id,
         location=fake.city(),
         phone_number=fake.phone_number(),
-        email=fake.email()
+        email=fake.email(),
     )
     db.add(patient)
     db.commit()
@@ -97,10 +103,7 @@ def create_patient(db: Session, user: User, doctors: list[User]) -> Patient:
 
 def create_lab_staff(db: Session, user: User, lab: MedicalLab) -> LabStaff:
     lab_staff = LabStaff(
-        id=user.id,
-        location=fake.city(),
-        specialties=fake.word(),
-        lab_id=lab.id
+        id=user.id, location=fake.city(), specialties=fake.word(), lab_id=lab.id
     )
     db.add(lab_staff)
     db.commit()
@@ -116,52 +119,50 @@ def create_medical_lab(db: Session) -> MedicalLab:
         "Genetics",
         "Radiology",
         "Toxicology",
-        "Immunology"
+        "Immunology",
     ]
     lab = MedicalLab(
         name=f"{fake.last_name()} Medical Lab",
         location=fake.city(),
-        specialties=", ".join(random.sample(specialties, k=random.randint(1, 3)))
+        specialties=", ".join(random.sample(specialties, k=random.randint(1, 3))),
     )
     db.add(lab)
     db.commit()
     db.refresh(lab)
     return lab
 
+
 def create_test_type(db: Session):
     test_types = [
-        'Complete Blood Count (CBC)',
-        'Basic Metabolic Panel',
-        'Comprehensive Metabolic Panel',
-        'Lipid Panel',
-        'Thyroid Function Panel',
-        'Liver Function Tests',
-        'Kidney Function Tests',
-        'HbA1c & Glucose',
-        'Cardiac Stress Test',
-        'Electrocardiogram (ECG)',
-        'Chest X-Ray',
-        'Lumbar Spine X-Ray',
-        'MRI Scan',
-        'CT Scan',
-        'Ultrasound',
-        'Skin Allergy Panel',
-        'Food Allergy Panel',
-        'Urinalysis',
-        'Stool Analysis',
-        'Blood Culture'
+        "Complete Blood Count (CBC)",
+        "Basic Metabolic Panel",
+        "Comprehensive Metabolic Panel",
+        "Lipid Panel",
+        "Thyroid Function Panel",
+        "Liver Function Tests",
+        "Kidney Function Tests",
+        "HbA1c & Glucose",
+        "Cardiac Stress Test",
+        "Electrocardiogram (ECG)",
+        "Chest X-Ray",
+        "Lumbar Spine X-Ray",
+        "MRI Scan",
+        "CT Scan",
+        "Ultrasound",
+        "Skin Allergy Panel",
+        "Food Allergy Panel",
+        "Urinalysis",
+        "Stool Analysis",
+        "Blood Culture",
     ]
-    
+
     # Adding each test type to the database
     for test_type_name in test_types:
-        test_type = TestType(
-            name=test_type_name
-        )
+        test_type = TestType(name=test_type_name)
         db.add(test_type)
-    
+
     db.commit()
     print(f"✅ {len(test_types)} test types added to the database.")
-
 
 
 def seed_db():
@@ -177,7 +178,7 @@ def seed_db():
         account_index = 0  # Start with the first account
 
         # Step 1: Create users with different roles
-        for role in ['DOCTOR', 'PATIENT', 'LAB_STAFF']:
+        for role in ["DOCTOR", "PATIENT", "LAB_STAFF"]:
             for _ in range(3):  # Create 3 users for each role
                 if account_index >= len(ganache_accounts):
                     raise ValueError("Not enough accounts in Ganache to create users.")
@@ -187,10 +188,10 @@ def seed_db():
                 users.append(user)
                 account_index += 1  # Increment index to use the next Ganache account
 
-                if role == 'DOCTOR':
+                if role == "DOCTOR":
                     doctor = create_doctor(db, user)
                     doctors.append(doctor)
-                elif role == 'LAB_STAFF':
+                elif role == "LAB_STAFF":
                     # Ensure labs are created before assigning lab staff
                     if not labs:  # If no labs exist yet, create them
                         for _ in range(5):  # Create 5 labs for testing purposes
@@ -207,10 +208,11 @@ def seed_db():
         for user in users:
             if user.role == RoleEnum.PATIENT:
                 create_patient(db, user, doctors)
-                
+
         print("✅ Database seeded successfully.")
     finally:
         db.close()
+
 
 if __name__ == "__main__":
     seed_db()

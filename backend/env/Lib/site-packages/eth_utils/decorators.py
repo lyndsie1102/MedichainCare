@@ -107,7 +107,7 @@ def return_arg_type(at_position: int) -> Callable[..., Callable[..., T]]:
 
 
 def replace_exceptions(
-    old_to_new_exceptions: Dict[Type[BaseException], Type[BaseException]]
+    old_to_new_exceptions: Dict[Type[BaseException], Type[BaseException]],
 ) -> Callable[[Callable[..., T]], Callable[..., T]]:
     """
     Replaces old exceptions with new exceptions to be raised in their place.

@@ -77,13 +77,13 @@ def get_doctor_dashboard(
     referred_symptoms = db.query(Symptom).join(Consent).filter(
         Consent.doctor_id == current_user.id,
         Consent.consent_type == ConsentPurpose.REFERRAL,
-        Consent.is_granted == True
+        Consent.is_granted
     ).all()
 
     # Query for research symptoms (where current doctor is involved in research)
     research_symptoms = db.query(Symptom).join(Consent).filter(
         Consent.consent_type == ConsentPurpose.RESEARCH,
-        Consent.is_granted == True
+        Consent.is_granted
     ).all()
 
     # Combine all symptoms
@@ -123,7 +123,7 @@ def get_doctor_dashboard(
         consent_data = db.query(Consent).filter(
             Consent.symptom_id == symptom.id,
             Consent.doctor_id == current_user.id,
-            Consent.is_granted == True
+            Consent.is_granted
         ).first()
 
         # Prepare consent field value based on the found consent
@@ -230,7 +230,7 @@ def get_symptom_details(
         Consent.symptom_id == symptom.id,
         Consent.doctor_id == current_user.id,
         Consent.consent_type == ConsentPurpose.RESEARCH,
-        Consent.is_granted == True
+        Consent.is_granted
     ).first()
     has_research_consent = research_consent is not None
 
@@ -339,54 +339,6 @@ def _get_diagnoses(db: Session, symptom_id: int) -> List[DiagnosisOut]:
         ))
     return output
 
-
-router.get("/doctor/submissions", response_model=List[SymptomOut])
-def get_submissions(status: Optional[str] = None, search: Optional[str] = None, db: Session = Depends(get_db)):
-    query = db.query(Symptom)
-
-    if status:
-        query = query.filter(Symptom.status == status)
-
-    symptoms = query.all()
-    results = []
-
-    for symptom in symptoms:
-        patient = db.query(Patient).filter(Patient.id == symptom.patient_id).first()
-        user = db.query(User).filter(User.id == symptom.patient_id).first()
-        consents = db.query(Consent).filter(Consent.symptom_id == symptom.id).all()
-
-        consent_data = {
-            "treatment": any(c.is_granted and c.consent_type == ConsentPurpose.TREATMENT for c in consents),
-            "referral": any(c.is_granted and c.consent_type == ConsentPurpose.REFERRAL for c in consents),
-            "research": any(c.is_granted and c.consent_type == ConsentPurpose.RESEARCH for c in consents),
-        }
-
-        diagnosis = db.query(Diagnosis).filter(Diagnosis.symptom_id == symptom.id).first()
-
-        # Apply keyword filtering (if search is passed)
-        if search:
-            search_text = search.lower()
-            if search_text not in symptom.symptoms.lower() and (user.name is None or search_text not in user.name.lower()):
-                continue
-
-        results.append(SymptomOut(
-            id=symptom.id,
-            symptoms=symptom.symptoms,
-            image_paths=[symptom.image_path] if symptom.image_path else [],
-            status=symptom.status,
-            submitted_at=symptom.timestamp,
-            consent=ConsentOut(**consent_data),
-            patient=PatientOut(
-                id=patient.id,
-                name=user.name,
-                age=patient.age,
-                gender=patient.gender,
-                phone=patient.phone_number,
-                email=patient.email,
-                address=patient.location
-                )
-            ))
-    return results
 
 
 @router.post("/create_diagnosis/")

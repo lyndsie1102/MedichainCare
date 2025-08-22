@@ -2,7 +2,8 @@ from datetime import datetime, timedelta
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
-import models, uuid
+import models
+import uuid
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from models import User, RoleEnum, TokenBlacklist
@@ -10,7 +11,6 @@ from database import get_db
 from typing import Union, List
 import os
 from dotenv import load_dotenv
-import websockets.client
 
 load_dotenv(".env")
 # Configuration

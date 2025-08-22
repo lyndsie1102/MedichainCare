@@ -8,9 +8,13 @@ from fastapi.security import OAuth2PasswordBearer
 from models import User, RoleEnum, TokenBlacklist
 from database import get_db
 from typing import Union, List
+import os
+from dotenv import load_dotenv
+import websockets.client
 
+load_dotenv(".env")
 # Configuration
-SECRET_KEY = "your-secret-key"
+SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 3600
 

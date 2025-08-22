@@ -15,7 +15,7 @@ fake = Faker()
 web3 = Web3(Web3.HTTPProvider('http://127.0.0.1:7545'))
 
 # Check connection status
-if web3.is_connected():
+if web3.isConnected():
     print("Connected to Ganache")
 else:
     print("Failed to connect to Ganache")
@@ -24,18 +24,12 @@ else:
 ganache_accounts = web3.eth.accounts
 
 def create_user(db: Session, role: str, account_index: int) -> User:
-    # Check if you're already connected to Ganache
-    if web3.is_connected():
-        print("Already connected to Ganache.")
-    else:
-        web3 = Web3(Web3.HTTPProvider('http://127.0.0.1:7545'))
-
     if account_index >= len(ganache_accounts):
         raise ValueError(f"Account index {account_index} is out of range. Ganache only has {len(ganache_accounts)} accounts.")
 
     # Get the Ganache account based on account_index
     user_account = ganache_accounts[account_index]
-    print(f"Creating user {role} with account: {user_account.address}")
+    print(f"Creating user {role} with account: {user_account}")
 
     # Create the user
     user = User(
@@ -47,7 +41,7 @@ def create_user(db: Session, role: str, account_index: int) -> User:
         age=random.randint(18, 80),
         is_active=True,
         timestamp=datetime.now(timezone.utc),
-        eth_address=user_account.address,  # Store Ethereum address
+        eth_address=user_account,  # Store Ethereum address
     )
 
     # Add user to DB
@@ -181,15 +175,11 @@ def seed_db():
         lab_staffs = []  # Track created lab staff
 
         account_index = 0  # Start with the first account
-         # Debugging: Print out Ganache accounts count and actual accounts
-        print(f"Ganache accounts available: {len(accounts)}")
-        print(f"Ganache accounts: {accounts}")
-
 
         # Step 1: Create users with different roles
         for role in ['DOCTOR', 'PATIENT', 'LAB_STAFF']:
             for _ in range(3):  # Create 3 users for each role
-                if account_index >= len(accounts):
+                if account_index >= len(ganache_accounts):
                     raise ValueError("Not enough accounts in Ganache to create users.")
 
                 # Map Ganache account to user (using account_index)

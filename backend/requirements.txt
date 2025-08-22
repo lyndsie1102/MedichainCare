@@ -9,4 +9,18 @@ python-multipart==0.0.9         # For file/image uploads
 jinja2==3.1.4                    # Optional: for templating (if needed)
 python-dotenv==0.16.0            # Optional: for loading .env settings
 pytz==2023.3.post1              # For timezone handling
-python-jose[cryptography]
+
+# 🔐 For authentication and token management
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+
+faker
+websockets==9.1
+black
+ruff
+
+# test
+pytest
+httpx
+pytest-cov
+requests

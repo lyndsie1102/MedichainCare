@@ -1,4 +1,0 @@
-pytest
-httpx
-pytest-cov
-requests

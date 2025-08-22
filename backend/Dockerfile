@@ -1,39 +1,41 @@
-# --- Stage 1: Base image with core dependencies ---
+# --- Stage 1: Base image with ALL dependencies ---
 FROM mcr.microsoft.com/devcontainers/python:3.10 AS base
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 WORKDIR /app
 
-COPY requirements-base.txt .
-RUN pip install --no-cache-dir -r requirements-base.txt
+# Copy the single requirements file
+COPY requirements.txt .
+
+# Install all dependencies from the single file
+RUN pip install --no-cache-dir -r requirements.txt
 
 
 # --- Stage 2: Development image ---
+# Builds FROM base, so it already has all dependencies
 FROM base AS dev
 
-COPY requirements-dev.txt .
-RUN pip install --no-cache-dir -r requirements-dev.txt
+# Copy the entire application context
 COPY . .
 
 
 # --- Stage 3: Test image ---
+# Builds FROM base, so it already has all dependencies
 FROM base AS test
 
-COPY requirements-test.txt .
-RUN pip install --no-cache-dir -r requirements-test.txt
+# Copy the entire application context
 COPY . .
 CMD ["pytest"]
 
 
-# --- Stage 4: Production image --- <<<< NEW STAGE >>>>
-# This is a lean image for deployment. It builds on 'base' and
-# only includes the necessary code and core dependencies.
+# --- Stage 4: Production image ---
+# This is a lean image for deployment.
+# It also builds from 'base'.
 FROM base AS production
 
 # Copy the application code from the context
 COPY . .
 
 # Command to run the Uvicorn server in a production-ready way
-# Note: We don't use --reload here.
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -1,0 +1,34 @@
+name: CI Pipeline
+
+# Triggers the workflow on pushes and pull requests to key branches
+on: [push, pull_request]
+
+jobs:
+  # First job: Run linters and format checkers
+  lint:
+    name: Linting and Formatting Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Build Dev Image for Tools
+        run: docker build --target dev -t myapp-dev ./backend
+
+      - name: Run Ruff Linter
+        run: docker run --rm myapp-dev ruff check ./app
+
+      - name: Check Code Formatting with Black
+        run: docker run --rm myapp-dev black --check /app
+
+  # Second job: Run the test suite
+  test:
+    name: Run Automated Tests
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Run Pytest with Docker Compose
+        run: docker-compose run --rm test

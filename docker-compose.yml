@@ -1,0 +1,53 @@
+# docker-compose.yml (CORRECTED VERSION)
+
+version: '3.8'
+
+services:
+  # Service for the Ganache local blockchain, needed for testing
+  ganache:
+    image: trufflesuite/ganache:latest
+    container_name: myapp_ganache
+    ports:
+      - "7545:7545"
+    # This command makes Ganache accessible from other containers
+    command: --host 0.0.0.0
+
+  # Service for the FastAPI Development Environment
+  backend-dev:
+    container_name: myapp_backend_dev
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: dev
+    volumes:
+      - ./backend:/app
+      - sqlite_data:/app/data
+    ports:
+      - "8000:8000"
+    environment:
+      # Explicitly define the database file for development
+      - DATABASE_URL=sqlite:////app/data/healthcare.db
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Service definition to run the test suite
+  test:
+    container_name: myapp_test
+    build:
+      context: ./backend 
+      dockerfile: Dockerfile
+      target: test
+    volumes:
+      - ./backend:/app
+      - sqlite_data:/app/data
+    environment:
+      # CRITICAL: Use a separate, explicitly named database for tests!
+      - DATABASE_URL=sqlite:////app/data/test_healthcare.db
+
+      # CRITICAL: Use the service name 'ganache' as the hostname, not 'localhost'.
+      - GANACHE_URL=http://ganache:7545
+    depends_on:
+      ganache:
+        condition: service_started
+
+volumes:
+  sqlite_data:

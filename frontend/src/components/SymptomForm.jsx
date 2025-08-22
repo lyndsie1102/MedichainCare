@@ -26,10 +26,20 @@ const SymptomForm = ({ onSubmitSuccess, patientId }) => {
   };
 
   const removeImage = (id) => {
-    setSelectedImages(prev => {
-      const filtered = prev.filter(img => img.id !== id);
-      return filtered;
+    const updatedImages = selectedImages.filter(img => img.id !== id);
+    setSelectedImages(updatedImages);
+
+    // Create a new DataTransfer object. This is the key part.
+    const dataTransfer = new DataTransfer();
+
+    // Add the remaining files (from the updatedImages array) to the DataTransfer object
+    updatedImages.forEach(img => {
+      dataTransfer.items.add(img.file);
     });
+
+    if (fileInputRef.current) {
+      fileInputRef.current.files = dataTransfer.files;
+    }
   };
 
   const handleSubmit = async (e) => {

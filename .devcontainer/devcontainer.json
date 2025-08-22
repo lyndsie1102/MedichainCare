@@ -1,0 +1,37 @@
+{
+  "name": "My FastAPI Backend Dev",
+
+  // Use docker-compose to define the environment
+  "dockerComposeFile": [
+    "../docker-compose.yml"
+  ],
+
+  // The service from docker-compose.yml to attach VS Code to
+  "service": "backend-dev",
+
+  // The folder inside the container to open VS Code in
+  "workspaceFolder": "/app",
+
+  // Add VS Code customizations
+  "customizations": {
+    "vscode": {
+      // Set default settings for the container
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.linting.enabled": true,
+        "python.linting.ruffEnabled": true,
+        "python.formatting.provider": "black"
+      },
+      // Pre-install useful extensions in the container
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "charliermarsh.ruff",
+        "ms-azuretools.vscode-docker"
+      ]
+    }
+  },
+
+  // Command to run after the container is created
+  "postCreateCommand": "echo 'Devcontainer is ready!'"
+}

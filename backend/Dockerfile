@@ -5,6 +5,11 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 WORKDIR /app
 
+RUN apt-get update && apt-get install -y --no-install-recommends build-essential
+
+# Upgrade pip to the latest version, as recommended by the notice
+RUN pip install --upgrade pip
+
 # Copy the single requirements file
 COPY requirements.txt .
 

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database import get_db
 from models import User, Symptom, RoleEnum, Consent, Patient, ConsentPurpose, Diagnosis, Doctor, MedicalLab, TestRequest, SymptomStatus, Referral, TestType
-from schemas import SymptomOut, ConsentOut, PatientOut, DiagnosisOut, PatientSymptomDetails, DoctorOut, DiagnosisCreate, LabAssignmentCreate, LabAssignmentOut, ReferralCreate, SymptomDetails, TestResultOut, MedicalLabs
+from schemas import SymptomOut, PatientOut, DiagnosisOut, PatientSymptomDetails, DoctorOut, DiagnosisCreate, LabAssignmentCreate, LabAssignmentOut, ReferralCreate, SymptomDetails, TestResultOut, MedicalLabs
 from typing import List, Optional, Union
 from .auth import verify_role
 from datetime import datetime

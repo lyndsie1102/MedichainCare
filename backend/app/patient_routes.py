@@ -3,13 +3,12 @@ from fastapi import APIRouter, Depends, File, UploadFile, HTTPException
 from sqlalchemy.orm import Session
 from database import get_db
 from models import User, Symptom, RoleEnum, Consent, Patient, ConsentPurpose, Diagnosis, Doctor, MedicalLab, TestRequest, TestResults, TestType, LabStaff, Appointment
-from schemas import SymptomCreate, ConsentOut, DiagnosisOut, SymptomHistory, SymptomDetails, TestResultOut
+from schemas import SymptomCreate, SymptomHistory
 import os
 import shutil
 from typing import List, Optional
 from .auth import verify_role
 from datetime import datetime
-from uuid import uuid4
 import json
 
 router = APIRouter()

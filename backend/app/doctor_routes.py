@@ -225,6 +225,15 @@ def get_symptom_details(
     ).first()
     is_referred_doctor = referral is not None
 
+    # Check for a specific RESEARCH consent record for THIS doctor
+    research_consent = db.query(Consent).filter(
+        Consent.symptom_id == symptom.id,
+        Consent.doctor_id == current_user.id,
+        Consent.consent_type == ConsentPurpose.RESEARCH,
+        Consent.is_granted == True
+    ).first()
+    has_research_consent = research_consent is not None
+
     if is_gp:
         # Full access
         return PatientSymptomDetails(
@@ -270,7 +279,7 @@ def get_symptom_details(
             consent='referral'
         )
     
-    elif symptom.consent_research:
+    elif has_research_consent:
         # Research-only access
         return PatientSymptomDetails(
             id=str(symptom.id),

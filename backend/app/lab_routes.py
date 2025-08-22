@@ -2,8 +2,8 @@ import uuid
 from fastapi import APIRouter, Depends, File, UploadFile, HTTPException, Form
 from sqlalchemy.orm import Session
 from database import get_db
-from models import User, Symptom, RoleEnum, Patient, Doctor, MedicalLab, TestRequest, SymptomStatus, TestResults, TestType, LabStaff, TestRequestStatus, AppointmentStatus, Appointment
-from schemas import DoctorOut, MedicalLabs, TestRequestOut
+from models import User, Symptom, RoleEnum, Patient, Doctor, TestRequest, SymptomStatus, TestResults, TestType, LabStaff, TestRequestStatus, AppointmentStatus, Appointment
+from schemas import DoctorOut, TestRequestOut, AppointmentSchedule
 import os
 import shutil
 from typing import List, Optional
@@ -168,8 +168,7 @@ def upload_lab_result(
 
 @router.post("/appointments/{test_request_id}/schedule")
 async def schedule_appointment(test_request_id: int, 
-                               date: str,  # Accept the date in string format
-                               time: str,  # Accept the time in string format
+                               payload: AppointmentSchedule,
                                db: Session = Depends(get_db), 
                                current_user: User = Depends(verify_role(RoleEnum.LAB_STAFF))):
 
@@ -181,7 +180,7 @@ async def schedule_appointment(test_request_id: int,
     # Step 2: Combine date and time to form a datetime object
     try:
         # Combine date and time into a single string and convert to datetime object
-        combined_datetime_str = f"{date} {time}"
+        combined_datetime_str = f"{payload.date} {payload.time}"
         scheduled_at = datetime.strptime(combined_datetime_str, "%Y-%m-%d %H:%M")
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid date or time format. Use 'YYYY-MM-DD' for date and 'HH:MM' for time.")

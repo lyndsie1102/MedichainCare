@@ -1,29 +1,35 @@
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 import random
 from faker import Faker
-import uuid
 from sqlalchemy.orm import Session
 from models import (
-    User, Doctor, Patient, LabStaff, Symptom, Diagnosis, Consent,
-    SymptomStatus, RoleEnum, GenderEnum, ConsentPurpose, MedicalLab, TestRequestStatus,
-    TestType, TestRequest, TestResults, Appointment, AppointmentStatus
-)
+    User, Doctor, Patient, LabStaff, RoleEnum, GenderEnum, 
+     MedicalLab, TestType )
 from database import SessionLocal
 from passlib.hash import bcrypt
-from brownie import accounts, network
+from web3 import Web3
 
 fake = Faker()
-network.connect('ganache-local')
+
+# Initialize Web3 and connect to Ganache
+web3 = Web3(Web3.HTTPProvider('http://127.0.0.1:7545'))
+
+# Check connection status
+if web3.is_connected():
+    print("Connected to Ganache")
+else:
+    print("Failed to connect to Ganache")
+
+# Get the list of accounts from Ganache
+ganache_accounts = web3.eth.accounts
 
 def create_user(db: Session, role: str, account_index: int) -> User:
     # Check if you're already connected to Ganache
-    if network.is_connected():
+    if web3.is_connected():
         print("Already connected to Ganache.")
     else:
-        network.connect('ganache-local')  # Ensure you're connected to the Ganache network
+        web3 = Web3(Web3.HTTPProvider('http://127.0.0.1:7545'))
 
-    # Get Ganache accounts
-    ganache_accounts = accounts  # Brownie automatically loads accounts
     if account_index >= len(ganache_accounts):
         raise ValueError(f"Account index {account_index} is out of range. Ganache only has {len(ganache_accounts)} accounts.")
 

@@ -1,8 +1,7 @@
-from pydantic import BaseModel
-from typing import Optional, Dict, List
+from pydantic import BaseModel, Field
+from typing import Optional, List
 from datetime import datetime
 from models import SymptomStatus, GenderEnum
-
 
 class LoginRequest(BaseModel):
     username: str
@@ -140,3 +139,10 @@ class ReferralCreate(BaseModel):
     class Config:
         from_attributes = True
         use_enum_values = True
+
+class AppointmentSchedule(BaseModel):
+    date: str = Field(..., pattern=r'^\d{4}-\d{2}-\d{2}$', description="Date in YYYY-MM-DD format")
+    time: str = Field(..., pattern=r'^\d{2}:\d{2}$', description="Time in HH:MM format")
+
+    class Config:
+        orm_mode = True

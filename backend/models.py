@@ -53,7 +53,14 @@ class User(Base):
     eth_address = Column(String, nullable=False)  # Store the Ethereum address
 
     doctor = relationship("Doctor", back_populates="user", uselist=False)
-
+    patient_profile = relationship(
+        "Patient", 
+        back_populates="user", 
+        foreign_keys="Patient.id", 
+        uselist=False # A user has only one patient profile
+    )
+    patients_as_gp = relationship("Patient", back_populates="gp", foreign_keys="Patient.gp_id")
+    
 class Doctor(Base):
     __tablename__ = "doctors"
     id = Column(Integer, ForeignKey("users.id"), primary_key=True)
@@ -69,6 +76,9 @@ class Patient(Base):
     location = Column(String, nullable=False)
     phone_number = Column(String, nullable=True)
     email = Column(String, nullable=True)
+
+    user = relationship("User", back_populates="patient_profile", foreign_keys=[id])
+    gp = relationship("User", back_populates="patients_as_gp", foreign_keys=[gp_id])
 
 class MedicalLab(Base):
     __tablename__ = "medical_labs"

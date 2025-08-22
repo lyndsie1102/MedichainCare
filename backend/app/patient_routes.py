@@ -18,7 +18,6 @@ os.makedirs(PATIENT_IMAGE_DIR, exist_ok=True)
 
 
 
-
 @router.get("/patient/me")
 def get_patient_details(
     current_user: User = Depends(verify_role(RoleEnum.PATIENT)),
@@ -255,6 +254,18 @@ def get_symptom_history(
     start_date: Optional[str] = None,
     end_date: Optional[str] = None
 ):
+    
+    try:
+        if start_date:
+            start_date_obj = datetime.strptime(start_date, "%Y-%m-%d").replace(hour=0, minute=0, second=0, microsecond=0)
+        if end_date:
+            end_date_obj = datetime.strptime(end_date, "%Y-%m-%d").replace(hour=23, minute=59, second=59, microsecond=999999)
+    except ValueError as e:
+        # If strptime fails, it raises a ValueError. We catch it here.
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid date format. Please use YYYY-MM-DD. Error: {e}"
+        )
 
     # Validate date range, if both start_date and end_date are provided
     if start_date and end_date:
@@ -285,6 +296,7 @@ def get_symptom_history(
     
     result = []
     for s in symptoms:
+        image_paths = [] 
         # Fetch consents related to this symptom
         consents = db.query(Consent).filter(Consent.symptom_id == s.id).all()
         

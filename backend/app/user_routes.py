@@ -32,8 +32,6 @@ def login(
 
     # Get the integer value of the requested role
     requested_role = role_map.get(login_data.role.lower())  # Convert to lowercase to ensure case-insensitivity
-    print(f"role {requested_role}")
-    print(f"role {user.role}")
     if requested_role is None:
         raise HTTPException(status_code=400, detail="Invalid role specified")
 

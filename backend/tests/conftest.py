@@ -2,9 +2,8 @@ import pytest
 from models import RoleEnum, User
 import uuid
 from datetime import datetime, timedelta
-from jose import jwt
 from sqlalchemy.orm import Session
-from database import SessionLocal, Base, engine
+from database import Base, engine
 from fastapi.testclient import TestClient
 from main import app
 from models import (

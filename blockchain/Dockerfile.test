@@ -18,4 +18,4 @@ COPY . .
 EXPOSE 7545
 
 # Compile and deploy smart contracts to docker network
-CMD truffle compile && truffle migrate --network docker && tail -f /dev/null
+CMD truffle test

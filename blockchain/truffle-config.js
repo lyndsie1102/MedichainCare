@@ -3,8 +3,8 @@ module.exports = {
   networks: {
     // Ganache local network
     "ganache-local": {
-      host: "host.docker.internal", // Localhost
-      port: 7545, // Ganache default port
+      host: process.env.HOST || "127.0.0.1",
+      port: process.env.PORT || 7545,
       network_id: "5777", // Match any network id
       gas: 6721975, // Gas limit
       gasPrice: 20000000000, // 20 Gwei

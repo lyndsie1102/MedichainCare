@@ -75,5 +75,16 @@ services:
     environment:
       - FASTAPI_ENV=test
 
+  blockchain-test:
+    build:
+      context: ./blockchain 
+    command: truffle test 
+    depends_on:
+      - blockchain          
+    volumes:
+      - ./blockchain:/workspace
+    environment:
+      - HOST=blockchain
+
 volumes:
   postgres_data:

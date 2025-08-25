@@ -5,7 +5,6 @@ FROM node:18-alpine AS blockchain
 WORKDIR /workspace
 
 # Install necessary build tools
-RUN apk add --no-cache libc6-compat
 RUN apk add --no-cache python3 py3-pip make g++ bash
 
 

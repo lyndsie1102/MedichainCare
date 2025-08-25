@@ -1,9 +1,8 @@
 module.exports = {
-  // Specify the networks object to configure your networks
   networks: {
     // Ganache local network
     "docker": {
-      host: "host.docker.internal", // Localhost
+      host: "host.docker.internal",
       port: 7545, // Ganache default port
       network_id: "5777", // Match any network id
       gas: 6721975, // Gas limit

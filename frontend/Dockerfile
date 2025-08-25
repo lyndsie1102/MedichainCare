@@ -9,6 +9,8 @@ COPY package*.json .
 # Install the Node.js dependencies
 RUN npm install
 
+RUN ls -la /workspace/node_modules/.bin
+
 # Copy the entire frontend code into the container
 COPY . .
 

@@ -47,6 +47,7 @@ services:
       - "3000:3000"
     volumes:
       - ./frontend:/workspace
+      - /workspace/node_modules 
     environment:
       - NODE_ENV=development
       - GANACHE_URL=http://blockchain:7545
@@ -87,4 +88,4 @@ services:
       - ./blockchain:/workspace
 
 volumes:
-  postgres_data:
+  postgres_data: {}

@@ -82,7 +82,7 @@ describe('UploadResultsModal Component', () => {
 
   test('calls onFileChange when a file is selected', () => {
     renderComponent();
-    const fileInput = screen.getByTestId('file-upload-input');
+    const fileInput = screen.getByLabelText(/click to select files/i);
     const file = new File(['(⌐□_□)'], 'test-result.pdf', { type: 'application/pdf' });
     
     fireEvent.change(fileInput, { target: { files: [file] } });

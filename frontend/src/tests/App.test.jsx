@@ -5,6 +5,8 @@ import App from '../App';
 import '@testing-library/jest-dom';
 import { getEthAddress } from '../utils/BlockchainInteract';
 
+
+
 jest.mock('../utils/BlockchainInteract');
 
 describe('App Routing Logic', () => {

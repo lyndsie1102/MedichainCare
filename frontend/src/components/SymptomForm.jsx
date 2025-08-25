@@ -29,17 +29,7 @@ const SymptomForm = ({ onSubmitSuccess, patientId }) => {
     const updatedImages = selectedImages.filter(img => img.id !== id);
     setSelectedImages(updatedImages);
 
-    // Create a new DataTransfer object. This is the key part.
-    const dataTransfer = new DataTransfer();
-
-    // Add the remaining files (from the updatedImages array) to the DataTransfer object
-    updatedImages.forEach(img => {
-      dataTransfer.items.add(img.file);
-    });
-
-    if (fileInputRef.current) {
-      fileInputRef.current.files = dataTransfer.files;
-    }
+    
   };
 
   const handleSubmit = async (e) => {
@@ -138,8 +128,9 @@ const SymptomForm = ({ onSubmitSuccess, patientId }) => {
           placeholder="Please describe your symptoms in detail, including when they started, severity, and any triggers you've noticed..."
         />
 
-        <label>Optional: Upload Image</label>
+        <label htmlFor='imageInput'>Optional: Upload Image</label>
         <input
+          id='imageInput'
           type="file"
           onChange={handleImageChange}
           accept="image/*"

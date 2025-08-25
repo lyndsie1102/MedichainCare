@@ -1,51 +1,79 @@
-version: '3.8'
-
 services:
-  # Service for the Ganache local blockchain, needed for testing
-  ganache:
-    image: trufflesuite/ganache:latest
-    container_name: myapp_ganache
+  blockchain:
+    build:
+      context: ./blockchain
     ports:
       - "7545:7545"
-    # This command makes Ganache accessible from other containers
-    command: --host 0.0.0.0
+    environment:
+      - GANACHE_NETWORK_ID=5777
+    volumes:
+      - ./blockchain:/workspace
+      - ./data:/workspace/data
+      - ./frontend/src/abis:/workspace/frontend/src/abis
 
-  # Service for the FastAPI Development Environment
-  backend-dev:
-    container_name: myapp_backend_dev
+  db:
+    image: postgres:13
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=healthcare_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+
+  # Backend Service
+  backend:
     build:
       context: ./backend
-      dockerfile: Dockerfile
-      target: dev
-    volumes:
-      - ./backend:/app
-      - sqlite_data:/app/data
     ports:
       - "8000:8000"
-    environment:
-      # Explicitly define the database file for development
-      - DATABASE_URL=sqlite:////app/data/healthcare.db
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-
-  # Service definition to run the test suite
-  test:
-    container_name: myapp_test
-    build:
-      context: ./backend 
-      dockerfile: Dockerfile
-      target: test
     volumes:
       - ./backend:/app
-      - sqlite_data:/app/data
     environment:
-      # CRITICAL: Use a separate, explicitly named database for tests!
-      - DATABASE_URL=sqlite:////app/data/test_healthcare.db
-
-      # CRITICAL: Use the service name 'ganache' as the hostname, not 'localhost'.
-      - GANACHE_URL=http://ganache:7545
+      - DATABASE_URL=postgresql://user:password@db:5432/healthcare_db
+      - FASTAPI_APP=main.py
+      - FASTAPI_ENV=development
+      - GANACHE_URL=http://blockchain:7545
     depends_on:
-      ganache:
-        condition: service_started
+      - blockchain
+      - db
+
+  # Frontend Service
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/workspace
+    environment:
+      - NODE_ENV=development
+      - GANACHE_URL=http://blockchain:7545
+    depends_on:
+      - blockchain
+
+  # Frontend Test Service
+  frontend-test:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.test
+    command: ["npm", "test"]
+    volumes:
+      - ./frontend:/app
+
+  # Backend Test Service
+  backend-test:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.test
+    command: ["pytest", "-v", "--maxfail=1", "--disable-warnings"]
+    depends_on:
+      - backend
+    volumes:
+      - ./backend:/app
+    environment:
+      - FASTAPI_ENV=test
 
 volumes:
-  sqlite_data:
+  postgres_data:

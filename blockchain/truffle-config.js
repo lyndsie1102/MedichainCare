@@ -3,13 +3,12 @@ module.exports = {
   networks: {
     // Ganache local network
     "ganache-local": {
-      host: "127.0.0.1", // Localhost
+      host: "host.docker.internal", // Localhost
       port: 7545, // Ganache default port
-      network_id: "*", // Match any network id
+      network_id: "5777", // Match any network id
       gas: 6721975, // Gas limit
       gasPrice: 20000000000, // 20 Gwei
-    },
-    // Other networks, such as ropsten or mainnet, can be configured here.
+    }
   },
 
   // Specify compilers for Solidity

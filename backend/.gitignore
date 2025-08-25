@@ -1,0 +1,13 @@
+__pycache__/
+node_modules/
+.env
+venv/
+app/
+build/
+data/
+dist/
+upload_images/
+uploads/
+.coverage
+test_localsystem.txt
+test.db

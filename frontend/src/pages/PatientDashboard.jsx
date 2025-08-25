@@ -147,7 +147,8 @@ const PatientDashboard = () => {
           </div>
         </div>
         {/* User Info */}
-        <div className="user-info" onClick={() => setShowUserDropdown(!showUserDropdown)}>
+        <div className="user-info" onClick={() => setShowUserDropdown(!showUserDropdown)}
+          data-testid="user-info-dropdown-toggle">
           <div className="patient-user-card patient-user-card-clickable">
             <UserIcon className="patient-user-icon" />
             <div className="user-details">
@@ -201,13 +202,19 @@ const PatientDashboard = () => {
         {/* Filters: add UI to update statusFilter, startDate, endDate */}
         <SymptomForm onSubmitSuccess={handleFormSubmitSuccess} />
 
-        <SubmissionHistory
-          submissions={filteredSubmissions}
-          handleViewClick={handleViewClick}
-          setStatusFilter={setStatusFilter}
-          setStartDate={setStartDate}
-          setEndDate={setEndDate}
-        />
+        {loading ? (
+          <p>Loading submissions...</p>
+        ) : error ? (
+          <p className="error-message">{error}</p> // This will render your error message
+        ) : (
+          <SubmissionHistory
+            submissions={filteredSubmissions}
+            handleViewClick={handleViewClick}
+            setStatusFilter={setStatusFilter}
+            setStartDate={setStartDate}
+            setEndDate={setEndDate}
+          />
+        )}
       </main>
       {
         selectedSubmission && (

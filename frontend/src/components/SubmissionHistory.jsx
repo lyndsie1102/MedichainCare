@@ -33,8 +33,9 @@ const SubmissionHistory = ({ submissions, handleViewClick, setStatusFilter, setS
         <div className="filters-grid">
           {/*Status Filter*/}
           <div className="filter-group">
-            <label className="filter-label">Status</label>
+            <label htmlFor="status-filter" className="filter-label">Status</label>
             <select
+              id="status-filter"
               onChange={(e) => setStatusFilter(e.target.value)}
             >
               <option value="all">All Status</option>
@@ -50,15 +51,17 @@ const SubmissionHistory = ({ submissions, handleViewClick, setStatusFilter, setS
           {/*Date range filter*/}
           <div className="filter-group date-group">
             <div className="filter-date">
-              <label className="filter-label">Start Date</label>
+              <label htmlFor="start-date-filter" className="filter-label">Start Date</label>
               <input
+                id="start-date-filter"
                 type="date"
                 onChange={(e) => setStartDate(e.target.value)}
               />
             </div>
             <div className="filter-date">
-              <label className="filter-label">End Date</label>
+              <label htmlFor="end-date-filter" className="filter-label">End Date</label>
               <input
+                id="end-date-filter"
                 type="date"
                 onChange={(e) => setEndDate(e.target.value)}
               />

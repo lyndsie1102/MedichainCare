@@ -20,10 +20,11 @@ const UploadResultsModal = ({ selectedRequest, onClose, onUpload, files,
                                 <Upload className="lab-upload-icon" />
                             </div>
                             <h4 className="lab-upload-title">Upload Test Results</h4>
-                            <p className="lab-upload-text">
+                            <label htmlFor="file-upload" className="lab-upload-text">
                                 Click to select files or drag and drop your test result files here
-                            </p>
+                            </label>
                             <input
+                                id="file-upload"
                                 type="file"
                                 multiple
                                 accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"

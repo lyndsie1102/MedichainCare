@@ -1,5 +1,4 @@
 import { Clock, CheckCircle, FileCheck, FlaskRound, Hourglass, ArrowRight } from 'lucide-react'
-import { jwtDecode } from 'jwt-decode';  // Correct import for latest version
 
 const getRequestStatusIcon = (status) => {
     switch (status) {
@@ -63,6 +62,9 @@ const getSymptomStatusColor = (status) => {
 
 // Format the date and time into a human-readable format
 const formatDate = (dateString) => {
+    if(!dateString) {
+        return '';
+    }
     if (!dateString.endsWith('Z')) {
         dateString += 'Z';
     }
@@ -82,13 +84,16 @@ const formatDate = (dateString) => {
 };
 
 const formatAddress = (address) => {
+    if (!address || typeof address !== 'string') {
+        return 'N/A';
+    }
     const shortEthAddress = `0x...${address.slice(-5)}`;
     return shortEthAddress;
 }
 
 const copyAddressToClipboard = (address) => {
     navigator.clipboard.writeText(address);
-  };
+};
 
 export {
     getRequestStatusIcon, getRequestStatusColor, getSymptomStatusColor, getSymptomStatusIcon,

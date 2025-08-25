@@ -46,8 +46,9 @@ const ScheduleAppointmentModal = ({
             <div className="lab-date-picker-section">
               <h4 className="lab-section-title">Select date and time for appointment</h4>
               <div className="lab-datetime-picker-container">
-                <label className="lab-picker-label">Date & Time:</label>
+                <label htmlFor="datetime-input" className="lab-picker-label">Date & Time:</label>
                 <input
+                  id="datetime-input"
                   type="datetime-local"
                   value={selectedDateTime}
                   onChange={(e) => setSelectedDateTime(e.target.value)}
@@ -69,10 +70,10 @@ const ScheduleAppointmentModal = ({
                   <div className="lab-appointment-summary-item">
                     <Clock className="lab-appointment-summary-icon" />
                     <span><strong>Time:</strong> {
-                      new Date(selectedDateTime).toLocaleTimeString('en-US', { 
-                        hour: 'numeric', 
-                        minute: '2-digit', 
-                        hour12: true 
+                      new Date(selectedDateTime).toLocaleTimeString('en-US', {
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        hour12: true
                       })
                     }</span>
                   </div>

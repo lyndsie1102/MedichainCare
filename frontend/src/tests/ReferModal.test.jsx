@@ -54,6 +54,7 @@ describe('ReferModal Component', () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
+        localStorageMock.getItem.mockReturnValue('fake-access-token');
         // Set up a successful API response for most tests
         getAllDoctors.mockResolvedValue(mockDoctors);
     });

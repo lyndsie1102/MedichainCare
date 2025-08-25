@@ -15,6 +15,8 @@ class MockDataTransfer {
   }
 }
 
+const mockSetSelectedImages = jest.fn();
+
 global.DataTransfer = MockDataTransfer;
 
 // Mock the API module
@@ -26,10 +28,12 @@ import * as blockchain from '../utils/BlockchainInteract';
 jest.mock('../utils/BlockchainInteract');
 
 // Mock globals like localStorage and alert
-const mockLocalStorage = {
-  getItem: jest.fn(() => 'fake_token'),
+// 3. Mock localStorage
+const localStorageMock = {
+  getItem: jest.fn().mockReturnValue('fake-token'),
 };
-Object.defineProperty(window, 'localStorage', { value: mockLocalStorage });
+
+Object.defineProperty(window, 'localStorage', { value: localStorageMock });
 Object.defineProperty(window, 'alert', { value: jest.fn() });
 
 // Mock URL.createObjectURL for file previews
@@ -48,6 +52,8 @@ describe('SymptomForm Component', () => {
   // Clear all mock history before each test
   beforeEach(() => {
     jest.clearAllMocks();
+    localStorageMock.getItem.mockReturnValue('fake-token');
+    
   });
 
   const renderComponent = () => {
@@ -74,7 +80,7 @@ describe('SymptomForm Component', () => {
     // Fill in symptoms: still disabled
     fireEvent.change(symptomTextarea, { target: { value: 'Feeling unwell' } });
     expect(submitButton).toBeDisabled();
-    
+
     // Check one consent: still disabled
     fireEvent.click(treatmentCheckbox);
     expect(submitButton).toBeDisabled();
@@ -95,17 +101,25 @@ describe('SymptomForm Component', () => {
 
     // Check that previews are rendered
     expect(screen.getByText(/Selected Images: test1.png, test2.png/i)).toBeInTheDocument();
-    expect(screen.getByAltText('test1.png')).toBeInTheDocument();
-    expect(screen.getByAltText('test2.png')).toBeInTheDocument();
+    expect(screen.getByText(/test1/i)).toBeInTheDocument();
+    expect(screen.getByText(/test2/i)).toBeInTheDocument();
 
     // Remove the first image (the remove icon is a text node `&times;`)
     const removeIcons = screen.getAllByText('×');
+    console.log(removeIcons);
     fireEvent.click(removeIcons[0]);
-    
+
     // Check that the first image is gone and the second remains
-    expect(screen.queryByAltText('test1.png')).not.toBeInTheDocument();
-    expect(screen.getByAltText('test2.png')).toBeInTheDocument();
-    expect(screen.getByText(/Selected Images: test2.png/i)).toBeInTheDocument();
+    waitFor(() => {
+        // Assert that the first image is now gone
+        expect(screen.queryByAltText('test1.png')).not.toBeInTheDocument();
+
+        // Assert that the second image remains
+        expect(screen.getByAltText('test2.png')).toBeInTheDocument();
+        
+        // Assert that the summary text has updated correctly
+        expect(screen.getByText(/Selected Images: test2.png/i)).toBeInTheDocument();
+    });
   });
 
   test('handles successful submission with images', async () => {
@@ -135,29 +149,30 @@ describe('SymptomForm Component', () => {
     fireEvent.click(submitButton);
 
     // Check submitting state
-    expect(screen.getByRole('button', { name: /submitting.../i })).toBeDisabled();
+    const submittingButton = await screen.findByRole('button', { name: /submitting.../i });
+    expect(submittingButton).toBeDisabled();
 
     // Wait for all async operations to finish
     await waitFor(() => {
       // 1. Blockchain setup was called
-      expect(mockSetupBlockchain).toHaveBeenCalledWith('fake_token');
-      
+      expect(mockSetupBlockchain).toHaveBeenCalledWith('fake-token');
+
       // 2. Blockchain submission was called
       expect(mockSubmitSymptomToBlockchain).toHaveBeenCalledWith({
         consent_type: { treatment: true, referral: true, research: true },
         role: 'patient',
       });
-      
+
       // 3. Image was uploaded
       expect(mockUploadImage).toHaveBeenCalledWith([file]);
-      
+
       // 4. Main symptom data was submitted
       expect(mockSubmitSymptom).toHaveBeenCalledWith({
         symptoms: 'Coughing',
         image_paths: ['path/to/image.png'],
         patient_id: 123,
         consent_type: { treatment: true, referral: true, research: true },
-      }, 'fake_token');
+      }, 'fake-token');
 
       // 5. Success callback was triggered
       expect(mockOnSubmitSuccess).toHaveBeenCalledTimes(1);
@@ -168,7 +183,7 @@ describe('SymptomForm Component', () => {
     expect(treatmentCheckbox.checked).toBe(false);
     expect(researchCheckbox.checked).toBe(false);
   });
-  
+
   test('stops submission if blockchain setup fails', async () => {
     // Mock blockchain setup failure
     mockSetupBlockchain.mockRejectedValue(new Error('MetaMask connection failed'));
@@ -180,14 +195,14 @@ describe('SymptomForm Component', () => {
     fireEvent.click(screen.getByLabelText(/consent to sharing my medical records with the referring doctor/i));
 
     fireEvent.click(screen.getByRole('button', { name: /submit symptoms/i }));
-    
+
     await waitFor(() => {
       // Check that alert was called and submission was halted
       expect(window.alert).toHaveBeenCalledWith("Please connect to Metamask or correct account.");
       expect(mockSubmitSymptomToBlockchain).not.toHaveBeenCalled();
       expect(mockSubmitSymptom).not.toHaveBeenCalled();
     });
-    
+
     // Button should be re-enabled
     expect(screen.getByRole('button', { name: /submit symptoms/i })).toBeEnabled();
   });

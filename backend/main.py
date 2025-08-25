@@ -6,6 +6,10 @@ from app.lab_routes import router as lab_router
 from app.user_routes import router as user_router
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+import websockets.client
+
+async def connect_websocket():
+     await websockets.client.connect("http://127.0.0.1:8000")
 
 app = FastAPI()
 

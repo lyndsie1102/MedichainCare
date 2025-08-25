@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom'; // No more BrowserRouter import here
 import PatientDashboard from './pages/PatientDashboard';
 import DoctorDashboard from './pages/DoctorDashboard';
 import LabDashboard from './pages/LabDashboard';
@@ -26,14 +26,13 @@ const DashboardRouter = () => {
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/login/:role" element={<LoginForm />} />
-        <Route path="/dashboard" element={<DashboardRouter />} />
-        <Route path="*" element={<Navigate to="/" />} /> {/* Catch-all redirect */}
-      </Routes>
-    </Router>
+    // The <Router> component has been removed from here
+    <Routes>
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/login/:role" element={<LoginForm />} />
+      <Route path="/dashboard" element={<DashboardRouter />} />
+      <Route path="*" element={<Navigate to="/" />} /> {/* Catch-all redirect */}
+    </Routes>
   );
 }
 

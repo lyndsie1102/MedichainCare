@@ -88,12 +88,11 @@ const { setupBlockchain, updateTestResultsOnBlockchain } = require('../utils/Blo
 
 
 // Mock data for tests
-// ----------------------------------------
 const mockLabStaff = { name: 'Dr. Emily Carter' };
 const mockTestRequests = [
-    { id: 1, patient_name: 'John Doe', doctor: { name: 'Dr. Smith' }, test_type: 'Blood Test', status: 'Pending', appointment_status: 'Scheduled', upload_token: 'token123' },
-    { id: 2, patient_name: 'Jane Smith', doctor: { name: 'Dr. Jones' }, test_type: 'X-Ray', status: 'Pending', appointment_status: null },
-    { id: 3, patient_name: 'Peter Pan', doctor: { name: 'Dr. Smith' }, test_type: 'MRI Scan', status: 'Uploaded', appointment_status: 'Scheduled' },
+    { id: 1, patient_name: 'John Doe', doctor: { name: 'Dr. Smith' }, testType: 'Blood Test', status: 'Pending', appointment_status: 'Scheduled', upload_token: 'token123' },
+    { id: 2, patient_name: 'Jane Smith', doctor: { name: 'Dr. Jones' }, testType: 'X-Ray', status: 'Pending', appointment_status: null },
+    { id: 3, patient_name: 'Peter Pan', doctor: { name: 'Dr. Smith' }, testType: 'MRI Scan', status: 'Uploaded', appointment_status: 'Scheduled' },
 ];
 
 

@@ -46,8 +46,7 @@ describe('SubmissionHistory Component', () => {
     expect(screen.getByRole('heading', { name: /submission history/i })).toBeInTheDocument();
     expect(screen.getByText(/filters/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /clear all/i })).toBeInTheDocument();
-    
-    // Check for filter controls by their accessible labels
+
     expect(screen.getByLabelText(/status/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/start date/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/end date/i)).toBeInTheDocument();
@@ -115,7 +114,7 @@ describe('SubmissionHistory Component', () => {
     expect(mockHandleViewClick).toHaveBeenCalledTimes(1);
     expect(mockHandleViewClick).toHaveBeenCalledWith(mockSubmissions[0]);
   });
-  
+
   test('calls filter set functions with default values when "Clear All" is clicked', () => {
     const mockSetStatusFilter = jest.fn();
     const mockSetStartDate = jest.fn();

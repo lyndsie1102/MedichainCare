@@ -19,13 +19,14 @@ from web3 import Web3
 fake = Faker()
 
 # Initialize Web3 and connect to Ganache
-web3 = Web3(Web3.HTTPProvider("http://127.0.0.1:7545"))
+web3 = Web3(Web3.HTTPProvider("http://host.docker.internal:7545"))
 
 # Check connection status
 if web3.isConnected():
     print("Connected to Ganache")
 else:
     print("Failed to connect to Ganache")
+
 
 # Get the list of accounts from Ganache
 ganache_accounts = web3.eth.accounts
@@ -39,11 +40,13 @@ def create_user(db: Session, role: str, account_index: int) -> User:
 
     # Get the Ganache account based on account_index
     user_account = ganache_accounts[account_index]
-    print(f"Creating user {role} with account: {user_account}")
+
+    username_prefix = role.lower()
+    username = f"{username_prefix}{account_index + 1}" 
 
     # Create the user
     user = User(
-        username=fake.user_name(),
+        username=username,
         hashed_password=bcrypt.hash("test123"),
         role=RoleEnum[role.upper()],
         name=fake.name(),
@@ -170,6 +173,7 @@ def seed_db():
     db = SessionLocal()
 
     try:
+
         users = []
         doctors = []
         labs = []  # Track created medical labs

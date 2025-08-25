@@ -21,6 +21,7 @@ jest.mock('lucide-react', () => ({
 const localStorageMock = {
     getItem: jest.fn().mockReturnValue('fake-access-token'),
 };
+
 Object.defineProperty(window, 'localStorage', { value: localStorageMock });
 
 
@@ -61,6 +62,7 @@ describe('AssignModal Component', () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
+        localStorageMock.getItem.mockReturnValue('fake-access-token');
         // Set up successful API responses for most tests
         getMedicalLabs.mockResolvedValue(mockLabs);
         getTestTypes.mockResolvedValue(mockTestTypes);

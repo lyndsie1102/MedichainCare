@@ -60,8 +60,6 @@ services:
       context: ./frontend
       dockerfile: Dockerfile.test
     command: ["npm", "test"]
-    volumes:
-      - ./frontend:/app
 
   # Backend Test Service
   backend-test:

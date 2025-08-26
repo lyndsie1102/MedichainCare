@@ -9,7 +9,7 @@ import {
     Wallet,
     CopyIcon
 } from 'lucide-react';
-import '../DoctorDashboard.css';
+import '../styles/DoctorDashboard.css';
 import AssignModal from '../components/AssignModal';
 import ReferModal from '../components/ReferModal';
 import SubmissionList from '../components/SubmissionList';

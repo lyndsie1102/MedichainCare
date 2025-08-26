@@ -10,7 +10,7 @@ import {
     Wallet,
     CopyIcon
 } from 'lucide-react';
-import '../LabStaffDashboard.css';
+import '../styles/LabStaffDashboard.css';
 import LogoutModal from '../components/LogoutModal';  // Import your LogoutModal component
 import { getTestRequests, uploadLabResult, getLabStaffInfo, appointmentSchedule, cancelAppointment } from '../api/lab-apis.js';  // Import your API functions
 import { logout } from '../api/user-apis.js'

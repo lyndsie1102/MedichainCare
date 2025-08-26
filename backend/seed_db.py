@@ -19,7 +19,7 @@ from web3 import Web3
 fake = Faker()
 
 # Initialize Web3 and connect to Ganache
-web3 = Web3(Web3.HTTPProvider("http://host.docker.internal:7545"))
+web3 = Web3(Web3.HTTPProvider("http://127.0.0.1:7545"))
 
 # Check connection status
 if web3.isConnected():

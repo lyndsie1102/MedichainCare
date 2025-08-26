@@ -59,9 +59,13 @@ export const uploadLabResult = async (upload_token, access_token, files, summary
 
 //Appointment Schedule API
 export const appointmentSchedule = async (testRequestId, date, time, token) => {
+  const bodyData = {
+    date: date,
+    time: time
+  };
   const response = await axios.post(
     `${API_URL}/labs/appointments/${testRequestId}/schedule`,
-    null,
+    bodyData,
     {
       params: { date, time },
       headers: {

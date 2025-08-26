@@ -8,6 +8,7 @@ import { getSymptomHistory, getPatientInfo, getSymptom } from '../api/patient-ap
 import { logout } from '../api/user-apis';
 import { getEthAddress } from '../utils/BlockchainInteract';
 import { formatAddress, copyAddressToClipboard } from '../utils/Helpers';
+import ChatBot from '../AI-chatbot/chatbot';
 
 const PatientDashboard = () => {
   const [submissions, setSubmissions] = useState([]);
@@ -20,12 +21,16 @@ const PatientDashboard = () => {
   const [error, setError] = useState(null);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
-  const [showFullAddress, setShowFullAddress] = useState(false);
   const [showAddressTooltip, setShowAddressTooltip] = useState(false);
+  const [showChatbot, setShowChatbot] = useState(false);
+
 
   const token = localStorage.getItem('access_token');
   const eth_address = getEthAddress(token);
   const shortEthAddress = formatAddress(eth_address);
+
+  // At line 33
+console.log('API URL:', process.env.REACT_APP_API_URL);
 
   // Fetch user info once on mount
   useEffect(() => {
@@ -224,6 +229,15 @@ const PatientDashboard = () => {
           />
         )
       }
+
+      <div className={`container ${showChatbot ? "show-chatbot" : ""}`}>
+        <button onClick={() => setShowChatbot(prev => !prev)} id="chatbot-toggler">
+          <span className="material-symbols-rounded">mode_comment</span>
+          <span className="material-symbols-rounded">close</span>
+        </button>
+        {showChatbot && <ChatBot />}
+      </div>
+
 
       {/* Logout Confirmation Modal */}
       <LogoutModal

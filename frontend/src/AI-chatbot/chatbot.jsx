@@ -31,7 +31,8 @@ const ChatBot = () => {
       console.log(error);
     };
   };
-
+  
+  // Auto scroll down in chat history when receiving bot's response
   useEffect(() => {
     chatBodyRef.current.scrollTo({ top: chatBodyRef.current.scrollHeight, behavior: "smooth" });
   }, [chatHistory]);

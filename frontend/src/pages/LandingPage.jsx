@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Heart, Stethoscope, User, TestTube, Shield, Clock, Users, ArrowRight } from 'lucide-react';
 import '../App.css';
 import { useNavigate } from 'react-router-dom';
+import ChatBot from '../AI-chatbot/chatbot';
 
 
 const LandingPage = () => {
+    const [showChatbot, setShowChatbot] = useState(false);
     const navigate = useNavigate();
     const handleLogin = (role) => {
         navigate(`/login/${role.toLowerCase()}`);
@@ -109,6 +111,14 @@ const LandingPage = () => {
                     </div>
                 </div>
             </section>
+
+            <div className={`container ${showChatbot ? "show-chatbot" : ""}`}>
+                <button onClick={() => setShowChatbot(prev => !prev)} id="chatbot-toggler">
+                    <span className="material-symbols-rounded">mode_comment</span>
+                    <span className="material-symbols-rounded">close</span>
+                </button>
+                {showChatbot && <ChatBot />}
+            </div>
 
             {/* Footer */}
             <footer className="footer">

@@ -9,11 +9,9 @@ from sqlalchemy import (
     UniqueConstraint,
 )
 from sqlalchemy.types import Enum as SQLEnum, JSON
-from sqlalchemy.orm import relationship, Session
-from sqlalchemy.types import PickleType
-from sqlalchemy.ext.mutable import MutableList
+from sqlalchemy.orm import relationship
 from database import Base
-from datetime import datetime, timedelta
+from datetime import datetime
 from enum import Enum, IntEnum
 import uuid
 

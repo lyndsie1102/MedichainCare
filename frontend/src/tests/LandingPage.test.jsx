@@ -21,8 +21,8 @@ describe('LandingPage Component', () => {
     render(<LandingPage />);
 
     // Check for the main header and hero text
-    expect(screen.getByRole('heading', { name: 'HealthConnect', level: 1 })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /welcome to healthconnect/i, level: 1 })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Medichain', level: 1 })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /welcome to Medichain/i, level: 1 })).toBeInTheDocument();
     expect(screen.getByText(/secure login for patients, doctors & lab staff/i)).toBeInTheDocument();
 
     // Check that all three role cards are rendered
@@ -31,8 +31,8 @@ describe('LandingPage Component', () => {
     expect(screen.getByRole('heading', { name: /lab staff login/i })).toBeInTheDocument();
 
     // Check for the features section and footer
-    expect(screen.getByRole('heading', { name: /why choose healthconnect/i })).toBeInTheDocument();
-    expect(screen.getByText(/© 2024 HealthConnect. All rights reserved./i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /why choose Medichain/i })).toBeInTheDocument();
+    expect(screen.getByText(/© 2024 Medichain. All rights reserved./i)).toBeInTheDocument();
   });
 
   test('navigates to the patient login page when the patient button is clicked', () => {

@@ -279,7 +279,7 @@ const LabStaffDashboard = ({ accessToken }) => {
                 <div className="logo">
                     <Heart size={40} className="icon-heart" />
                     <div>
-                        <h1>HealthCare Portal</h1>
+                        <h1>Medichain Portal</h1>
                         <p>Lab Dashboard</p>
                     </div>
                 </div>

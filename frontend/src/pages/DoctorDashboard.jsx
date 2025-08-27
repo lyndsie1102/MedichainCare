@@ -314,7 +314,7 @@ const DoctorDashboard = () => {
                 <div className="logo">
                     <Heart size={40} className="icon-heart" />
                     <div>
-                        <h1>HealthCare Portal</h1>
+                        <h1>Medichain Portal</h1>
                         <p>Doctor Dashboard</p>
                     </div>
                 </div>

@@ -3,7 +3,8 @@ import PatientDashboard from './pages/PatientDashboard';
 import DoctorDashboard from './pages/DoctorDashboard';
 import LabDashboard from './pages/LabDashboard';
 import LandingPage from './pages/LandingPage';
-import LoginForm from './components/LoginForm';
+import LoginPage from './pages/LoginPage';
+import './App.css';
 
 const DashboardRouter = () => {
   const user = JSON.parse(localStorage.getItem('user'));
@@ -29,7 +30,7 @@ function App() {
     // The <Router> component has been removed from here
     <Routes>
       <Route path="/" element={<LandingPage />} />
-      <Route path="/login/:role" element={<LoginForm />} />
+      <Route path="/login/:role" element={<LoginPage />} />
       <Route path="/dashboard" element={<DashboardRouter />} />
       <Route path="*" element={<Navigate to="/" />} /> {/* Catch-all redirect */}
     </Routes>

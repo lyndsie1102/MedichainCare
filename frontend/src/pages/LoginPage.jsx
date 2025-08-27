@@ -71,8 +71,8 @@ const LoginPage = () => {
           <div className="logo-circle">
             <Heart className="logo-icon" />
           </div>
-          <h1 className="app-title">HealthConnect</h1>
-          <p className="app-subtitle">Secure Healthcare Portal</p>
+          <h1 className="app-title">Medichain</h1>
+          <p className="app-subtitle">Secure Medichain Portal</p>
         </div>
 
         <div className="login-card">
@@ -146,7 +146,7 @@ const LoginPage = () => {
         </div>
 
         <footer className="login-footer">
-          <p>© 2024 HealthConnect. All rights reserved.</p>
+          <p>© 2024 Medichain. All rights reserved.</p>
           <div className="footer-links">
             <a href="#">Privacy Policy</a>
             <a href="#">Terms of Use</a>

@@ -114,39 +114,36 @@ const SubmissionViewModal = ({
                             )}
                         </div>
 
-                        { /* Test Results Section */}
-                        <div>
-                            <h4 className="section-title">Test Results</h4>
-                            {selectedSymptom.testResults && selectedSymptom.testResults.length > 0 ? (
+                        {/* Test Results Section */}
+                        {selectedSymptom.testResults && selectedSymptom.testResults.length > 0 && (
+                            <div>
+                                <h4 className="section-title">Test Results</h4>
                                 <div className="test-results-card">
+                                    <h5 className="test-results-type">{selectedSymptom.testType}</h5>
+                                    <p className="test-results-date">
+                                        <Calendar className="test-results-icon" />
+                                        Results uploaded: {formatDate(selectedSymptom.testResults[0].uploadedAt)}
+                                    </p>
+                                    <div className="test-results-summary">
+                                        <h6 className="test-results-summary-title">Summary:</h6>
+                                        <p className="test-results-summary-text">{selectedSymptom.testResults[0].summary ?
+                                            selectedSymptom.testResults[0].summary : 'N/A'}</p>
+                                    </div>
                                     {selectedSymptom.testResults.map((testResult, index) => (
                                         <div key={index} className="test-results">
                                             <div className="test-results-header">
-                                                <div className="test-results-info">
-                                                    <h5 className="test-results-type">{selectedSymptom.testType?.name || 'N/A'}</h5>
-                                                    <p className="test-results-date">
-                                                        <Calendar className="test-results-icon" />
-                                                        Results uploaded: {formatDate(testResult.uploadedAt)}
-                                                    </p>
-                                                </div>
+                                                <div className="test-results-info"></div>
                                             </div>
-
-                                            <div className="test-results-summary">
-                                                <h6 className="test-results-summary-title">Summary:</h6>
-                                                <p className="test-results-summary-text">{testResult.summary}</p>
-                                            </div>
-
                                             <div className="test-results-files">
-                                                <h6 className="test-results-files-title">Attached Files:</h6>
                                                 <div className="test-results-files-list">
                                                     {testResult.files.map((file, fileIndex) => (
                                                         <div key={fileIndex} className="test-results-file">
                                                             <FileText className="test-results-file-icon" />
                                                             <div className="test-results-file-info">
                                                                 <span className="test-results-file-name">{file.name}</span>
-                                                                <span className="test-results-file-type">{file.type || 'Unknown'}</span>
+                                                                {/* Open the file in a new tab */}
                                                                 <a
-                                                                    href={file.url}
+                                                                    href={`http://localhost:8000/${file.path}`}
                                                                     target="_blank"
                                                                     rel="noopener noreferrer"
                                                                     className="file-preview-button"
@@ -161,10 +158,8 @@ const SubmissionViewModal = ({
                                         </div>
                                     ))}
                                 </div>
-                            ) : (
-                                <p className="section-placeholder">No test results uploaded yet.</p>
-                            )}
-                        </div>
+                            </div>
+                        )}
 
                         { /* Doctor Diagnosis */}
                         <div>

@@ -85,7 +85,7 @@ describe('DoctorDashboard', () => {
         render(<DoctorDashboard />);
 
         // Check for header elements
-        expect(screen.getByText('HealthCare Portal')).toBeInTheDocument();
+        expect(screen.getByText('Medichain Portal')).toBeInTheDocument();
 
         // Wait for async data to load and check doctor info
         expect(await screen.findByText('Dr. Test Doctor')).toBeInTheDocument();

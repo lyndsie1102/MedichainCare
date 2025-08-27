@@ -9,7 +9,6 @@ body {
   max-width: 1500px;
   margin: 0 auto;
   padding: 0 1rem;
-  min-height: 100vh;
   display: flex;
   flex-direction: column;
 }
@@ -275,6 +274,10 @@ button:disabled {
 
 .text-orange {
   color: #f97316;
+}
+
+.main-content {
+  flex-grow: 1;
 }
 
 .hero {
@@ -863,9 +866,12 @@ button:disabled {
 
 .name-address {
   display: flex;
-  flex-direction: column; /* Stack elements vertically */
-  gap: 0.5rem; /* Add some space between name and address */
-  align-items: flex-start; /* Align all items to the left */
+  flex-direction: column;
+  /* Stack elements vertically */
+  gap: 0.5rem;
+  /* Add some space between name and address */
+  align-items: flex-start;
+  /* Align all items to the left */
 }
 
 .user-name {
@@ -933,6 +939,7 @@ button:disabled {
     opacity: 0;
     transform: translateY(-0.25rem);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -1054,7 +1061,8 @@ button:disabled {
 
 .patient-user-icon {
   flex-shrink: 0;
-  background: linear-gradient(to right, #f97316, #fd7e14); /* Gradient from deep to lighter orange */
+  background: linear-gradient(to right, #f97316, #fd7e14);
+  /* Gradient from deep to lighter orange */
   padding: 0.5rem;
   border-radius: 0.5rem;
   color: white;
@@ -1630,4 +1638,132 @@ textarea {
   color: #dc2626;
 }
 
+/* Test Results Section */
+.test-results-card {
+  background-color: #f2e5ea;
+  border: 1px solid #d1969f;
+  border-radius: 0.5rem;
+  padding: 1rem;
+}
 
+.test-results-header {
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+}
+
+.test-results-type {
+  font-size: 1rem;
+  font-weight: 600;
+  color: black;
+  margin-bottom: 0.25rem;
+}
+
+.test-results-date {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  color: black;
+}
+
+.test-results-icon {
+  height: 0.875rem;
+  width: 0.875rem;
+}
+
+.test-results-summary {
+  margin-top: 1rem;
+  margin-bottom: 0;
+  background-color: white;
+  border: 1px solid #e8becb;
+  border-radius: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.test-results-summary-title {
+  margin-left: 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: black;
+  margin-top: 0.5rem;
+  margin-bottom: 0;
+}
+
+.test-results-summary-text {
+  font-size: 0.875rem;
+  color: #374151;
+  line-height: 1.5;
+  word-wrap: break-word;
+  margin-left: 1rem;
+}
+
+.test-results-files-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: black;
+  margin-bottom: 0.5rem;
+}
+
+.test-results-files-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.test-results-file {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: white;
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  border: 1px solid #dcfce7;
+}
+
+.test-results-file-icon {
+  height: 1rem;
+  width: 1rem;
+  color: #d08493;
+  flex-shrink: 0;
+}
+
+.test-results-file-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.test-results-file-name {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #111827;
+}
+
+.test-results-file-type {
+  font-size: 0.625rem;
+  color: #6b7280;
+}
+
+.file-preview-button {
+  font-size: 13px;
+  /* Font size */
+  color: #007bff;
+  /* Initial color (blue) */
+  text-decoration: none;
+  /* Remove underline */
+  transition: color 0.3s ease;
+  /* Smooth color transition */
+  padding-top: 0.25rem;
+  /* Padding for better click area */
+}
+
+/* Hover effect for the "View" link */
+.file-preview-button:hover {
+  color: #0056b3;
+  /* Darker blue on hover */
+}
+
+/* Optional: Active state to change color when clicked */
+.file-preview-button:active {
+  color: #003f8f;
+  /* Even darker blue when clicked */
+}

@@ -280,13 +280,13 @@ def get_symptom_details(
         db.query(Consent)
         .filter(
             Consent.symptom_id == symptom.id,
-            Consent.doctor_id == current_user.id,
             Consent.consent_type == ConsentPurpose.RESEARCH,
             Consent.is_granted,
         )
         .first()
     )
     has_research_consent = research_consent is not None
+    print(f"research consent {has_research_consent}")
 
     if is_gp:
         # Full access

@@ -20,6 +20,8 @@ jobs:
 
       - name: Compile smart contracts
         run: npx truffle compile
+        working-directory: ./blockchain
         
       - name: Run Truffle Test
         run: npx truffle test
+        working-directory: ./blockchain

@@ -15,6 +15,11 @@ module.exports = {
       gas: 6721975, // Gas limit
       gasPrice: 20000000000, // 20 Gwei
     },
+    "docker_ganache": {
+      host: "blockchain", 
+      port: 7545,
+      network_id: "*",
+    }
   },
 
   // Specify compilers for Solidity

@@ -1,5 +1,5 @@
-# Use Node.js base image
-FROM node:18-alpine AS blockchain
+# Start from official Ganache CLI image
+FROM trufflesuite/ganache-cli:latest
 
 # Set working directory
 WORKDIR /workspace
@@ -17,4 +17,4 @@ COPY . .
 EXPOSE 7545
 
 # Compile and deploy smart contracts to docker network
-CMD truffle compile && truffle migrate --network docker && tail -f /dev/null
+CMD ["ganache-cli", "--host", "0.0.0.0", "--port", "7545", "--networkId", "5777", "--deterministic"]

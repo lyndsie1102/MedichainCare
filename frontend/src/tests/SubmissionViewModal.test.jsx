@@ -107,7 +107,7 @@ describe('SubmissionViewModal Component', () => {
         expect(screen.getByText('No images uploaded.')).toBeInTheDocument();
 
         // Check for "No test results" placeholder
-        expect(screen.getByText('No test results uploaded yet.')).toBeInTheDocument();
+        expect(screen.queryByText('Test Results')).not.toBeInTheDocument();
 
         // Check for "No diagnoses" placeholder
         expect(screen.getByText('No diagnoses updated yet.')).toBeInTheDocument();

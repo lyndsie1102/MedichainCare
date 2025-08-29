@@ -5,6 +5,10 @@
   "devDependencies": {
     "@testing-library/jest-dom": "^6.8.0",
     "@testing-library/react": "^16.3.0",
-    "jest": "^30.0.5"
+    "jest": "^30.0.5",
+    "solidity-coverage": "^0.8.16"
+  },
+  "scripts": {
+    "coverage": "solidity-coverage"
   }
 }

@@ -70,7 +70,6 @@ def submit_symptoms(
     current_user: User = Depends(verify_role(RoleEnum.PATIENT)),
     db: Session = Depends(get_db),
 ):
-
     # Enforce required consents
     if not symptom.consent_type.treatment:
         raise HTTPException(status_code=400, detail="Treatment consent is required.")

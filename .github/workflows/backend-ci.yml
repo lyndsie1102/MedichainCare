@@ -1,34 +1,107 @@
-name: CI Pipeline
+name: Medichain CI/CD Pipeline
 
-# Triggers the workflow on pushes and pull requests to key branches
-on: [push, pull_request]
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push events for the "main" branch
+  push:
+    branches: [ "main" ]
+  # Triggers the workflow on pull request events targeting the "main" branch
+  pull_request:
+    branches: [ "main" ]
 
 jobs:
-  # First job: Run linters and format checkers
+  # --------------------------------------------------
+  # Job 1: Linting - Quick static analysis checks
+  # --------------------------------------------------
   lint:
-    name: Linting and Formatting Check
+    name: Run Linters
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Build Dev Image for Tools
-        run: docker build --target dev -t myapp-dev ./backend
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
 
-      - name: Run Ruff Linter
-        run: docker run --rm myapp-dev ruff check ./app
+      - name: Install and run backend linter (flake8)
+        run: |
+          pip install flake8
+          # Stop the build if there are Python syntax errors or undefined names
+          flake8 ./backend --count --select=E9,F63,F7,F82 --show-source --statistics
+          # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+          flake8 ./backend --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
-      - name: Check Code Formatting with Black
-        run: docker run --rm myapp-dev black --check /app
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
 
-  # Second job: Run the test suite
+      - name: Install and run frontend linter (ESLint)
+        run: |
+          cd ./frontend
+          npm ci
+          npm run lint # Assumes you have a "lint" script in your package.json
+
+  # --------------------------------------------------
+  # Job 2: Testing - Run all tests using Docker Compose
+  # --------------------------------------------------
   test:
-    name: Run Automated Tests
+    name: Run All Tests
     runs-on: ubuntu-latest
+    # This job will only run if the 'lint' job succeeds
     needs: lint
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Run Pytest with Docker Compose
-        run: docker compose run --rm -e SECRET_KEY=${{ secrets.SECRET_KEY }} test
+      - name: Run test services with Docker Compose
+        run: |
+          docker-compose up --build --abort-on-container-exit blockchain-test backend-test frontend-test
+        # --build: Ensures images are built with the latest code from the commit.
+        # --abort-on-container-exit: Stops all containers if any single container exits.
+        # Since our test services run tests and then exit, this command will fail the workflow
+        # if any test suite fails (exits with a non-zero code).
+
+  # -------------------------------------------------------------------
+  # Job 3: Build & Push - Build final images and push to a registry
+  # -------------------------------------------------------------------
+  build-and-push:
+    name: Build and Push Docker Images
+    runs-on: ubuntu-latest
+    # This job depends on the 'test' job completing successfully
+    needs: test
+    # IMPORTANT: This job only runs on a push to the main branch, not on pull requests.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build and push Backend image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile # Assuming the production Dockerfile is named 'Dockerfile'
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/medichain-backend:latest, ${{ secrets.DOCKERHUB_USERNAME }}/medichain-backend:${{ github.sha }}
+
+      - name: Build and push Frontend image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/medichain-frontend:latest, ${{ secrets.DOCKERHUB_USERNAME }}/medichain-frontend:${{ github.sha }}
+

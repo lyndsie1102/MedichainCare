@@ -177,7 +177,6 @@ def upload_lab_result(
     current_user: User = Depends(verify_role(RoleEnum.LAB_STAFF)),
     db: Session = Depends(get_db),
 ):
-
     # Retrieve the test request based on the token
     assignment = db.query(TestRequest).filter_by(upload_token=token).first()
 

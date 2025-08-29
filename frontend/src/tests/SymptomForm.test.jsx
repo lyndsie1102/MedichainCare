@@ -1,7 +1,9 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import SymptomForm from '../components/SymptomForm'; // Adjust path if necessary
+import SymptomForm from '../components/SymptomForm';
+import * as api from '../api/patient-apis';
+import * as blockchain from '../utils/BlockchainInteract';
 
 // ---- Mock External Dependencies ----
 class MockDataTransfer {
@@ -20,11 +22,9 @@ const mockSetSelectedImages = jest.fn();
 global.DataTransfer = MockDataTransfer;
 
 // Mock the API module
-import * as api from '../api/patient-apis';
 jest.mock('../api/patient-apis');
 
 // Mock the Blockchain module
-import * as blockchain from '../utils/BlockchainInteract';
 jest.mock('../utils/BlockchainInteract');
 
 // Mock globals like localStorage and alert

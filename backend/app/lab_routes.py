@@ -178,7 +178,7 @@ def upload_lab_result(
     db: Session = Depends(get_db),
 ):
     # Retrieve the test request based on the token
-    assignment = db.query(TestRequest).filter_by(upload_token=token).first()
+    assignment = db.query(TestRequest).filter_by(upload_token=token, status="pending").first()
 
     if not assignment:
         raise HTTPException(status_code=404, detail="Invalid token")

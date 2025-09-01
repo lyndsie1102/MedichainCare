@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/devcontainers/python:3.10
+FROM python:3.10-slim
 
 # Set working directory
 WORKDIR /workspace
@@ -17,4 +17,4 @@ EXPOSE 8000
 
 
 # run backend with uvicorn command
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

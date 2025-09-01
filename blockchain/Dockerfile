@@ -17,4 +17,4 @@ COPY . .
 EXPOSE 7545
 
 # Compile and deploy smart contracts to docker network
-CMD ["ganache-cli", "--host", "0.0.0.0", "--port", "7545", "--networkId", "5777", "--deterministic"]
+CMD truffle compile && truffle migrate --network docker && tail -f /dev/null

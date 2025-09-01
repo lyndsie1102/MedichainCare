@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:8000';
+const API_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:8000";
 
 //Doctor dasboard APIs
 export const getDoctorDashboard = async (token, status = null, search = null) => {

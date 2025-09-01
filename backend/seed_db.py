@@ -15,9 +15,11 @@ TestType,
 from database import SessionLocal
 from passlib.hash import bcrypt
 from web3 import Web3
+import os
 
 
 fake = Faker()
+GANACHE_URL = os.getenv("GANACHE_URL", "http://127.0.0.1:7545")
 
 # --- Configuration ---
 NUM_ENTITIES = 3  # We will create 3 of each: doctors, patients, labs, lab_staff
@@ -25,7 +27,7 @@ NUM_ENTITIES = 3  # We will create 3 of each: doctors, patients, labs, lab_staff
 
 # Initialize Web3 and connect to Ganache
 try:
-    web3 = Web3(Web3.HTTPProvider("http://127.0.0.1:7545"))
+    web3 = Web3(Web3.HTTPProvider(GANACHE_URL ))
     if web3.isConnected():
         print(f"✅ Connected to Ganache at successfully")
         ganache_accounts = web3.eth.accounts

@@ -7,14 +7,30 @@ from app.user_routes import router as user_router
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import websockets.client
+import seed_db
+from contextlib import asynccontextmanager
 
 async def connect_websocket():
      await websockets.client.connect("http://127.0.0.1:8000")
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # ✅ Startup code
+    print("Running startup tasks...")
+    seed_db.seed()
+
+    yield  # ⏸ Application runs while waiting here
+
+    # ⛔ Optional: Shutdown code
+    print("Shutting down...")
+
+
+app = FastAPI(lifespan=lifespan)
 
 # Create all tables in the database
 Base.metadata.create_all(bind=engine)
+
+
 
 # Include routers with the prefix for each role
 app.include_router(user_router, prefix="/users", tags=["users"])

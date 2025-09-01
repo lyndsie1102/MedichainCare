@@ -1,6 +1,8 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:8000';
+const API_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:8000";
+console.log("Using API_URL:", API_URL);
+
 
 
 export const login = async ({ username, password, role }) => {

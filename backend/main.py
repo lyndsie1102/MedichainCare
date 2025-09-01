@@ -17,7 +17,7 @@ async def connect_websocket():
 async def lifespan(app: FastAPI):
     # ✅ Startup code
     print("Running startup tasks...")
-    seed_db.seed()
+    seed_db.seed_db()
 
     yield  # ⏸ Application runs while waiting here
 

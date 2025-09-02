@@ -178,7 +178,7 @@ const LabStaffDashboard = ({ accessToken }) => {
             localStorage.removeItem('access_token');
             localStorage.removeItem('user');
 
-            window.location.href = '/login';
+            window.location.href = '/';
         } catch (error) {
             console.error('Logout error:', error);
             alert('Logout failed. Please try again.');

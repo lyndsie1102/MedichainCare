@@ -182,7 +182,7 @@ describe('PatientDashboard', () => {
         });
         expect(localStorage.removeItem).toHaveBeenCalledWith('access_token');
         expect(localStorage.removeItem).toHaveBeenCalledWith('user');
-        expect(window.location.href).toBe('/login');
+        expect(window.location.href).toBe('/');
     });
 
     test('cancels logout from the modal', async () => {

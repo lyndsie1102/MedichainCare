@@ -192,7 +192,7 @@ describe('LabStaffDashboard', () => {
         expect(logout).toHaveBeenCalledWith('fake_token');
         await waitFor(() => {
             expect(window.localStorage.getItem('access_token')).toBeNull();
-            expect(window.location.href).toBe('/login');
+            expect(window.location.href).toBe('/');
         });
 
         // Restore window.location

@@ -20,6 +20,7 @@ import os
 
 fake = Faker()
 GANACHE_URL = os.getenv("GANACHE_URL", "http://127.0.0.1:7545")
+print("Ganache URL", GANACHE_URL)
 
 # --- Configuration ---
 NUM_ENTITIES = 3  # We will create 3 of each: doctors, patients, labs, lab_staff

@@ -9,6 +9,10 @@ from fastapi.staticfiles import StaticFiles
 import websockets.client
 import seed_db
 from contextlib import asynccontextmanager
+import os
+
+origin = os.getenv("ALLOWED_ORIGINS")
+origins = [origin] if origin else []
 
 async def connect_websocket():
      await websockets.client.connect("http://127.0.0.1:8000")
@@ -44,7 +48,7 @@ app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 # Enable CORS for all origins
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

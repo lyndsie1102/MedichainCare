@@ -14,7 +14,10 @@ module.exports = async function (deployer) {
   const contractAddress = contract.address;
 
   // Define the path to save the ABI and address
-  const frontendPath = path.join('./frontend/src/abis/LogAudits.json') || ('./build/contracts/LogAudits.json');
+  const outputDir = path.resolve(__dirname, '../../frontend/src/abis');
+  fs.mkdirSync(outputDir, { recursive: true });
+  const outputPath = path.join(outputDir, 'LogAudits.json');
+
 
   // Create an object with ABI and contract address
   const contractData = {
@@ -23,12 +26,13 @@ module.exports = async function (deployer) {
   };
 
   // Write the ABI and address to the file
-  fs.writeFileSync(frontendPath, JSON.stringify(contractData, null, 2));
+fs.writeFileSync(outputPath, JSON.stringify(contractData, null, 2));
+console.log(`Contract ABI and address saved to: ${outputPath}`);
+
   const provider = deployer.provider;
   const providerUrl = provider.host || provider.connection.url || 'Unknown URL';
   
   
   console.log(`Deployed to network: ${providerUrl}`);
 
-  console.log("Contract ABI and address saved to frontend/src/abis/LogAudits.json");
 };

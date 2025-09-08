@@ -14,7 +14,7 @@ module.exports = async function (deployer) {
   const contractAddress = contract.address;
 
   // Define the path to save the ABI and address
-  const frontendPath = path.join('./frontend/src/abis/LogAudits.json');
+  const frontendPath = path.join('./frontend/src/abis/LogAudits.json') || ('./build/contracts/LogAudits.json');
 
   // Create an object with ABI and contract address
   const contractData = {

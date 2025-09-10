@@ -60,32 +60,27 @@
           "type": "uint256"
         },
         {
-          "components": [
-            {
-              "internalType": "bool",
-              "name": "treatment",
-              "type": "bool"
-            },
-            {
-              "internalType": "bool",
-              "name": "referral",
-              "type": "bool"
-            },
-            {
-              "internalType": "bool",
-              "name": "research",
-              "type": "bool"
-            }
-          ],
           "indexed": false,
-          "internalType": "struct LogAudits.Consent",
-          "name": "granted_consent",
-          "type": "tuple"
+          "internalType": "bool",
+          "name": "treatment",
+          "type": "bool"
+        },
+        {
+          "indexed": false,
+          "internalType": "bool",
+          "name": "referral",
+          "type": "bool"
+        },
+        {
+          "indexed": false,
+          "internalType": "bool",
+          "name": "research",
+          "type": "bool"
         }
       ],
       "name": "PatientLogged",
       "type": "event",
-      "signature": "0xbaf4064c4bce11ab1664ab198d1f4c3902389a7fe4a40279db2d522716fb729b"
+      "signature": "0x6ef6696e0d07f5c45d8154742f77faacf863bf4a6c11d1411dc5cf283da61c92"
     },
     {
       "inputs": [
@@ -173,5 +168,5 @@
       "signature": "0xc2b81ea3"
     }
   ],
-  "address": "0xe06d76Dd772Dd92D74E5C2DD08ad0dC7A57E459E"
+  "address": "0xdF24585d9AD8311D84f50fDF7FEB28ACcc863593"
 }

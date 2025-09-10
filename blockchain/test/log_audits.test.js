@@ -21,31 +21,30 @@ contract("LogAudits", (accounts) => {
 
   // Test Case 2: submitSymptom function
   describe("submitSymptom", () => {
-    it("should allow a patient to submit symptoms and emit a PatientLogged event", async () => {
-      // Perform the transaction
-      const tx = await logAuditsInstance.submitSymptom(true, false, true, "patient", { from: patient });
+  it("should allow a patient to submit symptoms and emit a PatientLogged event", async () => {
+    // Perform the transaction
+    const tx = await logAuditsInstance.submitSymptom(true, false, true, "patient", { from: patient });
 
-      // Check that exactly one event was emitted
-      assert.equal(tx.logs.length, 1, "Should emit one event");
+    // Check that exactly one event was emitted
+    assert.equal(tx.logs.length, 1, "Should emit one event");
 
-      const log = tx.logs[0];
-      // Check the event name
-      assert.equal(log.event, "PatientLogged", "The event name should be PatientLogged");
+    const log = tx.logs[0];
+    // Check the event name
+    assert.equal(log.event, "PatientLogged", "The event name should be PatientLogged");
 
-      // Check the arguments of the event
-      const args = log.args;
-      assert.equal(args.user, patient, "The event user should be the patient's address");
-      assert.equal(args.role, "patient", "The event role should be 'patient'");
-      assert.equal(args.action_type, "submit_symptom", "The action type should be 'submit_symptom'");
-      assert.ok(args.created_at, "The timestamp should exist");
+    // Check the arguments of the event
+    const args = log.args;
+    assert.equal(args.user, patient, "The event user should be the patient's address");
+    assert.equal(args.role, "patient", "The event role should be 'patient'");
+    assert.equal(args.action_type, "submit_symptom", "The action type should be 'submit_symptom'");
+    assert.ok(args.created_at.toNumber() > 0, "The timestamp should be a positive number");
 
-      // Check the nested consent struct within the event
-      const consent = args.granted_consent;
-      assert.equal(consent.treatment, true, "Treatment consent should be true");
-      assert.equal(consent.referral, false, "Referral consent should be false");
-      assert.equal(consent.research, true, "Research consent should be true");
-    });
+    assert.equal(args.treatment, true, "Treatment consent should be true");
+    assert.equal(args.referral, false, "Referral consent should be false");
+    assert.equal(args.research, true, "Research consent should be true");
   });
+});
+
 
   // A helper function to test all ActionLogged events to avoid repeating code
   const testActionLoggedEvent = async (functionName, role, userAccount, actionType) => {

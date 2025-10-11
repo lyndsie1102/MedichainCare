@@ -52,11 +52,13 @@ def create_user(db: Session, role: str, index: int, account_index: int) -> User:
     user_account = ganache_accounts[account_index]
     username_prefix = role.lower().replace("_", "")
     username = f"{username_prefix}{index + 1}"
+    password = "test123"
+    password = password[:72]
 
     user = User(
         username=username,
         name=username, 
-        hashed_password=bcrypt.hash("test123"),
+        hashed_password=bcrypt.hash(password),
         role=RoleEnum[role.upper()],
         gender=random.choice(list(GenderEnum)),
         age=random.randint(18, 80),

@@ -54,6 +54,9 @@ def create_user(db: Session, role: str, index: int, account_index: int) -> User:
     username = f"{username_prefix}{index + 1}"
     password = "test123"
     password = password[:72]
+    hashed_password = bcrypt.hash(password)
+    print("hashed password length", len(hashed_password), hashed_password)
+
 
     user = User(
         username=username,

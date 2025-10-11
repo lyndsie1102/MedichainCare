@@ -56,7 +56,7 @@ class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True)
     username = Column(String, unique=True, nullable=False)
-    hashed_password = Column(String, nullable=False)
+    hashed_password = Column(String(255), nullable=False)
     role = Column(
         SQLEnum(RoleEnum, native_enum=False), nullable=False
     )  # role will be one of patient, doctor, lab_staff
